@@ -28,13 +28,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const fetchStaff = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('staff_members')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .maybeSingle();
-    return data as StaffMember | null;
+    try {
+      const { data } = await supabase
+        .from('staff_members')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .maybeSingle();
+      return data as StaffMember | null;
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -42,9 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchStaff(session.user.id).then(staff => {
           setState({ user: session.user, session, staff, loading: false });
+        }).catch(() => {
+          setState({ user: session.user, session, staff: null, loading: false });
         });
       } else {
-        setState(prev => ({ ...prev, loading: false }));
+        setState({ user: null, session: null, staff: null, loading: false });
       }
     });
 
