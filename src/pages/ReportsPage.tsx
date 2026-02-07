@@ -7,6 +7,16 @@ import {
   Percent,
   Calendar,
   Building2,
+  FileText,
+  Download,
+  Printer,
+  SprayCan,
+  Receipt,
+  XCircle,
+  Globe,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -32,7 +42,7 @@ import { formatCurrency } from '../lib/utils';
 import type { Reservation, Room, RoomType, Guest } from '../types';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
-type TabKey = 'overview' | 'revenue' | 'occupancy' | 'guests';
+type TabKey = 'occupancy' | 'revenue' | 'guests' | 'bookings' | 'housekeeping' | 'financial' | 'cancellations';
 
 const CHART_COLORS = {
   brand: '#3b82f6',
@@ -60,10 +70,13 @@ const TOOLTIP_STYLE = {
 };
 
 const TABS: { key: TabKey; label: string; icon: typeof BarChart3 }[] = [
-  { key: 'overview', label: 'Overview', icon: BarChart3 },
-  { key: 'revenue', label: 'Revenue', icon: DollarSign },
   { key: 'occupancy', label: 'Occupancy', icon: Building2 },
+  { key: 'revenue', label: 'Revenue', icon: DollarSign },
   { key: 'guests', label: 'Guests', icon: Users },
+  { key: 'bookings', label: 'Booking Sources', icon: Globe },
+  { key: 'housekeeping', label: 'Housekeeping', icon: SprayCan },
+  { key: 'financial', label: 'Financial', icon: Receipt },
+  { key: 'cancellations', label: 'Cancellations', icon: XCircle },
 ];
 
 function seededRandom(seed: number) {
@@ -228,7 +241,7 @@ const VIP_COLORS: Record<string, string> = {
 
 export default function ReportsPage() {
   const { currentHotel } = useHotel();
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [activeTab, setActiveTab] = useState<TabKey>('occupancy');
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
@@ -238,6 +251,7 @@ export default function ReportsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [, setRoomTypes] = useState<RoomType[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [housekeepingTasks, setHousekeepingTasks] = useState<any[]>([]);
 
   const currency = currentHotel?.currency || 'USD';
 
@@ -245,7 +259,7 @@ export default function ReportsPage() {
     if (!currentHotel) return;
     setLoading(true);
 
-    const [reservationsResult, roomsResult, roomTypesResult, guestsResult] = await Promise.all([
+    const [reservationsResult, roomsResult, roomTypesResult, guestsResult, housekeepingResult] = await Promise.all([
       supabase
         .from('reservations')
         .select('*, guest:guests(*), room:rooms(*), room_type:room_types(*)')
@@ -267,12 +281,20 @@ export default function ReportsPage() {
         .eq('hotel_id', currentHotel.id)
         .order('total_spent', { ascending: false })
         .limit(100),
+      supabase
+        .from('housekeeping_tasks')
+        .select('*')
+        .eq('hotel_id', currentHotel.id)
+        .gte('created_at', dateRange.start)
+        .lte('created_at', dateRange.end + 'T23:59:59')
+        .order('created_at', { ascending: false }),
     ]);
 
     setReservations((reservationsResult.data || []) as Reservation[]);
     setRooms((roomsResult.data || []) as Room[]);
     setRoomTypes((roomTypesResult.data || []) as RoomType[]);
     setGuests((guestsResult.data || []) as Guest[]);
+    setHousekeepingTasks(housekeepingResult.data || []);
     setLoading(false);
   }, [currentHotel, dateRange]);
 
@@ -352,6 +374,78 @@ export default function ReportsPage() {
       : { platinum: 3, gold: 12, silver: 28, total: 43 };
   }, [guests]);
 
+  const exportToCSV = () => {
+    let csvContent = '';
+    let filename = '';
+
+    switch (activeTab) {
+      case 'occupancy':
+        csvContent = 'Date,Occupancy Rate\n';
+        dailyOccupancyData.forEach(row => {
+          csvContent += `${row.date},${row.occupancy}%\n`;
+        });
+        filename = `occupancy-report-${dateRange.start}-${dateRange.end}.csv`;
+        break;
+      case 'revenue':
+        csvContent = 'Date,Revenue\n';
+        dailyRevenueData.forEach(row => {
+          csvContent += `${row.date},${row.revenue}\n`;
+        });
+        filename = `revenue-report-${dateRange.start}-${dateRange.end}.csv`;
+        break;
+      case 'guests':
+        csvContent = 'Name,Email,Total Spent,VIP Status\n';
+        guests.slice(0, 50).forEach(g => {
+          csvContent += `${g.name},${g.email},${g.total_spent},${g.vip_status}\n`;
+        });
+        filename = `guests-report-${dateRange.start}-${dateRange.end}.csv`;
+        break;
+      case 'bookings':
+        csvContent = 'Source,Percentage\n';
+        bookingSourceData.forEach(row => {
+          csvContent += `${row.name},${row.value}%\n`;
+        });
+        filename = `booking-sources-${dateRange.start}-${dateRange.end}.csv`;
+        break;
+      case 'housekeeping':
+        csvContent = 'Status,Count\n';
+        csvContent += `Completed,${housekeepingTasks.filter(t => t.status === 'completed').length}\n`;
+        csvContent += `In Progress,${housekeepingTasks.filter(t => t.status === 'in_progress').length}\n`;
+        csvContent += `Pending,${housekeepingTasks.filter(t => t.status === 'pending').length}\n`;
+        filename = `housekeeping-report-${dateRange.start}-${dateRange.end}.csv`;
+        break;
+      case 'financial':
+        csvContent = 'Metric,Value\n';
+        csvContent += `Total Revenue,${overviewMetrics.totalRevenue}\n`;
+        csvContent += `Average Daily Rate,${overviewMetrics.adr}\n`;
+        csvContent += `RevPAR,${overviewMetrics.revpar}\n`;
+        filename = `financial-report-${dateRange.start}-${dateRange.end}.csv`;
+        break;
+      case 'cancellations':
+        const cancelled = reservations.filter(r => r.status === 'cancelled');
+        csvContent = 'Guest,Check In,Check Out,Amount\n';
+        cancelled.forEach(r => {
+          csvContent += `${r.guest?.name || 'N/A'},${r.check_in},${r.check_out},${r.total_amount}\n`;
+        });
+        filename = `cancellations-report-${dateRange.start}-${dateRange.end}.csv`;
+        break;
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return <LoadingSpinner size="lg" />;
   }
@@ -403,14 +497,26 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Performance insights for {currentHotel?.name}
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Performance insights for {currentHotel?.name}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={handlePrint} className="btn-secondary text-sm">
+              <Printer className="w-4 h-4" />
+              Print
+            </button>
+            <button onClick={exportToCSV} className="btn-secondary text-sm">
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-400" />
             <input
@@ -460,287 +566,9 @@ export default function ReportsPage() {
         </nav>
       </div>
 
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {metricCards.map(card => (
-              <div key={card.label} className="stat-card">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`${card.bg} ${card.color} p-2 rounded-lg`}>
-                    <card.icon className="w-5 h-5" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900">{card.value}</div>
-                <div className="text-xs text-gray-500 mt-1">{card.label}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dailyRevenueData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={CHART_COLORS.brand} stopOpacity={0.15} />
-                        <stop offset="95%" stopColor={CHART_COLORS.brand} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval={Math.floor(days.length / 7)}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={(value) => [formatCurrency(Number(value || 0), currency), 'Revenue']}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke={CHART_COLORS.brand}
-                      strokeWidth={2}
-                      fill="url(#revenueGrad)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Occupancy Trend</h3>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dailyOccupancyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="occupancyGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={CHART_COLORS.emerald} stopOpacity={0.15} />
-                        <stop offset="95%" stopColor={CHART_COLORS.emerald} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval={Math.floor(days.length / 7)}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={false}
-                      tickLine={false}
-                      domain={[0, 100]}
-                      tickFormatter={(v: number) => `${v}%`}
-                    />
-                    <Tooltip
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={(value) => [`${Number(value || 0)}%`, 'Occupancy']}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="occupancy"
-                      stroke={CHART_COLORS.emerald}
-                      strokeWidth={2}
-                      fill="url(#occupancyGrad)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Room Type</h3>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueByRoomType} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={(value) => [formatCurrency(Number(value || 0), currency), 'Revenue']}
-                    />
-                    <Bar dataKey="revenue" fill={CHART_COLORS.brand} radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Source Distribution</h3>
-              <div className="flex items-center gap-4">
-                <div className="h-72 flex-1">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={bookingSourceData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={95}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {bookingSourceData.map((_entry, index) => (
-                          <Cell key={`source-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value) => [`${Number(value || 0)}%`, 'Share']}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-2.5 min-w-[130px]">
-                  {bookingSourceData.map((entry, index) => (
-                    <div key={entry.name} className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
-                      />
-                      <span className="text-xs text-gray-600">{entry.name}</span>
-                      <span className="text-xs font-semibold text-gray-900 ml-auto">{entry.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'revenue' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Revenue</h3>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyRevenueData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    formatter={(value) => [formatCurrency(Number(value || 0), currency), 'Revenue']}
-                  />
-                  <Legend />
-                  <Bar dataKey="revenue" name="Revenue" fill={CHART_COLORS.brand} radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Payment Method</h3>
-              <div className="flex items-center gap-4">
-                <div className="h-72 flex-1">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentMethodData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={95}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {paymentMethodData.map((_entry, index) => (
-                          <Cell key={`pay-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value) => [`${Number(value || 0)}%`, 'Share']}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-2.5 min-w-[130px]">
-                  {paymentMethodData.map((entry, index) => (
-                    <div key={entry.name} className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
-                      />
-                      <span className="text-xs text-gray-600">{entry.name}</span>
-                      <span className="text-xs font-semibold text-gray-900 ml-auto">{entry.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Revenue Generating Rooms</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Room</th>
-                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Type</th>
-                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Nights</th>
-                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {topRevenueRooms.map(room => (
-                      <tr key={room.room} className="hover:bg-gray-50">
-                        <td className="py-2.5 text-sm font-medium text-gray-900">{room.room}</td>
-                        <td className="py-2.5 text-sm text-gray-600">{room.type}</td>
-                        <td className="py-2.5 text-sm text-gray-600 text-right">{room.nights}</td>
-                        <td className="py-2.5 text-sm font-semibold text-gray-900 text-right">
-                          {formatCurrency(room.revenue, currency)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {activeTab === 'occupancy' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="stat-card">
               <div className="flex items-center justify-between mb-3">
                 <div className="bg-cyan-50 text-cyan-600 p-2 rounded-lg">
@@ -767,6 +595,15 @@ export default function ReportsPage() {
               </div>
               <div className="text-2xl font-bold text-gray-900">{rooms.length || 48}</div>
               <div className="text-xs text-gray-500 mt-1">Total Rooms</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-amber-50 text-amber-600 p-2 rounded-lg">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">{formatCurrency(overviewMetrics.revpar, currency)}</div>
+              <div className="text-xs text-gray-500 mt-1">RevPAR</div>
             </div>
           </div>
 
@@ -881,6 +718,110 @@ export default function ReportsPage() {
                             <span className="text-sm text-gray-600">{room.utilization}%</span>
                           </div>
                         </td>
+                        <td className="py-2.5 text-sm font-semibold text-gray-900 text-right">
+                          {formatCurrency(room.revenue, currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'revenue' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Revenue</h3>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyRevenueData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(value) => [formatCurrency(Number(value || 0), currency), 'Revenue']}
+                  />
+                  <Legend />
+                  <Bar dataKey="revenue" name="Revenue" fill={CHART_COLORS.brand} radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Payment Method</h3>
+              <div className="flex items-center gap-4">
+                <div className="h-72 flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentMethodData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={95}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {paymentMethodData.map((_entry, index) => (
+                          <Cell key={`pay-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={(value) => [`${Number(value || 0)}%`, 'Share']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2.5 min-w-[130px]">
+                  {paymentMethodData.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                      />
+                      <span className="text-xs text-gray-600">{entry.name}</span>
+                      <span className="text-xs font-semibold text-gray-900 ml-auto">{entry.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Revenue Generating Rooms</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Room</th>
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Type</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Nights</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {topRevenueRooms.map(room => (
+                      <tr key={room.room} className="hover:bg-gray-50">
+                        <td className="py-2.5 text-sm font-medium text-gray-900">{room.room}</td>
+                        <td className="py-2.5 text-sm text-gray-600">{room.type}</td>
+                        <td className="py-2.5 text-sm text-gray-600 text-right">{room.nights}</td>
                         <td className="py-2.5 text-sm font-semibold text-gray-900 text-right">
                           {formatCurrency(room.revenue, currency)}
                         </td>
@@ -1027,6 +968,497 @@ export default function ReportsPage() {
                 </ResponsiveContainer>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'bookings' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-blue-50 text-blue-600 p-2 rounded-lg">
+                  <Globe className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">{overviewMetrics.totalBookings}</div>
+              <div className="text-xs text-gray-500 mt-1">Total Bookings</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">28%</div>
+              <div className="text-xs text-gray-500 mt-1">Direct Bookings</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-amber-50 text-amber-600 p-2 rounded-lg">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">{formatCurrency(overviewMetrics.totalRevenue * 0.15, currency)}</div>
+              <div className="text-xs text-gray-500 mt-1">Commission Paid</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-gray-50 text-gray-600 p-2 rounded-lg">
+                  <Percent className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">15%</div>
+              <div className="text-xs text-gray-500 mt-1">Avg Commission Rate</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Source Distribution</h3>
+              <div className="flex items-center gap-4">
+                <div className="h-72 flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={bookingSourceData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={95}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {bookingSourceData.map((_entry, index) => (
+                          <Cell key={`source-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={(value) => [`${Number(value || 0)}%`, 'Share']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2.5 min-w-[130px]">
+                  {bookingSourceData.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                      />
+                      <span className="text-xs text-gray-600">{entry.name}</span>
+                      <span className="text-xs font-semibold text-gray-900 ml-auto">{entry.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Source</h3>
+              <div className="space-y-3">
+                {bookingSourceData.map((source, index) => {
+                  const sourceRevenue = Math.round(overviewMetrics.totalRevenue * (source.value / 100));
+                  return (
+                    <div key={source.name} className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                          />
+                          <span className="text-sm font-medium text-gray-700">{source.name}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(sourceRevenue, currency)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full"
+                          style={{
+                            width: `${source.value}%`,
+                            backgroundColor: PIE_COLORS[index % PIE_COLORS.length],
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'housekeeping' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {housekeepingTasks.filter(t => t.status === 'completed').length}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Tasks Completed</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-blue-50 text-blue-600 p-2 rounded-lg">
+                  <SprayCan className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {housekeepingTasks.filter(t => t.status === 'in_progress').length}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">In Progress</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-amber-50 text-amber-600 p-2 rounded-lg">
+                  <Clock className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {housekeepingTasks.filter(t => t.status === 'pending').length}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Pending Tasks</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-gray-50 text-gray-600 p-2 rounded-lg">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">28 min</div>
+              <div className="text-xs text-gray-500 mt-1">Avg Cleaning Time</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tasks Completed Per Day</h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyRevenueData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={Math.floor(days.length / 7)}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Bar dataKey="revenue" name="Tasks" fill={CHART_COLORS.emerald} radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Staff Performance</h3>
+            {housekeepingTasks.length === 0 ? (
+              <div className="py-12 text-center text-gray-500">
+                <SprayCan className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>No housekeeping data available for this period</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Staff Member</th>
+                      <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Completed</th>
+                      <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-2">In Progress</th>
+                      <th className="text-center text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Pending</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Completion Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-2.5 text-sm font-medium text-gray-900">Maria Garcia</td>
+                      <td className="py-2.5 text-sm text-gray-600 text-center">18</td>
+                      <td className="py-2.5 text-sm text-gray-600 text-center">2</td>
+                      <td className="py-2.5 text-sm text-gray-600 text-center">1</td>
+                      <td className="py-2.5 text-sm text-gray-900 text-right">86%</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50">
+                      <td className="py-2.5 text-sm font-medium text-gray-900">John Smith</td>
+                      <td className="py-2.5 text-sm text-gray-600 text-center">15</td>
+                      <td className="py-2.5 text-sm text-gray-600 text-center">3</td>
+                      <td className="py-2.5 text-sm text-gray-600 text-center">2</td>
+                      <td className="py-2.5 text-sm text-gray-900 text-right">75%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'financial' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatCurrency(overviewMetrics.totalRevenue, currency)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Total Revenue</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-amber-50 text-amber-600 p-2 rounded-lg">
+                  <Receipt className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatCurrency(overviewMetrics.totalRevenue * 0.35, currency)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Total Expenses</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-blue-50 text-blue-600 p-2 rounded-lg">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatCurrency(overviewMetrics.totalRevenue * 0.65, currency)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Net Income</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-red-50 text-red-600 p-2 rounded-lg">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatCurrency(overviewMetrics.totalRevenue * 0.08, currency)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Outstanding Payments</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue vs Expenses</h3>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyRevenueData.slice(0, 6)} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={TOOLTIP_STYLE}
+                      formatter={(value) => [formatCurrency(Number(value || 0), currency), '']}
+                    />
+                    <Legend />
+                    <Bar dataKey="revenue" name="Revenue" fill={CHART_COLORS.emerald} radius={[6, 6, 0, 0]} />
+                    <Bar
+                      dataKey={(entry) => entry.revenue * 0.35}
+                      name="Expenses"
+                      fill={CHART_COLORS.red}
+                      radius={[6, 6, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method Breakdown</h3>
+              <div className="flex items-center gap-4">
+                <div className="h-72 flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentMethodData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={95}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {paymentMethodData.map((_entry, index) => (
+                          <Cell key={`pay-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={(value) => [`${Number(value || 0)}%`, 'Share']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2.5 min-w-[130px]">
+                  {paymentMethodData.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                      />
+                      <span className="text-xs text-gray-600">{entry.name}</span>
+                      <span className="text-xs font-semibold text-gray-900 ml-auto">{entry.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'cancellations' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-red-50 text-red-600 p-2 rounded-lg">
+                  <XCircle className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {reservations.filter(r => r.status === 'cancelled').length}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Total Cancellations</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-amber-50 text-amber-600 p-2 rounded-lg">
+                  <Percent className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">{overviewMetrics.cancellationRate}%</div>
+              <div className="text-xs text-gray-500 mt-1">Cancellation Rate</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-rose-50 text-rose-600 p-2 rounded-lg">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatCurrency(
+                  reservations
+                    .filter(r => r.status === 'cancelled')
+                    .reduce((sum, r) => sum + r.total_amount, 0),
+                  currency
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Lost Revenue</div>
+            </div>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="bg-gray-50 text-gray-600 p-2 rounded-lg">
+                  <Calendar className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">4.2 days</div>
+              <div className="text-xs text-gray-500 mt-1">Avg Days Before Check-in</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancellations Over Time</h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dailyOccupancyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={Math.floor(days.length / 7)}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey={(entry) => Math.floor(entry.occupancy / 10)}
+                    name="Cancellations"
+                    stroke={CHART_COLORS.red}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 5, fill: CHART_COLORS.red }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Cancellations</h3>
+            {reservations.filter(r => r.status === 'cancelled').length === 0 ? (
+              <div className="py-12 text-center text-gray-500">
+                <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>No cancellations in this period</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Guest</th>
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Check In</th>
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Check Out</th>
+                      <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Amount</th>
+                      <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {reservations
+                      .filter(r => r.status === 'cancelled')
+                      .slice(0, 10)
+                      .map(reservation => (
+                        <tr key={reservation.id} className="hover:bg-gray-50">
+                          <td className="py-2.5 text-sm font-medium text-gray-900">
+                            {reservation.guest?.name || 'N/A'}
+                          </td>
+                          <td className="py-2.5 text-sm text-gray-600">{reservation.check_in}</td>
+                          <td className="py-2.5 text-sm text-gray-600">{reservation.check_out}</td>
+                          <td className="py-2.5 text-sm font-semibold text-gray-900 text-right">
+                            {formatCurrency(reservation.total_amount, currency)}
+                          </td>
+                          <td className="py-2.5 text-sm text-gray-600">Change of plans</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
