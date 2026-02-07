@@ -155,6 +155,16 @@ export default function LoginPage() {
               {isSignUp ? 'Sign in' : 'Create one'}
             </button>
           </p>
+
+          {!isSignUp && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</p>
+              <div className="space-y-1 text-sm text-blue-700">
+                <p><span className="font-medium">Email:</span> admin@demo.com</p>
+                <p><span className="font-medium">Password:</span> demo123456</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
