@@ -318,6 +318,39 @@ export default function ReservationsPage() {
       return;
     }
 
+    const checkInDate = new Date(form.check_in);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (!editingReservation && checkInDate < today) {
+      toast('error', 'Check-in date cannot be in the past');
+      return;
+    }
+
+    if (form.room_id) {
+      const { data: conflictingReservations, error: checkError } = await supabase
+        .from('reservations')
+        .select('id, confirmation_code')
+        .eq('hotel_id', currentHotel.id)
+        .eq('room_id', form.room_id)
+        .in('status', ['pending', 'confirmed', 'checked_in'])
+        .or(`check_in.lte.${form.check_out},check_out.gte.${form.check_in}`);
+
+      if (checkError) {
+        toast('error', 'Failed to check room availability');
+        return;
+      }
+
+      const conflicts = editingReservation
+        ? (conflictingReservations || []).filter(r => r.id !== editingReservation.id)
+        : (conflictingReservations || []);
+
+      if (conflicts.length > 0) {
+        toast('error', `Room is not available for the selected dates (Conflict with ${conflicts[0].confirmation_code})`);
+        return;
+      }
+    }
+
     setSaving(true);
 
     let guestId = form.guest_id;
@@ -436,6 +469,56 @@ export default function ReservationsPage() {
         .from('rooms')
         .update({ status: 'dirty' })
         .eq('id', reservation.room_id);
+
+      const { data: existingInvoice } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('reservation_id', reservation.id)
+        .maybeSingle();
+
+      if (!existingInvoice && currentHotel) {
+        const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+        const subtotal = reservation.total_amount - reservation.tax_amount;
+
+        const { data: newInvoice, error: invoiceError } = await supabase
+          .from('invoices')
+          .insert({
+            hotel_id: currentHotel.id,
+            reservation_id: reservation.id,
+            guest_id: reservation.guest_id,
+            invoice_number: invoiceNumber,
+            issue_date: reservation.check_in,
+            due_date: reservation.check_out,
+            subtotal: subtotal,
+            tax_amount: reservation.tax_amount,
+            discount_amount: reservation.discount_amount,
+            total_amount: reservation.total_amount,
+            amount_paid: reservation.amount_paid,
+            status: reservation.payment_status === 'paid' ? ('paid' as const) : ('sent' as const),
+          })
+          .select()
+          .single();
+
+        if (!invoiceError && newInvoice) {
+          await supabase.from('invoice_items').insert({
+            invoice_id: newInvoice.id,
+            description: `${reservation.room_type?.name || 'Room'} - ${reservation.check_in} to ${reservation.check_out}`,
+            category: 'room',
+            quantity: 1,
+            unit_price: subtotal,
+            total_price: subtotal,
+          });
+        }
+      }
+
+      await supabase.from('housekeeping_tasks').insert({
+        hotel_id: currentHotel!.id,
+        room_id: reservation.room_id,
+        task_type: 'clean',
+        priority: 'high',
+        status: 'pending',
+        assigned_to: '',
+      });
     }
 
     toast('success', `Reservation ${getStatusLabel(newStatus).toLowerCase()}`);

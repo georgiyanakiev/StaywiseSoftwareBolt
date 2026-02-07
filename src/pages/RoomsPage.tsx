@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BedDouble, Plus, Search, Filter, Edit, Trash2, Wifi, Tv, Wind, Coffee, Bath, Star, Layers, ChevronDown } from 'lucide-react';
+import { BedDouble, Plus, Search, Filter, Edit, Trash2, Wifi, Tv, Wind, Coffee, Bath, Star, Layers, ChevronDown, LayoutGrid, List } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, getStatusColor, getStatusLabel } from '../lib/utils';
@@ -11,6 +11,8 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
 
 const ROOM_STATUSES: Room['status'][] = ['available', 'occupied', 'dirty', 'clean', 'maintenance', 'out_of_service'];
+
+type RoomView = 'grid' | 'board';
 
 const BED_TYPES = ['Single', 'Double', 'Queen', 'King', 'Twin'];
 
@@ -80,6 +82,7 @@ export default function RoomsPage() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<TabView>('rooms');
+  const [roomView, setRoomView] = useState<RoomView>('grid');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,6 +143,26 @@ export default function RoomsPage() {
   useEffect(() => {
     if (currentHotel) {
       fetchAll();
+
+      const roomsSubscription = supabase
+        .channel('rooms-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'rooms',
+            filter: `hotel_id=eq.${currentHotel.id}`,
+          },
+          () => {
+            fetchRooms();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        roomsSubscription.unsubscribe();
+      };
     }
   }, [currentHotel?.id]);
 
@@ -389,6 +412,30 @@ export default function RoomsPage() {
               />
             </div>
             <div className="flex items-center gap-2">
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setRoomView('grid')}
+                  className={`p-2 rounded transition-colors ${
+                    roomView === 'grid'
+                      ? 'bg-white text-brand-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setRoomView('board')}
+                  className={`p-2 rounded transition-colors ${
+                    roomView === 'board'
+                      ? 'bg-white text-brand-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Status Board"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
               <Filter className="w-4 h-4 text-gray-400 hidden sm:block" />
               <select
                 value={statusFilter}
@@ -437,6 +484,88 @@ export default function RoomsPage() {
                 ) : undefined
               }
             />
+          ) : roomView === 'board' ? (
+            <div className="space-y-4">
+              {floors.filter(f => !floorFilter || f === Number(floorFilter)).map(floor => {
+                const floorRooms = filteredRooms.filter(r => r.floor === floor);
+                if (floorRooms.length === 0) return null;
+                return (
+                  <div key={floor} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                      <h3 className="font-semibold text-gray-900">Floor {floor}</h3>
+                      <p className="text-sm text-gray-500">{floorRooms.length} rooms</p>
+                    </div>
+                    <div className="p-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                      {floorRooms.map(room => {
+                        const statusBgColor = {
+                          available: 'bg-green-500',
+                          occupied: 'bg-blue-500',
+                          dirty: 'bg-red-500',
+                          clean: 'bg-emerald-500',
+                          maintenance: 'bg-gray-400',
+                          out_of_service: 'bg-gray-400',
+                        }[room.status];
+
+                        return (
+                          <div key={room.id} className="relative group">
+                            <button
+                              onClick={() => setStatusDropdownOpen(statusDropdownOpen === room.id ? null : room.id)}
+                              className={`w-full aspect-square rounded-lg ${statusBgColor} text-white font-bold text-sm flex flex-col items-center justify-center hover:opacity-90 transition-opacity`}
+                            >
+                              <span className="text-lg">{room.number}</span>
+                              <span className="text-xs opacity-90 mt-0.5">{room.room_type?.name}</span>
+                            </button>
+                            {statusDropdownOpen === room.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setStatusDropdownOpen(null)} />
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-20 py-1 min-w-max">
+                                  <div className="px-3 py-1.5 text-xs font-medium text-gray-500 border-b border-gray-100">
+                                    Room {room.number}
+                                  </div>
+                                  {ROOM_STATUSES.filter(s => s !== room.status).map(s => (
+                                    <button
+                                      key={s}
+                                      onClick={() => handleStatusChange(room.id, s)}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                      <span className={`w-2 h-2 rounded-full ${STATUS_DOT_COLORS[s]}`} />
+                                      {getStatusLabel(s)}
+                                    </button>
+                                  ))}
+                                  <div className="border-t border-gray-100 mt-1 pt-1">
+                                    <button
+                                      onClick={() => {
+                                        openEditRoom(room);
+                                        setStatusDropdownOpen(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                                    >
+                                      <Edit className="w-3 h-3" />
+                                      Edit Room
+                                    </button>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Status Legend</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                  {ROOM_STATUSES.map(status => (
+                    <div key={status} className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded ${STATUS_DOT_COLORS[status]}`} />
+                      <span className="text-xs text-gray-600">{getStatusLabel(status)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredRooms.map(room => (
