@@ -84,7 +84,13 @@ export default function BillingPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [form, setForm] = useState<InvoiceForm>(createEmptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -314,6 +320,61 @@ export default function BillingPage() {
     setSaving(false);
   };
 
+  const openPaymentModal = (invoice: Invoice) => {
+    setPaymentInvoice(invoice);
+    const balance = invoice.total_amount - invoice.amount_paid;
+    setPaymentAmount(balance);
+    setPaymentMethod('cash');
+    setPaymentNotes('');
+    setShowPaymentModal(true);
+  };
+
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentInvoice(null);
+    setPaymentAmount(0);
+    setPaymentNotes('');
+  };
+
+  const handleRecordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentInvoice || !currentHotel) return;
+
+    if (paymentAmount <= 0) {
+      toast('error', 'Payment amount must be greater than 0');
+      return;
+    }
+
+    const balance = paymentInvoice.total_amount - paymentInvoice.amount_paid;
+    if (paymentAmount > balance) {
+      toast('error', 'Payment amount cannot exceed balance due');
+      return;
+    }
+
+    setProcessingPayment(true);
+
+    const newAmountPaid = paymentInvoice.amount_paid + paymentAmount;
+    const newStatus = newAmountPaid >= paymentInvoice.total_amount ? 'paid' : paymentInvoice.status;
+
+    const { error } = await supabase
+      .from('invoices')
+      .update({
+        amount_paid: newAmountPaid,
+        status: newStatus,
+      })
+      .eq('id', paymentInvoice.id);
+
+    if (error) {
+      toast('error', 'Failed to record payment');
+    } else {
+      toast('success', `Payment of ${formatCurrency(paymentAmount, currentHotel.currency)} recorded`);
+      closePaymentModal();
+      fetchInvoices();
+    }
+
+    setProcessingPayment(false);
+  };
+
   const markAsPaid = async (invoice: Invoice) => {
     const { error } = await supabase
       .from('invoices')
@@ -346,7 +407,283 @@ export default function BillingPage() {
   };
 
   const generatePdf = (invoice: Invoice) => {
-    toast('info', `PDF generated for ${invoice.invoice_number}`);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast('error', 'Please allow pop-ups to generate PDF');
+      return;
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice ${invoice.invoice_number}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      color: #1f2937;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .hotel-info h1 {
+      margin: 0 0 5px 0;
+      font-size: 24px;
+      color: #111827;
+    }
+    .hotel-info p {
+      margin: 2px 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .invoice-info {
+      text-align: right;
+    }
+    .invoice-info h2 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      color: #111827;
+    }
+    .invoice-number {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 5px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-paid { background: #d1fae5; color: #065f46; }
+    .status-sent { background: #dbeafe; color: #1e40af; }
+    .status-draft { background: #f3f4f6; color: #374151; }
+    .status-overdue { background: #fee2e2; color: #991b1b; }
+
+    .details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    .details-section h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin: 0 0 10px 0;
+      letter-spacing: 0.5px;
+    }
+    .details-section p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 30px 0;
+    }
+    th {
+      background: #f9fafb;
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #6b7280;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 14px;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .text-right { text-align: right; }
+
+    .totals {
+      margin-top: 30px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .totals-table {
+      width: 300px;
+    }
+    .totals-table tr {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .totals-table tr.total-row {
+      border-top: 2px solid #e5e7eb;
+      padding-top: 12px;
+      margin-top: 8px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .totals-table tr.balance-row {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    .notes {
+      margin-top: 40px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+    .notes h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #374151;
+    }
+    .notes p {
+      margin: 0;
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    @media print {
+      body { padding: 20px; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="hotel-info">
+      <h1>${currentHotel?.name || 'Hotel'}</h1>
+      <p>${currentHotel?.address || ''}</p>
+      <p>${currentHotel?.city || ''}, ${currentHotel?.country || ''}</p>
+      ${currentHotel?.phone ? `<p>Phone: ${currentHotel.phone}</p>` : ''}
+      ${currentHotel?.email ? `<p>Email: ${currentHotel.email}</p>` : ''}
+    </div>
+    <div class="invoice-info">
+      <h2>INVOICE</h2>
+      <div class="invoice-number">${invoice.invoice_number}</div>
+      <span class="status-badge status-${invoice.status}">${getStatusLabel(invoice.status)}</span>
+    </div>
+  </div>
+
+  <div class="details">
+    <div class="details-section">
+      <h3>Bill To</h3>
+      <p><strong>${invoice.guest ? `${invoice.guest.first_name} ${invoice.guest.last_name}` : 'Guest'}</strong></p>
+      ${invoice.guest?.email ? `<p>${invoice.guest.email}</p>` : ''}
+      ${invoice.guest?.phone ? `<p>${invoice.guest.phone}</p>` : ''}
+      ${invoice.guest?.address ? `<p>${invoice.guest.address}</p>` : ''}
+    </div>
+    <div class="details-section">
+      <h3>Invoice Details</h3>
+      <p><strong>Issue Date:</strong> ${formatDate(invoice.issue_date)}</p>
+      <p><strong>Due Date:</strong> ${formatDate(invoice.due_date)}</p>
+      ${invoice.reservation_id ? `<p><strong>Reservation:</strong> Linked</p>` : ''}
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Category</th>
+        <th class="text-right">Qty</th>
+        <th class="text-right">Unit Price</th>
+        <th class="text-right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${(invoice.items || []).map(item => `
+        <tr>
+          <td>${item.description}</td>
+          <td>${item.category.charAt(0).toUpperCase() + item.category.slice(1)}</td>
+          <td class="text-right">${item.quantity}</td>
+          <td class="text-right">${formatCurrency(item.unit_price, currentHotel?.currency)}</td>
+          <td class="text-right"><strong>${formatCurrency(item.total_price, currentHotel?.currency)}</strong></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="totals-table">
+      <div>
+        <div>Subtotal</div>
+        <div>${formatCurrency(invoice.subtotal, currentHotel?.currency)}</div>
+      </div>
+      <div>
+        <div>Tax</div>
+        <div>${formatCurrency(invoice.tax_amount, currentHotel?.currency)}</div>
+      </div>
+      ${invoice.discount_amount > 0 ? `
+        <div>
+          <div>Discount</div>
+          <div>-${formatCurrency(invoice.discount_amount, currentHotel?.currency)}</div>
+        </div>
+      ` : ''}
+      <div class="total-row">
+        <div>Total</div>
+        <div>${formatCurrency(invoice.total_amount, currentHotel?.currency)}</div>
+      </div>
+      <div>
+        <div>Amount Paid</div>
+        <div>${formatCurrency(invoice.amount_paid, currentHotel?.currency)}</div>
+      </div>
+      <div class="balance-row">
+        <div>Balance Due</div>
+        <div>${formatCurrency(invoice.total_amount - invoice.amount_paid, currentHotel?.currency)}</div>
+      </div>
+    </div>
+  </div>
+
+  ${invoice.notes ? `
+    <div class="notes">
+      <h3>Notes</h3>
+      <p>${invoice.notes.replace(/\n/g, '<br>')}</p>
+    </div>
+  ` : ''}
+
+  <div class="footer">
+    <p>Thank you for your business!</p>
+    <p>Generated on ${formatDate(new Date().toISOString().split('T')[0])}</p>
+  </div>
+
+  <div class="no-print" style="margin-top: 30px; text-align: center;">
+    <button onclick="window.print()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+      Print / Save as PDF
+    </button>
+    <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 10px;">
+      Close
+    </button>
+  </div>
+</body>
+</html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    toast('success', 'Invoice PDF ready to print');
   };
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -557,9 +894,9 @@ export default function BillingPage() {
                           )}
                           {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
                             <button
-                              onClick={() => markAsPaid(invoice)}
+                              onClick={() => openPaymentModal(invoice)}
                               className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                              title="Mark as Paid"
+                              title="Record Payment"
                             >
                               <DollarSign className="w-4 h-4" />
                             </button>
@@ -1016,13 +1353,13 @@ export default function BillingPage() {
                 viewingInvoice.status !== 'cancelled' && (
                   <button
                     onClick={() => {
-                      markAsPaid(viewingInvoice);
                       closeViewModal();
+                      openPaymentModal(viewingInvoice);
                     }}
                     className="btn-primary"
                   >
                     <DollarSign className="w-4 h-4" />
-                    Mark as Paid
+                    Record Payment
                   </button>
                 )}
               <button
@@ -1034,6 +1371,100 @@ export default function BillingPage() {
               </button>
             </div>
           </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={showPaymentModal}
+        onClose={closePaymentModal}
+        title="Record Payment"
+        size="md"
+      >
+        {paymentInvoice && (
+          <form onSubmit={handleRecordPayment} className="space-y-6">
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Invoice Number</span>
+                <span className="font-medium text-gray-900">{paymentInvoice.invoice_number}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Total Amount</span>
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(paymentInvoice.total_amount, currentHotel?.currency)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Amount Paid</span>
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(paymentInvoice.amount_paid, currentHotel?.currency)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
+                <span className="text-gray-900 font-semibold">Balance Due</span>
+                <span className="font-semibold text-gray-900">
+                  {formatCurrency(
+                    paymentInvoice.total_amount - paymentInvoice.amount_paid,
+                    currentHotel?.currency
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Payment Amount
+              </label>
+              <input
+                type="number"
+                value={paymentAmount}
+                onChange={e => setPaymentAmount(Number(e.target.value))}
+                className="input-field w-full"
+                min={0.01}
+                max={paymentInvoice.total_amount - paymentInvoice.amount_paid}
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Payment Method
+              </label>
+              <select
+                value={paymentMethod}
+                onChange={e => setPaymentMethod(e.target.value)}
+                className="input-field w-full"
+              >
+                <option value="cash">Cash</option>
+                <option value="card">Credit/Debit Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="check">Check</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Notes (optional)
+              </label>
+              <textarea
+                value={paymentNotes}
+                onChange={e => setPaymentNotes(e.target.value)}
+                className="input-field w-full"
+                rows={3}
+                placeholder="Payment reference, transaction ID, etc..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+              <button type="button" onClick={closePaymentModal} className="btn-secondary">
+                Cancel
+              </button>
+              <button type="submit" disabled={processingPayment} className="btn-primary">
+                {processingPayment ? 'Processing...' : 'Record Payment'}
+              </button>
+            </div>
+          </form>
         )}
       </Modal>
     </div>
