@@ -9,6 +9,10 @@ import {
   Clock,
   AlertTriangle,
   ChevronDown,
+  CheckSquare,
+  Square,
+  TrendingUp,
+  Award,
 } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
 import { supabase } from '../lib/supabase';
@@ -18,6 +22,14 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
+
+interface ChecklistItem {
+  id: string;
+  item_name: string;
+  is_completed: boolean;
+  completed_by: string;
+  completed_at: string | null;
+}
 
 type ViewMode = 'tasks' | 'board';
 
@@ -62,6 +74,54 @@ const TASK_TYPE_COLORS: Record<string, string> = {
 };
 
 const ROOM_STATUSES: Room['status'][] = ['available', 'occupied', 'dirty', 'clean', 'maintenance', 'out_of_service'];
+
+const DEFAULT_CHECKLIST_ITEMS: Record<HousekeepingTask['task_type'], string[]> = {
+  clean: [
+    'Make bed with fresh linens',
+    'Vacuum and mop floors',
+    'Clean and disinfect bathroom',
+    'Dust all surfaces',
+    'Empty trash bins',
+    'Restock toiletries',
+    'Check and replace towels',
+    'Clean mirrors and windows',
+  ],
+  deep_clean: [
+    'Make bed with fresh linens',
+    'Deep vacuum carpets and furniture',
+    'Clean and disinfect bathroom thoroughly',
+    'Dust all surfaces including high areas',
+    'Empty and sanitize trash bins',
+    'Restock all toiletries',
+    'Wash all towels and linens',
+    'Clean mirrors, windows, and glass surfaces',
+    'Clean under furniture',
+    'Sanitize all touch points',
+    'Check and clean air vents',
+  ],
+  linen_change: [
+    'Remove all used linens',
+    'Replace bed sheets and pillowcases',
+    'Replace duvet cover',
+    'Add fresh towels',
+    'Check mattress condition',
+  ],
+  restock: [
+    'Check and restock toiletries',
+    'Restock towels',
+    'Restock coffee/tea supplies',
+    'Restock minibar items',
+    'Replace used glasses',
+  ],
+  inspection: [
+    'Check room cleanliness',
+    'Verify all amenities present',
+    'Test all lights and switches',
+    'Check plumbing and fixtures',
+    'Inspect furniture condition',
+    'Check for maintenance issues',
+  ],
+};
 
 interface TaskFormData {
   room_id: string;
@@ -119,6 +179,13 @@ export default function HousekeepingPage() {
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
 
   const [roomStatusDropdown, setRoomStatusDropdown] = useState<string | null>(null);
+
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<HousekeepingTask | null>(null);
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [loadingChecklist, setLoadingChecklist] = useState(false);
+
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
 
   const fetchTasks = async () => {
     if (!currentHotel) return;
@@ -350,6 +417,159 @@ export default function HousekeepingPage() {
     return null;
   };
 
+  const openChecklistModal = async (task: HousekeepingTask) => {
+    setSelectedTask(task);
+    setShowChecklistModal(true);
+    setLoadingChecklist(true);
+
+    const { data, error } = await supabase
+      .from('housekeeping_checklist_items')
+      .select('*')
+      .eq('task_id', task.id)
+      .order('created_at');
+
+    if (error) {
+      toast('error', 'Failed to load checklist');
+      setLoadingChecklist(false);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setChecklistItems(data as ChecklistItem[]);
+    } else {
+      const defaultItems = DEFAULT_CHECKLIST_ITEMS[task.task_type] || [];
+      const itemsToInsert = defaultItems.map(name => ({
+        hotel_id: currentHotel!.id,
+        task_id: task.id,
+        item_name: name,
+        is_completed: false,
+        completed_by: '',
+      }));
+
+      const { data: newItems, error: insertError } = await supabase
+        .from('housekeeping_checklist_items')
+        .insert(itemsToInsert)
+        .select();
+
+      if (insertError || !newItems) {
+        toast('error', 'Failed to create checklist');
+        setChecklistItems([]);
+      } else {
+        setChecklistItems(newItems as ChecklistItem[]);
+      }
+    }
+
+    setLoadingChecklist(false);
+  };
+
+  const toggleChecklistItem = async (itemId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    const updatePayload: Record<string, unknown> = {
+      is_completed: newStatus,
+    };
+
+    if (newStatus) {
+      updatePayload.completed_by = currentHotel?.name || 'Staff';
+      updatePayload.completed_at = new Date().toISOString();
+    } else {
+      updatePayload.completed_by = '';
+      updatePayload.completed_at = null;
+    }
+
+    const { error } = await supabase
+      .from('housekeeping_checklist_items')
+      .update(updatePayload)
+      .eq('id', itemId);
+
+    if (error) {
+      toast('error', 'Failed to update checklist item');
+      return;
+    }
+
+    setChecklistItems(prev =>
+      prev.map(item =>
+        item.id === itemId
+          ? {
+              ...item,
+              is_completed: newStatus,
+              completed_by: newStatus ? (currentHotel?.name || 'Staff') : '',
+              completed_at: newStatus ? new Date().toISOString() : null,
+            }
+          : item
+      )
+    );
+  };
+
+  const completeTaskWithChecklist = async () => {
+    if (!selectedTask) return;
+
+    const allCompleted = checklistItems.every(item => item.is_completed);
+    if (!allCompleted) {
+      toast('warning', 'Please complete all checklist items before finishing the task');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('housekeeping_tasks')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', selectedTask.id);
+
+    if (error) {
+      toast('error', 'Failed to complete task');
+      return;
+    }
+
+    if (selectedTask.room_id) {
+      await supabase
+        .from('rooms')
+        .update({ status: 'clean' })
+        .eq('id', selectedTask.room_id);
+      setRooms(prev =>
+        prev.map(r => (r.id === selectedTask.room_id ? { ...r, status: 'clean' as const } : r))
+      );
+    }
+
+    toast('success', 'Task completed successfully');
+    setShowChecklistModal(false);
+    fetchTasks();
+  };
+
+  const staffPerformance = useMemo(() => {
+    const staffMap = new Map<string, { name: string; completed: number; inProgress: number; pending: number; completedToday: number }>();
+    const today = new Date().toISOString().split('T')[0];
+
+    tasks.forEach(task => {
+      if (!task.assigned_to) return;
+
+      if (!staffMap.has(task.assigned_to)) {
+        staffMap.set(task.assigned_to, {
+          name: task.assigned_to,
+          completed: 0,
+          inProgress: 0,
+          pending: 0,
+          completedToday: 0,
+        });
+      }
+
+      const staff = staffMap.get(task.assigned_to)!;
+      if (task.status === 'completed') {
+        staff.completed++;
+        if (task.completed_at?.startsWith(today)) {
+          staff.completedToday++;
+        }
+      } else if (task.status === 'in_progress') {
+        staff.inProgress++;
+      } else if (task.status === 'pending') {
+        staff.pending++;
+      }
+    });
+
+    return Array.from(staffMap.values()).sort((a, b) => b.completed - a.completed);
+  }, [tasks]);
+
   if (loading) return <LoadingSpinner size="lg" />;
   if (!currentHotel) return null;
 
@@ -361,6 +581,10 @@ export default function HousekeepingPage() {
           <p className="text-sm text-gray-500 mt-1">Manage cleaning tasks, room statuses, and maintenance</p>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowPerformanceModal(true)} className="btn-secondary">
+            <TrendingUp className="w-4 h-4" />
+            Staff Performance
+          </button>
           <button onClick={openCreateTask} className="btn-primary">
             <Plus className="w-4 h-4" />
             Create Task
@@ -534,19 +758,31 @@ export default function HousekeepingPage() {
                         {task.notes || '-'}
                       </td>
                       <td className="table-cell">
-                        {getNextStatusLabel(task.status) && (
-                          <button
-                            onClick={() => handleTaskStatusAdvance(task)}
-                            className="btn-secondary text-xs"
-                          >
-                            {task.status === 'pending' && <Clock className="w-3 h-3" />}
-                            {task.status === 'in_progress' && <CheckCircle className="w-3 h-3" />}
-                            {getNextStatusLabel(task.status)}
-                          </button>
-                        )}
-                        {task.status === 'completed' && (
-                          <span className="text-xs text-gray-400">Done</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {task.status !== 'completed' && (
+                            <button
+                              onClick={() => openChecklistModal(task)}
+                              className="btn-secondary text-xs"
+                              title="Open checklist"
+                            >
+                              <ClipboardList className="w-3 h-3" />
+                              Checklist
+                            </button>
+                          )}
+                          {getNextStatusLabel(task.status) && (
+                            <button
+                              onClick={() => handleTaskStatusAdvance(task)}
+                              className="btn-secondary text-xs"
+                            >
+                              {task.status === 'pending' && <Clock className="w-3 h-3" />}
+                              {task.status === 'in_progress' && <CheckCircle className="w-3 h-3" />}
+                              {getNextStatusLabel(task.status)}
+                            </button>
+                          )}
+                          {task.status === 'completed' && (
+                            <span className="text-xs text-gray-400">Done</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -866,6 +1102,221 @@ export default function HousekeepingPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={showChecklistModal}
+        onClose={() => setShowChecklistModal(false)}
+        title={`Cleaning Checklist - Room ${selectedTask?.room?.number || ''}`}
+        size="lg"
+      >
+        {loadingChecklist ? (
+          <div className="py-8">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Task Type:</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {selectedTask && getStatusLabel(selectedTask.task_type)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Priority:</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {selectedTask && getStatusLabel(selectedTask.priority)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Assigned To:</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {selectedTask?.assigned_to || 'Unassigned'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Progress:</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {checklistItems.filter(i => i.is_completed).length} / {checklistItems.length}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {checklistItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => toggleChecklistItem(item.id, item.is_completed)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                    item.is_completed
+                      ? 'bg-emerald-50 border-emerald-300'
+                      : 'bg-white border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {item.is_completed ? (
+                    <CheckSquare className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <Square className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  )}
+                  <span
+                    className={`flex-1 text-left text-sm ${
+                      item.is_completed ? 'text-emerald-900 line-through' : 'text-gray-900'
+                    }`}
+                  >
+                    {item.item_name}
+                  </span>
+                  {item.is_completed && item.completed_at && (
+                    <span className="text-xs text-emerald-600">
+                      {formatDateTime(item.completed_at)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {checklistItems.length === 0 && (
+              <EmptyState
+                icon={<ClipboardList className="w-6 h-6" />}
+                title="No checklist items"
+                description="No checklist items found for this task."
+              />
+            )}
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowChecklistModal(false)}
+                className="btn-secondary"
+              >
+                Close
+              </button>
+              {selectedTask?.status !== 'completed' && (
+                <button
+                  onClick={completeTaskWithChecklist}
+                  disabled={!checklistItems.every(item => item.is_completed)}
+                  className="btn-primary"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Complete Task
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={showPerformanceModal}
+        onClose={() => setShowPerformanceModal(false)}
+        title="Staff Performance"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-emerald-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-medium text-emerald-700">Total Completed</span>
+              </div>
+              <span className="text-2xl font-bold text-emerald-900">
+                {tasks.filter(t => t.status === 'completed').length}
+              </span>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-medium text-blue-700">In Progress</span>
+              </div>
+              <span className="text-2xl font-bold text-blue-900">
+                {tasks.filter(t => t.status === 'in_progress').length}
+              </span>
+            </div>
+            <div className="bg-amber-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <span className="text-xs font-medium text-amber-700">Pending</span>
+              </div>
+              <span className="text-2xl font-bold text-amber-900">
+                {tasks.filter(t => t.status === 'pending').length}
+              </span>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Award className="w-4 h-4 text-gray-600" />
+                <span className="text-xs font-medium text-gray-700">Active Staff</span>
+              </div>
+              <span className="text-2xl font-bold text-gray-900">{staffPerformance.length}</span>
+            </div>
+          </div>
+
+          {staffPerformance.length === 0 ? (
+            <EmptyState
+              icon={<Award className="w-6 h-6" />}
+              title="No staff data"
+              description="Assign tasks to staff members to see performance metrics."
+            />
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="table-header">Staff Member</th>
+                    <th className="table-header">Completed</th>
+                    <th className="table-header">In Progress</th>
+                    <th className="table-header">Pending</th>
+                    <th className="table-header">Today</th>
+                    <th className="table-header">Completion Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {staffPerformance.map(staff => {
+                    const total = staff.completed + staff.inProgress + staff.pending;
+                    const completionRate = total > 0 ? Math.round((staff.completed / total) * 100) : 0;
+
+                    return (
+                      <tr key={staff.name} className="hover:bg-gray-50 transition-colors">
+                        <td className="table-cell font-medium text-gray-900">{staff.name}</td>
+                        <td className="table-cell">
+                          <span className="badge bg-emerald-100 text-emerald-700">
+                            {staff.completed}
+                          </span>
+                        </td>
+                        <td className="table-cell">
+                          <span className="badge bg-blue-100 text-blue-700">
+                            {staff.inProgress}
+                          </span>
+                        </td>
+                        <td className="table-cell">
+                          <span className="badge bg-amber-100 text-amber-700">
+                            {staff.pending}
+                          </span>
+                        </td>
+                        <td className="table-cell">
+                          <span className="badge bg-gray-100 text-gray-700">
+                            {staff.completedToday}
+                          </span>
+                        </td>
+                        <td className="table-cell">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[100px]">
+                              <div
+                                className="bg-emerald-500 h-2 rounded-full transition-all"
+                                style={{ width: `${completionRate}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">{completionRate}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );
