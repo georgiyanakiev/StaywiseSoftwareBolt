@@ -70,6 +70,7 @@ function generateRevenueData() {
 export default function DashboardPage() {
   const { currentHotel } = useHotel();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [recentReservations, setRecentReservations] = useState<Reservation[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
@@ -86,64 +87,78 @@ export default function DashboardPage() {
   useEffect(() => {
     if (currentHotel) {
       fetchDashboardData();
+    } else {
+      setLoading(false);
     }
   }, [currentHotel]);
 
   async function fetchDashboardData() {
     if (!currentHotel) return;
-    setLoading(true);
 
-    const today = new Date().toISOString().split('T')[0];
+    try {
+      setLoading(true);
+      setError(null);
 
-    const [roomsResult, reservationsResult, checkInsResult, checkOutsResult] = await Promise.all([
-      supabase
-        .from('rooms')
-        .select('*')
-        .eq('hotel_id', currentHotel.id),
-      supabase
-        .from('reservations')
-        .select('*, guest:guests(*)')
-        .eq('hotel_id', currentHotel.id)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('reservations')
-        .select('id', { count: 'exact' })
-        .eq('hotel_id', currentHotel.id)
-        .eq('check_in', today)
-        .in('status', ['confirmed', 'checked_in']),
-      supabase
-        .from('reservations')
-        .select('id', { count: 'exact' })
-        .eq('hotel_id', currentHotel.id)
-        .eq('check_out', today)
-        .in('status', ['checked_in', 'checked_out']),
-    ]);
+      const today = new Date().toISOString().split('T')[0];
 
-    const fetchedRooms = (roomsResult.data || []) as Room[];
-    const fetchedReservations = (reservationsResult.data || []) as Reservation[];
+      const [roomsResult, reservationsResult, checkInsResult, checkOutsResult] = await Promise.all([
+        supabase
+          .from('rooms')
+          .select('*')
+          .eq('hotel_id', currentHotel.id),
+        supabase
+          .from('reservations')
+          .select('*, guest:guests(*)')
+          .eq('hotel_id', currentHotel.id)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('reservations')
+          .select('id', { count: 'exact' })
+          .eq('hotel_id', currentHotel.id)
+          .eq('check_in', today)
+          .in('status', ['confirmed', 'checked_in']),
+        supabase
+          .from('reservations')
+          .select('id', { count: 'exact' })
+          .eq('hotel_id', currentHotel.id)
+          .eq('check_out', today)
+          .in('status', ['checked_in', 'checked_out']),
+      ]);
 
-    const totalRooms = fetchedRooms.length;
-    const availableRooms = fetchedRooms.filter(r => r.status === 'available').length;
-    const occupiedRooms = fetchedRooms.filter(r => r.status === 'occupied').length;
-    const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
+      if (roomsResult.error) throw roomsResult.error;
+      if (reservationsResult.error) throw reservationsResult.error;
+      if (checkInsResult.error) throw checkInsResult.error;
+      if (checkOutsResult.error) throw checkOutsResult.error;
 
-    const todayRevenue = fetchedReservations
-      .filter(r => r.status !== 'cancelled')
-      .reduce((sum, r) => sum + (r.total_amount || 0), 0);
+      const fetchedRooms = (roomsResult.data || []) as Room[];
+      const fetchedReservations = (reservationsResult.data || []) as Reservation[];
 
-    setRooms(fetchedRooms);
-    setRecentReservations(fetchedReservations);
-    setStats({
-      totalRooms,
-      availableRooms,
-      todayCheckIns: checkInsResult.count || 0,
-      todayCheckOuts: checkOutsResult.count || 0,
-      occupancyRate,
-      todayRevenue,
-    });
+      const totalRooms = fetchedRooms.length;
+      const availableRooms = fetchedRooms.filter(r => r.status === 'available').length;
+      const occupiedRooms = fetchedRooms.filter(r => r.status === 'occupied').length;
+      const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
-    setLoading(false);
+      const todayRevenue = fetchedReservations
+        .filter(r => r.status !== 'cancelled')
+        .reduce((sum, r) => sum + (r.total_amount || 0), 0);
+
+      setRooms(fetchedRooms);
+      setRecentReservations(fetchedReservations);
+      setStats({
+        totalRooms,
+        availableRooms,
+        todayCheckIns: checkInsResult.count || 0,
+        todayCheckOuts: checkOutsResult.count || 0,
+        occupancyRate,
+        todayRevenue,
+      });
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const roomStatusData = useMemo((): RoomStatusCount[] => {
@@ -160,6 +175,30 @@ export default function DashboardPage() {
 
   if (loading) {
     return <LoadingSpinner size="lg" />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="text-red-600 text-lg font-semibold mb-2">Error loading dashboard</div>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button
+          onClick={() => fetchDashboardData()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (!currentHotel) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="text-gray-600 text-lg">No hotel selected</div>
+        <p className="text-gray-500 text-sm mt-2">Please select a hotel to view the dashboard</p>
+      </div>
+    );
   }
 
   const statCards = [
