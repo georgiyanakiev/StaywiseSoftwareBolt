@@ -51,10 +51,12 @@ export interface Room {
 export interface Guest {
   id: string;
   hotel_id: string;
+  title: string;
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
+  mobile: string;
   address: string;
   city: string;
   country: string;
@@ -65,10 +67,47 @@ export interface Guest {
   vip_status: 'regular' | 'silver' | 'gold' | 'platinum';
   notes: string;
   preferences: Record<string, unknown>;
+  room_floor_preference: string;
+  room_view_preference: string;
+  bed_type_preference: string;
+  special_requests: string;
+  dietary_restrictions: string;
+  allergies: string;
+  email_opt_in: boolean;
+  sms_opt_in: boolean;
+  newsletter_opt_in: boolean;
+  communication_preference: string;
+  favorite_room_types: string[];
+  complaint_history: string;
   total_stays: number;
   total_spent: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface GuestDocument {
+  id: string;
+  guest_id: string;
+  hotel_id: string;
+  type: string;
+  file_name: string;
+  file_url: string;
+  file_size: number;
+  uploaded_at: string;
+  created_at: string;
+}
+
+export interface GuestCommunication {
+  id: string;
+  guest_id: string;
+  hotel_id: string;
+  type: 'email' | 'sms' | 'whatsapp' | 'phone';
+  subject: string;
+  message: string;
+  sent_by: string | null;
+  sent_at: string;
+  status: 'sent' | 'delivered' | 'failed';
+  created_at: string;
 }
 
 export interface Reservation {
