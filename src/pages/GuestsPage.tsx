@@ -85,7 +85,10 @@ export default function GuestsPage() {
   const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchGuests = useCallback(async () => {
-    if (!currentHotel) return;
+    if (!currentHotel) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     let query = supabase
