@@ -256,53 +256,59 @@ export default function ReportsPage() {
   const currency = currentHotel?.currency || 'USD';
 
   const fetchData = useCallback(async () => {
-    if (!currentHotel) return;
+    if (!currentHotel) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
-    const [reservationsResult, roomsResult, roomTypesResult, guestsResult, housekeepingResult] = await Promise.all([
-      supabase
-        .from('reservations')
-        .select('*, guest:guests(*), room:rooms(*), room_type:room_types(*)')
-        .eq('hotel_id', currentHotel.id)
-        .gte('created_at', dateRange.start)
-        .lte('created_at', dateRange.end + 'T23:59:59')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('rooms')
-        .select('*, room_type:room_types(*)')
-        .eq('hotel_id', currentHotel.id),
-      supabase
-        .from('room_types')
-        .select('*')
-        .eq('hotel_id', currentHotel.id),
-      supabase
-        .from('guests')
-        .select('*')
-        .eq('hotel_id', currentHotel.id)
-        .order('total_spent', { ascending: false })
-        .limit(100),
-      supabase
-        .from('housekeeping_tasks')
-        .select('*')
-        .eq('hotel_id', currentHotel.id)
-        .gte('created_at', dateRange.start)
-        .lte('created_at', dateRange.end + 'T23:59:59')
-        .order('created_at', { ascending: false }),
-    ]);
+    try {
+      const [reservationsResult, roomsResult, roomTypesResult, guestsResult, housekeepingResult] = await Promise.all([
+        supabase
+          .from('reservations')
+          .select('*, guest:guests(*), room:rooms(*), room_type:room_types(*)')
+          .eq('hotel_id', currentHotel.id)
+          .gte('created_at', dateRange.start)
+          .lte('created_at', dateRange.end + 'T23:59:59')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('rooms')
+          .select('*, room_type:room_types(*)')
+          .eq('hotel_id', currentHotel.id),
+        supabase
+          .from('room_types')
+          .select('*')
+          .eq('hotel_id', currentHotel.id),
+        supabase
+          .from('guests')
+          .select('*')
+          .eq('hotel_id', currentHotel.id)
+          .order('total_spent', { ascending: false })
+          .limit(100),
+        supabase
+          .from('housekeeping_tasks')
+          .select('*')
+          .eq('hotel_id', currentHotel.id)
+          .gte('created_at', dateRange.start)
+          .lte('created_at', dateRange.end + 'T23:59:59')
+          .order('created_at', { ascending: false }),
+      ]);
 
-    setReservations((reservationsResult.data || []) as Reservation[]);
-    setRooms((roomsResult.data || []) as Room[]);
-    setRoomTypes((roomTypesResult.data || []) as RoomType[]);
-    setGuests((guestsResult.data || []) as Guest[]);
-    setHousekeepingTasks(housekeepingResult.data || []);
-    setLoading(false);
+      setReservations((reservationsResult.data || []) as Reservation[]);
+      setRooms((roomsResult.data || []) as Room[]);
+      setRoomTypes((roomTypesResult.data || []) as RoomType[]);
+      setGuests((guestsResult.data || []) as Guest[]);
+      setHousekeepingTasks(housekeepingResult.data || []);
+    } catch (error) {
+      console.error('Error fetching reports data:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [currentHotel, dateRange]);
 
   useEffect(() => {
-    if (currentHotel) {
-      fetchData();
-    }
-  }, [fetchData, currentHotel]);
+    fetchData();
+  }, [fetchData]);
 
   const days = useMemo(() => {
     return eachDayOfInterval({
