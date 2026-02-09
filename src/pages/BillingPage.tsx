@@ -8,7 +8,7 @@ import {
   getStatusLabel,
   generateInvoiceNumber,
 } from '../lib/utils';
-import type { Invoice, Guest, Reservation } from '../types';
+import type { Invoice, Guest, Reservation, Payment } from '../types';
 import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -24,6 +24,10 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  History,
+  TrendingUp,
+  CreditCard,
+  Calendar,
 } from 'lucide-react';
 
 type InvoiceStatus = Invoice['status'] | '';
@@ -96,48 +100,61 @@ export default function BillingPage() {
 
   const [guests, setGuests] = useState<Guest[]>([]);
   const [guestReservations, setGuestReservations] = useState<Reservation[]>([]);
+  const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
 
   const fetchInvoices = useCallback(async () => {
-    if (!currentHotel) return;
+    if (!currentHotel) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
-    let query = supabase
-      .from('invoices')
-      .select('*, guest:guests(*), items:invoice_items(*)', { count: 'exact' })
-      .eq('hotel_id', currentHotel.id);
+    try {
+      let query = supabase
+        .from('invoices')
+        .select('*, guest:guests(*), items:invoice_items(*)', { count: 'exact' })
+        .eq('hotel_id', currentHotel.id);
 
-    if (statusFilter) {
-      query = query.eq('status', statusFilter);
-    }
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
 
-    if (dateFrom) {
-      query = query.gte('issue_date', dateFrom);
-    }
+      if (dateFrom) {
+        query = query.gte('issue_date', dateFrom);
+      }
 
-    if (dateTo) {
-      query = query.lte('issue_date', dateTo);
-    }
+      if (dateTo) {
+        query = query.lte('issue_date', dateTo);
+      }
 
-    if (searchQuery.trim()) {
-      query = query.or(
-        `invoice_number.ilike.%${searchQuery.trim()}%,guest.first_name.ilike.%${searchQuery.trim()}%,guest.last_name.ilike.%${searchQuery.trim()}%`
-      );
-    }
+      if (searchQuery.trim()) {
+        query = query.or(
+          `invoice_number.ilike.%${searchQuery.trim()}%,guest.first_name.ilike.%${searchQuery.trim()}%,guest.last_name.ilike.%${searchQuery.trim()}%`
+        );
+      }
 
-    query = query
-      .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      query = query
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    const { data, count, error } = await query;
+      const { data, count, error } = await query;
 
-    if (error) {
+      if (error) {
+        toast('error', 'Failed to load invoices');
+        console.error('Error fetching invoices:', error);
+      } else {
+        setInvoices((data || []) as Invoice[]);
+        setTotalCount(count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
       toast('error', 'Failed to load invoices');
-    } else {
-      setInvoices((data || []) as Invoice[]);
-      setTotalCount(count || 0);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, [currentHotel, statusFilter, dateFrom, dateTo, searchQuery, page, toast]);
 
   const fetchGuests = useCallback(async () => {
@@ -353,26 +370,83 @@ export default function BillingPage() {
 
     setProcessingPayment(true);
 
-    const newAmountPaid = paymentInvoice.amount_paid + paymentAmount;
-    const newStatus = newAmountPaid >= paymentInvoice.total_amount ? 'paid' : paymentInvoice.status;
+    try {
+      const newAmountPaid = paymentInvoice.amount_paid + paymentAmount;
+      const newStatus = newAmountPaid >= paymentInvoice.total_amount ? 'paid' : paymentInvoice.status;
 
-    const { error } = await supabase
-      .from('invoices')
-      .update({
-        amount_paid: newAmountPaid,
-        status: newStatus,
-      })
-      .eq('id', paymentInvoice.id);
+      const { error: invoiceError } = await supabase
+        .from('invoices')
+        .update({
+          amount_paid: newAmountPaid,
+          status: newStatus,
+        })
+        .eq('id', paymentInvoice.id);
 
-    if (error) {
-      toast('error', 'Failed to record payment');
-    } else {
+      if (invoiceError) throw invoiceError;
+
+      const paymentPayload = {
+        hotel_id: currentHotel.id,
+        invoice_id: paymentInvoice.id,
+        guest_id: paymentInvoice.guest_id,
+        reservation_id: paymentInvoice.reservation_id,
+        amount: paymentAmount,
+        payment_method: paymentMethod,
+        payment_date: new Date().toISOString(),
+        reference_number: '',
+        notes: paymentNotes.trim(),
+        processed_by: currentHotel.name,
+      };
+
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert(paymentPayload);
+
+      if (paymentError) {
+        console.error('Failed to record payment history:', paymentError);
+      }
+
       toast('success', `Payment of ${formatCurrency(paymentAmount, currentHotel.currency)} recorded`);
       closePaymentModal();
       fetchInvoices();
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      toast('error', 'Failed to record payment');
+    } finally {
+      setProcessingPayment(false);
     }
+  };
 
-    setProcessingPayment(false);
+  const fetchPaymentHistory = async (invoice: Invoice) => {
+    setSelectedInvoiceForHistory(invoice);
+    setShowPaymentHistoryModal(true);
+    setLoadingPayments(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('*, guest:guests(*)')
+        .eq('invoice_id', invoice.id)
+        .order('payment_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching payment history:', error);
+        toast('error', 'Failed to load payment history');
+        setPaymentHistory([]);
+      } else {
+        setPaymentHistory((data || []) as Payment[]);
+      }
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      setPaymentHistory([]);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  const closePaymentHistoryModal = () => {
+    setShowPaymentHistoryModal(false);
+    setSelectedInvoiceForHistory(null);
+    setPaymentHistory([]);
   };
 
   const markAsPaid = async (invoice: Invoice) => {
@@ -899,6 +973,15 @@ export default function BillingPage() {
                               title="Record Payment"
                             >
                               <DollarSign className="w-4 h-4" />
+                            </button>
+                          )}
+                          {invoice.amount_paid > 0 && (
+                            <button
+                              onClick={() => fetchPaymentHistory(invoice)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+                              title="Payment History"
+                            >
+                              <History className="w-4 h-4" />
                             </button>
                           )}
                           <button
@@ -1465,6 +1548,110 @@ export default function BillingPage() {
               </button>
             </div>
           </form>
+        )}
+      </Modal>
+
+      <Modal
+        open={showPaymentHistoryModal}
+        onClose={closePaymentHistoryModal}
+        title={`Payment History - ${selectedInvoiceForHistory?.invoice_number || ''}`}
+        size="lg"
+      >
+        {selectedInvoiceForHistory && (
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-gray-500">Total Amount</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {formatCurrency(selectedInvoiceForHistory.total_amount, currentHotel?.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Amount Paid</p>
+                <p className="text-sm font-semibold text-emerald-600">
+                  {formatCurrency(selectedInvoiceForHistory.amount_paid, currentHotel?.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Balance Due</p>
+                <p className="text-sm font-semibold text-red-600">
+                  {formatCurrency(
+                    selectedInvoiceForHistory.total_amount - selectedInvoiceForHistory.amount_paid,
+                    currentHotel?.currency
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {loadingPayments ? (
+              <div className="py-8">
+                <LoadingSpinner />
+              </div>
+            ) : paymentHistory.length === 0 ? (
+              <EmptyState
+                icon={<History className="w-6 h-6" />}
+                title="No payment history"
+                description="No payments have been recorded for this invoice yet."
+              />
+            ) : (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="table-header">Date</th>
+                      <th className="table-header">Amount</th>
+                      <th className="table-header">Method</th>
+                      <th className="table-header">Processed By</th>
+                      <th className="table-header">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentHistory.map((payment) => (
+                      <tr key={payment.id} className="border-b border-gray-50">
+                        <td className="table-cell text-gray-900">
+                          {formatDate(payment.payment_date)}
+                        </td>
+                        <td className="table-cell font-semibold text-emerald-600">
+                          {formatCurrency(payment.amount, currentHotel?.currency)}
+                        </td>
+                        <td className="table-cell">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            <CreditCard className="w-3 h-3" />
+                            {payment.payment_method.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+                        </td>
+                        <td className="table-cell text-gray-600">
+                          {payment.processed_by || '-'}
+                        </td>
+                        <td className="table-cell text-gray-500 text-sm">
+                          {payment.notes || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+              <button onClick={closePaymentHistoryModal} className="btn-secondary">
+                Close
+              </button>
+              {selectedInvoiceForHistory.status !== 'paid' &&
+                selectedInvoiceForHistory.status !== 'cancelled' && (
+                  <button
+                    onClick={() => {
+                      closePaymentHistoryModal();
+                      openPaymentModal(selectedInvoiceForHistory);
+                    }}
+                    className="btn-primary"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    Record Another Payment
+                  </button>
+                )}
+            </div>
+          </div>
         )}
       </Modal>
     </div>

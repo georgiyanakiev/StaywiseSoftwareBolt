@@ -172,6 +172,23 @@ export interface InvoiceItem {
   created_at: string;
 }
 
+export interface Payment {
+  id: string;
+  hotel_id: string;
+  invoice_id: string;
+  guest_id: string;
+  reservation_id: string | null;
+  amount: number;
+  payment_method: 'cash' | 'card' | 'bank_transfer' | 'check' | 'other';
+  payment_date: string;
+  reference_number: string;
+  notes: string;
+  processed_by: string;
+  created_at: string;
+  guest?: Guest;
+  invoice?: Invoice;
+}
+
 export interface HousekeepingTask {
   id: string;
   hotel_id: string;
