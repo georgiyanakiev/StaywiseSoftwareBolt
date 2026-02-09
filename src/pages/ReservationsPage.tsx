@@ -100,6 +100,7 @@ export default function ReservationsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
 
@@ -122,66 +123,87 @@ export default function ReservationsPage() {
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   const fetchReservations = useCallback(async () => {
-    if (!currentHotel) return;
-    setLoading(true);
-
-    let query = supabase
-      .from('reservations')
-      .select('*, guest:guests(*), room:rooms(*, room_type:room_types(*)), room_type:room_types(*)', { count: 'exact' })
-      .eq('hotel_id', currentHotel.id)
-      .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-    if (statusFilter) {
-      query = query.eq('status', statusFilter);
-    }
-
-    if (dateFrom) {
-      query = query.gte('check_in', dateFrom);
-    }
-
-    if (dateTo) {
-      query = query.lte('check_out', dateTo);
-    }
-
-    const { data, count, error } = await query;
-
-    if (error) {
-      toast('error', 'Failed to load reservations');
+    if (!currentHotel) {
       setLoading(false);
       return;
     }
 
-    let results = (data || []) as Reservation[];
+    try {
+      setLoading(true);
+      setError(null);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      results = results.filter(
-        r =>
-          r.guest?.first_name?.toLowerCase().includes(q) ||
-          r.guest?.last_name?.toLowerCase().includes(q) ||
-          `${r.guest?.first_name} ${r.guest?.last_name}`.toLowerCase().includes(q) ||
-          r.confirmation_code?.toLowerCase().includes(q)
-      );
+      let query = supabase
+        .from('reservations')
+        .select('*, guest:guests(*), room:rooms(*, room_type:room_types(*)), room_type:room_types(*)', { count: 'exact' })
+        .eq('hotel_id', currentHotel.id)
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (dateFrom) {
+        query = query.gte('check_in', dateFrom);
+      }
+
+      if (dateTo) {
+        query = query.lte('check_out', dateTo);
+      }
+
+      const { data, count, error: queryError } = await query;
+
+      if (queryError) {
+        console.error('Error fetching reservations:', queryError);
+        setError(queryError.message);
+        toast('error', 'Failed to load reservations');
+        return;
+      }
+
+      let results = (data || []) as Reservation[];
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        results = results.filter(
+          r =>
+            r.guest?.first_name?.toLowerCase().includes(q) ||
+            r.guest?.last_name?.toLowerCase().includes(q) ||
+            `${r.guest?.first_name} ${r.guest?.last_name}`.toLowerCase().includes(q) ||
+            r.confirmation_code?.toLowerCase().includes(q)
+        );
+      }
+
+      setReservations(results);
+      setTotalCount(count || 0);
+    } catch (err) {
+      console.error('Error in fetchReservations:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load reservations');
+      toast('error', 'Failed to load reservations');
+    } finally {
+      setLoading(false);
     }
-
-    setReservations(results);
-    setTotalCount(count || 0);
-    setLoading(false);
   }, [currentHotel, page, statusFilter, dateFrom, dateTo, searchQuery, toast]);
 
   const fetchReferenceData = useCallback(async () => {
     if (!currentHotel) return;
 
-    const [guestsRes, roomsRes, roomTypesRes] = await Promise.all([
-      supabase.from('guests').select('*').eq('hotel_id', currentHotel.id).order('last_name'),
-      supabase.from('rooms').select('*, room_type:room_types(*)').eq('hotel_id', currentHotel.id).order('number'),
-      supabase.from('room_types').select('*').eq('hotel_id', currentHotel.id).order('name'),
-    ]);
+    try {
+      const [guestsRes, roomsRes, roomTypesRes] = await Promise.all([
+        supabase.from('guests').select('*').eq('hotel_id', currentHotel.id).order('last_name'),
+        supabase.from('rooms').select('*, room_type:room_types(*)').eq('hotel_id', currentHotel.id).order('number'),
+        supabase.from('room_types').select('*').eq('hotel_id', currentHotel.id).order('name'),
+      ]);
 
-    setGuests((guestsRes.data || []) as Guest[]);
-    setRooms((roomsRes.data || []) as Room[]);
-    setRoomTypes((roomTypesRes.data || []) as RoomType[]);
+      if (guestsRes.error) console.error('Error fetching guests:', guestsRes.error);
+      if (roomsRes.error) console.error('Error fetching rooms:', roomsRes.error);
+      if (roomTypesRes.error) console.error('Error fetching room types:', roomTypesRes.error);
+
+      setGuests((guestsRes.data || []) as Guest[]);
+      setRooms((roomsRes.data || []) as Room[]);
+      setRoomTypes((roomTypesRes.data || []) as RoomType[]);
+    } catch (err) {
+      console.error('Error in fetchReferenceData:', err);
+    }
   }, [currentHotel]);
 
   useEffect(() => {
@@ -586,7 +608,37 @@ export default function ReservationsPage() {
     }
   }, [actionMenuId]);
 
-  if (!currentHotel) return null;
+  if (!currentHotel) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="text-gray-600 text-lg">No hotel selected</div>
+        <p className="text-gray-500 text-sm mt-2">Please select a hotel to view reservations</p>
+      </div>
+    );
+  }
+
+  if (error && reservations.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Reservations</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage bookings and guest stays</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center h-96 bg-white rounded-xl border border-gray-200">
+          <div className="text-red-600 text-lg font-semibold mb-2">Error loading reservations</div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => fetchReservations()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
