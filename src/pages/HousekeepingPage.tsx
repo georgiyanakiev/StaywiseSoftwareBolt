@@ -230,15 +230,23 @@ export default function HousekeepingPage() {
   };
 
   const fetchAll = async () => {
+    if (!currentHotel) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    await Promise.all([fetchTasks(), fetchRooms(), fetchMaintenanceRequests()]);
-    setLoading(false);
+    try {
+      await Promise.all([fetchTasks(), fetchRooms(), fetchMaintenanceRequests()]);
+    } catch (error) {
+      console.error('Error fetching housekeeping data:', error);
+      toast('error', 'Failed to load housekeeping data');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (currentHotel) {
-      fetchAll();
-    }
+    fetchAll();
   }, [currentHotel?.id]);
 
   const pendingCount = useMemo(() => tasks.filter(t => t.status === 'pending').length, [tasks]);
