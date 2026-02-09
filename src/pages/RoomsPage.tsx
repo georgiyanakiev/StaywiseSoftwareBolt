@@ -181,6 +181,9 @@ export default function RoomsPage() {
       return () => {
         roomsSubscription.unsubscribe();
       };
+    } else {
+      // If no hotel is selected, stop loading
+      setLoading(false);
     }
   }, [currentHotel?.id]);
 
