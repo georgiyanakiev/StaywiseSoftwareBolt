@@ -86,6 +86,7 @@ export default function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState('');
   const [floorFilter, setFloorFilter] = useState('');
@@ -108,36 +109,53 @@ export default function RoomsPage() {
 
   const fetchRooms = async () => {
     if (!currentHotel) return;
-    const { data, error } = await supabase
-      .from('rooms')
-      .select('*, room_type:room_types(*)')
-      .eq('hotel_id', currentHotel.id)
-      .order('number');
-    if (error) {
-      toast('error', 'Failed to load rooms');
-      return;
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*, room_type:room_types(*)')
+        .eq('hotel_id', currentHotel.id)
+        .order('number');
+      if (error) throw error;
+      setRooms((data || []) as Room[]);
+    } catch (err) {
+      console.error('Error fetching rooms:', err);
+      throw err;
     }
-    setRooms((data || []) as Room[]);
   };
 
   const fetchRoomTypes = async () => {
     if (!currentHotel) return;
-    const { data, error } = await supabase
-      .from('room_types')
-      .select('*')
-      .eq('hotel_id', currentHotel.id)
-      .order('name');
-    if (error) {
-      toast('error', 'Failed to load room types');
-      return;
+    try {
+      const { data, error } = await supabase
+        .from('room_types')
+        .select('*')
+        .eq('hotel_id', currentHotel.id)
+        .order('name');
+      if (error) throw error;
+      setRoomTypes((data || []) as RoomType[]);
+    } catch (err) {
+      console.error('Error fetching room types:', err);
+      throw err;
     }
-    setRoomTypes((data || []) as RoomType[]);
   };
 
   const fetchAll = async () => {
-    setLoading(true);
-    await Promise.all([fetchRooms(), fetchRoomTypes()]);
-    setLoading(false);
+    if (!currentHotel) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      await Promise.all([fetchRooms(), fetchRoomTypes()]);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load rooms data');
+      toast('error', 'Failed to load rooms data');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -346,6 +364,38 @@ export default function RoomsPage() {
   };
 
   if (loading) return <LoadingSpinner size="lg" />;
+
+  if (!currentHotel) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="text-gray-600 text-lg">No hotel selected</div>
+        <p className="text-gray-500 text-sm mt-2">Please select a hotel to manage rooms</p>
+      </div>
+    );
+  }
+
+  if (error && rooms.length === 0 && roomTypes.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Room Management</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage rooms and room types</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center h-96 bg-white rounded-xl border border-gray-200">
+          <div className="text-red-600 text-lg font-semibold mb-2">Error loading rooms</div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => fetchAll()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
