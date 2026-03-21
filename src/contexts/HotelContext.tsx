@@ -29,21 +29,23 @@ export function HotelProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase.from('hotels').select('*').order('name');
     const hotelList = (data || []) as Hotel[];
     setHotels(hotelList);
-    if (hotelList.length > 0 && !currentHotel) {
+    if (hotelList.length > 0) {
       const savedId = localStorage.getItem('staywise_current_hotel');
       const found = savedId ? hotelList.find(h => h.id === savedId) : null;
-      setCurrentHotel(found || hotelList[0]);
+      setCurrentHotel(prev => prev ?? (found || hotelList[0]));
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    if (user && staff) {
+    if (user) {
       refreshHotels();
     } else {
+      setHotels([]);
+      setCurrentHotel(null);
       setLoading(false);
     }
-  }, [user, staff]);
+  }, [user]);
 
   const handleSetHotel = (hotel: Hotel) => {
     setCurrentHotel(hotel);
