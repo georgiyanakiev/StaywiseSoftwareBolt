@@ -76,6 +76,14 @@ export default function TopNav() {
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white" />
               </button>
 
+              <button
+                onClick={signOut}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-100"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden md:inline">Sign out</span>
+              </button>
+
               {staff && (
                 <div className="relative">
                   <button
@@ -148,6 +156,13 @@ export default function TopNav() {
                 {item.label}
               </NavLink>
             ))}
+            <button
+              onClick={() => { setMobileOpen(false); signOut(); }}
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              Sign out
+            </button>
           </div>
         )}
       </header>
