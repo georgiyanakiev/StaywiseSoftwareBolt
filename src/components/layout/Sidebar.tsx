@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, BedDouble, Users, Receipt,
-  SprayCan, BarChart3, Settings, Building2, ChevronLeft, ChevronRight, LogOut, X, BookOpen,
+  SprayCan, BarChart3, Settings, Building2, ChevronLeft, ChevronRight, LogOut, X, BookOpen, Link2,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
@@ -28,6 +28,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/billing', icon: Receipt, label: t.nav.billing },
     { to: '/housekeeping', icon: SprayCan, label: t.nav.housekeeping },
     { to: '/reports', icon: BarChart3, label: t.nav.reports },
+    { to: '/booking-com', icon: Link2, label: 'Booking.com' },
     { to: '/settings', icon: Settings, label: t.nav.settings },
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];

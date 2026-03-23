@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, DollarSign, Save, Plus, CreditCard as Edit, UserX, Trash2 } from 'lucide-react';
+import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, DollarSign, Save, Plus, CreditCard as Edit, UserX, Trash2, Link2 } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,8 +10,9 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
+import BookingComTab from './settings/BookingComTab';
 
-type TabKey = 'hotel' | 'rooms' | 'tax' | 'users' | 'emails' | 'payment' | 'notifications' | 'preferences';
+type TabKey = 'hotel' | 'rooms' | 'tax' | 'users' | 'emails' | 'payment' | 'notifications' | 'preferences' | 'bookingcom';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR'];
 
@@ -39,6 +40,7 @@ const TABS_STATIC: { key: TabKey; icon: typeof Building2; adminOnly?: boolean }[
   { key: 'payment', icon: CreditCard, adminOnly: true },
   { key: 'notifications', icon: Bell },
   { key: 'preferences', icon: Globe },
+  { key: 'bookingcom', icon: Link2, adminOnly: true },
 ];
 
 function HotelSettingsTab() {
@@ -1189,6 +1191,7 @@ export default function SettingsPage() {
     payment: t.settings.payment,
     notifications: t.settings.notifications,
     preferences: t.settings.preferences,
+    bookingcom: 'Booking.com',
   };
 
   const TABS = TABS_STATIC.map(tab => ({ ...tab, label: TAB_LABELS[tab.key] }));
@@ -1238,6 +1241,7 @@ export default function SettingsPage() {
         {activeTab === 'payment' && <PaymentSettingsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'preferences' && <PreferencesTab />}
+        {activeTab === 'bookingcom' && <BookingComTab />}
       </div>
     </div>
   );

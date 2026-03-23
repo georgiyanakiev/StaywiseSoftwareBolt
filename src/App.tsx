@@ -12,6 +12,7 @@ import HousekeepingPage from './pages/HousekeepingPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import GuidePage from './pages/GuidePage';
+import BookingComPage from './pages/BookingComPage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
 function AuthenticatedApp() {
@@ -28,6 +29,7 @@ function AuthenticatedApp() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/guide" element={<GuidePage />} />
+          <Route path="/booking-com" element={<BookingComPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
