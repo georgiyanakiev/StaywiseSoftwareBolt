@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 const sections = [
   {
@@ -467,12 +469,25 @@ Checklist — A structured list of tasks within a housekeeping job, used to ensu
 ];
 
 export default function GuidePage() {
+  const navigate = useNavigate();
+
   useEffect(() => {
     document.title = 'StayWise Software — User Guide';
   }, []);
 
   return (
     <div className="guide-root" style={{ fontFamily: 'Georgia, "Times New Roman", serif', color: '#1a1a2e', background: '#fff' }}>
+      <div style={{ fontFamily: 'system-ui, sans-serif', marginBottom: '24px' }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+        >
+          <ArrowLeft style={{ width: '14px', height: '14px' }} />
+          Back to Dashboard
+        </button>
+      </div>
       <style>{`
         @page {
           size: A4;
