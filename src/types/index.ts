@@ -378,3 +378,48 @@ export interface CloudbedsRoomMapping {
   updated_at: string;
   room_type?: RoomType;
 }
+
+export interface SiteMinderSettings {
+  id: string;
+  hotel_id: string;
+  property_id: string;
+  api_key: string;
+  api_secret: string;
+  hotel_code: string;
+  is_enabled: boolean;
+  sync_reservations: boolean;
+  sync_availability: boolean;
+  last_sync_at: string | null;
+  last_sync_status: string;
+  sync_interval_minutes: number;
+  rate_multiplier: number;
+  min_advance_days: number;
+  max_advance_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SiteMinderSyncLog {
+  id: string;
+  hotel_id: string;
+  direction: 'inbound' | 'outbound';
+  status: 'success' | 'partial' | 'failed' | 'running';
+  records_processed: number;
+  error_message: string | null;
+  raw_payload: Record<string, unknown> | null;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface SiteMinderRoomMapping {
+  id: string;
+  hotel_id: string;
+  room_type_id: string;
+  siteminder_room_type_id: string;
+  siteminder_rate_plan_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  room_type?: RoomType;
+}

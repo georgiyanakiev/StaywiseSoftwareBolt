@@ -31,6 +31,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/booking-com', icon: Link2, label: 'Booking.com' },
     { to: '/expedia', icon: Link2, label: 'Expedia' },
     { to: '/cloudbeds', icon: Link2, label: 'Cloudbeds' },
+    { to: '/siteminder', icon: Link2, label: 'SiteMinder' },
     { to: '/settings', icon: Settings, label: t.nav.settings },
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];

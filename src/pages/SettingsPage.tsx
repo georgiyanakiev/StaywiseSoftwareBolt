@@ -13,8 +13,9 @@ import { useToast } from '../components/ui/Toast';
 import BookingComTab from './settings/BookingComTab';
 import ExpediaTab from './settings/ExpediaTab';
 import CloudbedsTab from './settings/CloudbedsTab';
+import SiteMinderTab from './settings/SiteMinderTab';
 
-type TabKey = 'hotel' | 'rooms' | 'tax' | 'users' | 'emails' | 'payment' | 'notifications' | 'preferences' | 'bookingcom' | 'expedia' | 'cloudbeds';
+type TabKey = 'hotel' | 'rooms' | 'tax' | 'users' | 'emails' | 'payment' | 'notifications' | 'preferences' | 'bookingcom' | 'expedia' | 'cloudbeds' | 'siteminder';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR'];
 
@@ -45,6 +46,7 @@ const TABS_STATIC: { key: TabKey; icon: typeof Building2; adminOnly?: boolean }[
   { key: 'bookingcom', icon: Link2, adminOnly: true },
   { key: 'expedia', icon: Link2, adminOnly: true },
   { key: 'cloudbeds', icon: Link2, adminOnly: true },
+  { key: 'siteminder', icon: Link2, adminOnly: true },
 ];
 
 function HotelSettingsTab() {
@@ -1198,6 +1200,7 @@ export default function SettingsPage() {
     bookingcom: 'Booking.com',
     expedia: 'Expedia',
     cloudbeds: 'Cloudbeds',
+    siteminder: 'SiteMinder',
   };
 
   const TABS = TABS_STATIC.map(tab => ({ ...tab, label: TAB_LABELS[tab.key] }));
@@ -1250,6 +1253,7 @@ export default function SettingsPage() {
         {activeTab === 'bookingcom' && <BookingComTab />}
         {activeTab === 'expedia' && <ExpediaTab />}
         {activeTab === 'cloudbeds' && <CloudbedsTab />}
+        {activeTab === 'siteminder' && <SiteMinderTab />}
       </div>
     </div>
   );
