@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, DollarSign, Save, Plus, CreditCard as Edit, UserX, Trash2, Link2 } from 'lucide-react';
+import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, DollarSign, Save, Plus, CreditCard as Edit, UserX, Trash2, Link2, Eye, EyeOff } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -570,6 +570,8 @@ function UsersPermissionsTab() {
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', email: '', phone: '', role: 'receptionist', is_active: true,
   });
+  const [editPassword, setEditPassword] = useState('');
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchStaff = useCallback(async () => {
@@ -606,6 +608,8 @@ function UsersPermissionsTab() {
       role: member.role,
       is_active: member.is_active,
     });
+    setEditPassword('');
+    setShowEditPassword(false);
     setShowEditModal(true);
   };
 
@@ -627,8 +631,33 @@ function UsersPermissionsTab() {
     if (!selectedStaff) return;
     setSubmitting(true);
     const { error } = await supabase.from('staff_members').update(formData).eq('id', selectedStaff.id);
-    if (error) { toast('error', error.message); }
-    else { toast('success', 'Staff member updated'); setShowEditModal(false); await fetchStaff(); }
+    if (error) { toast('error', error.message); setSubmitting(false); return; }
+
+    if (editPassword.trim()) {
+      if (editPassword.length < 6) {
+        toast('error', 'Password must be at least 6 characters.');
+        setSubmitting(false);
+        return;
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-staff-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ staff_member_id: selectedStaff.id, password: editPassword }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) { toast('error', result.error || 'Failed to update password'); setSubmitting(false); return; }
+    }
+
+    toast('success', 'Staff member updated');
+    setShowEditModal(false);
+    await fetchStaff();
     setSubmitting(false);
   };
 
@@ -740,6 +769,28 @@ function UsersPermissionsTab() {
 
       <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Staff Member">
         {renderForm()}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">New Password <span className="text-gray-400 font-normal">(leave blank to keep current)</span></label>
+          <div className="relative">
+            <input
+              type={showEditPassword ? 'text' : 'password'}
+              value={editPassword}
+              onChange={e => setEditPassword(e.target.value)}
+              placeholder="Enter new password"
+              className="input-field pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowEditPassword(v => !v)}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+            >
+              {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {editPassword && editPassword.length < 6 && (
+            <p className="text-xs text-red-500 mt-1">Password must be at least 6 characters.</p>
+          )}
+        </div>
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={() => setShowEditModal(false)} className="btn-secondary">Cancel</button>
           <button onClick={handleEditStaff} disabled={submitting} className="btn-primary">{submitting ? 'Saving...' : 'Save Changes'}</button>
