@@ -1,54 +1,22 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BedDouble, DoorOpen, LogIn, LogOut, TrendingUp, DollarSign, Plus, UserCheck,
-  LayoutGrid, BarChart3, SprayCan, RefreshCw, CalendarDays, Activity,
-  ChevronUp, ChevronDown, Minus,
+  BedDouble, LogIn, LogOut, Users, SprayCan, RefreshCw,
+  CalendarDays, DollarSign, TrendingUp, BarChart3, Activity,
+  CheckCircle2, AlertTriangle, Wrench, Baby,
+  ArrowRightCircle, UserCheck,
 } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { useHotel } from '../contexts/HotelContext';
-import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../lib/utils';
+import { formatCurrency, formatDate } from '../lib/utils';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import OccupancyGauge from './dashboard/OccupancyGauge';
-import ActivityFeed from './dashboard/ActivityFeed';
-import AvailabilityCalendar from './dashboard/AvailabilityCalendar';
 import { useDashboardData } from './dashboard/useDashboardData';
-
-type RevenueRange = '7d' | '14d';
-
-const ROOM_STATUS_COLORS: Record<string, string> = {
-  available: '#10b981', occupied: '#2563eb', dirty: '#f59e0b',
-  clean: '#22c55e', maintenance: '#6b7280', out_of_service: '#9ca3af',
-};
-
-const RESERVATION_STATUS_COLORS: Record<string, string> = {
-  confirmed: '#2563eb', checked_in: '#10b981', checked_out: '#6b7280',
-  pending: '#f59e0b', cancelled: '#ef4444',
-};
-
-function TrendBadge({ value, prev }: { value: number; prev?: number }) {
-  if (prev == null) return null;
-  const diff = value - prev;
-  if (diff === 0) return <span className="inline-flex items-center gap-0.5 text-xs text-gray-400"><Minus className="w-3 h-3" />0%</span>;
-  const pct = prev > 0 ? Math.round(Math.abs(diff / prev) * 100) : 100;
-  const up = diff > 0;
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${up ? 'text-emerald-600' : 'text-red-500'}`}>
-      {up ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      {pct}%
-    </span>
-  );
-}
+import ActivityFeed from './dashboard/ActivityFeed';
 
 export default function DashboardPage() {
   const { currentHotel } = useHotel();
   const { loading, error, stats, revenueData, recentActivity, availabilityData, roomStatusData, refresh } = useDashboardData(currentHotel);
-  const [revenueRange, setRevenueRange] = useState<RevenueRange>('14d');
-
-  const visibleRevenue = revenueRange === '7d' ? revenueData.slice(-7) : revenueData;
 
   if (loading) return <LoadingSpinner size="lg" />;
 
@@ -71,103 +39,158 @@ export default function DashboardPage() {
     );
   }
 
-  const kpiCards = [
-    {
-      label: 'Total Rooms', value: stats.totalRooms, icon: BedDouble,
-      color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100',
-    },
-    {
-      label: 'Available Now', value: stats.availableRooms, icon: DoorOpen,
-      color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100',
-    },
-    {
-      label: 'Pending Check-ins', value: stats.pendingCheckIns, icon: LogIn,
-      color: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-100',
-    },
-    {
-      label: 'Pending Check-outs', value: stats.pendingCheckOuts, icon: LogOut,
-      color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100',
-    },
-    {
-      label: 'Rooms Needing Clean', value: stats.dirtyRooms, icon: SprayCan,
-      color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100',
-    },
-    {
-      label: 'Active Reservations', value: stats.activeReservations, icon: CalendarDays,
-      color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100',
-    },
-  ];
+  const occupiedCount = roomStatusData.find(r => r.key === 'occupied')?.value ?? stats.occupiedRooms;
+  const availableCount = roomStatusData.find(r => r.key === 'available')?.value ?? stats.availableRooms;
+  const dirtyCount = roomStatusData.find(r => r.key === 'dirty')?.value ?? 0;
+  const cleanCount = roomStatusData.find(r => r.key === 'clean')?.value ?? 0;
+  const maintenanceCount = roomStatusData.find(r => r.key === 'maintenance')?.value ?? 0;
+  const outOfServiceCount = roomStatusData.find(r => r.key === 'out_of_service')?.value ?? 0;
+
+  const today = availabilityData[0];
+  const todayAvailable = today?.available ?? availableCount;
+  const todayOccupied = today?.occupied ?? occupiedCount;
+
+  const visibleRevenue = revenueData.slice(-7);
 
   const revenueCards = [
-    { label: "Today's Revenue", value: stats.todayRevenue, icon: DollarSign, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: "This Week", value: stats.weekRevenue, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: "This Month", value: stats.monthRevenue, icon: BarChart3, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: "Year to Date", value: stats.ytdRevenue, icon: Activity, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: "Today", value: stats.todayRevenue, icon: DollarSign, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: "This Week", value: stats.weekRevenue, icon: TrendingUp, color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: "This Month", value: stats.monthRevenue, icon: BarChart3, color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { label: "Year to Date", value: stats.ytdRevenue, icon: Activity, color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
   ];
-
-  const quickActions = [
-    { label: 'New Reservation', icon: Plus, to: '/reservations', color: 'bg-blue-600 hover:bg-blue-700 text-white' },
-    { label: 'Quick Check-in', icon: UserCheck, to: '/reservations', color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-    { label: 'Room Status', icon: LayoutGrid, to: '/rooms', color: 'bg-gray-800 hover:bg-gray-900 text-white' },
-    { label: 'Housekeeping', icon: SprayCan, to: '/housekeeping', color: 'bg-amber-500 hover:bg-amber-600 text-white' },
-    { label: 'View Reports', icon: BarChart3, to: '/reports', color: 'bg-teal-600 hover:bg-teal-700 text-white' },
-  ];
-
-  const reservationStatusData = Object.entries(stats.statusBreakdown)
-    .filter(([, v]) => v > 0)
-    .map(([key, value]) => ({
-      name: getStatusLabel(key),
-      value,
-      color: RESERVATION_STATUS_COLORS[key] || '#6b7280',
-    }));
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {currentHotel.name} &middot; {formatDate(new Date(), 'EEEE, MMMM d, yyyy')}
-          </p>
+          <h1 className="text-xl font-bold text-gray-900">{currentHotel.name}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{formatDate(new Date(), 'EEEE, MMMM d, yyyy')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1.5">
-            {quickActions.map(a => (
-              <Link key={a.label} to={a.to}
-                className={`${a.color} hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm`}>
-                <a.icon className="w-3.5 h-3.5" />
-                {a.label}
-              </Link>
-            ))}
-          </div>
-          <button onClick={refresh}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Refresh">
+          <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
+            <LogIn className="w-3.5 h-3.5" /> Quick Check-in
+          </Link>
+          <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
+            <CalendarDays className="w-3.5 h-3.5" /> New Booking
+          </Link>
+          <button onClick={refresh} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {kpiCards.map(card => (
-          <div key={card.label} className={`bg-white rounded-xl border ${card.border} p-4 hover:shadow-md transition-shadow`}>
-            <div className={`${card.bg} ${card.color} w-9 h-9 rounded-lg flex items-center justify-center mb-3`}>
-              <card.icon className="w-4.5 h-4.5 w-5 h-5" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{card.value}</div>
-            <div className="text-xs text-gray-500 mt-0.5 leading-tight">{card.label}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <OperaTile
+          title="Room Status"
+          accentColor="bg-slate-700"
+          icon={<BedDouble className="w-5 h-5 text-white" />}
+          link="/rooms"
+        >
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-1">
+            <RoomStatusRow icon={<OccupiedIcon />} label="Occupied" value={occupiedCount} valueColor="text-blue-700" />
+            <RoomStatusRow icon={<AvailableIcon />} label="Available" value={availableCount} valueColor="text-emerald-700" />
+            <RoomStatusRow icon={<DirtyIcon />} label="Needs Clean" value={dirtyCount} valueColor="text-amber-600" />
+            <RoomStatusRow icon={<CleanIcon />} label="Clean" value={cleanCount} valueColor="text-emerald-600" />
+            <RoomStatusRow icon={<WrenchIcon />} label="Maintenance" value={maintenanceCount} valueColor="text-red-600" />
+            <RoomStatusRow icon={<OOSIcon />} label="Out of Svc" value={outOfServiceCount} valueColor="text-gray-500" />
           </div>
-        ))}
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+              <span>Occupancy</span>
+              <span className="font-semibold text-gray-800">{stats.occupancyRate}%</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${stats.occupancyRate}%`,
+                  background: stats.occupancyRate >= 90 ? '#ef4444' : stats.occupancyRate >= 70 ? '#f59e0b' : '#2563eb',
+                }}
+              />
+            </div>
+          </div>
+        </OperaTile>
+
+        <OperaTile
+          title="Departures"
+          accentColor="bg-amber-600"
+          icon={<LogOut className="w-5 h-5 text-white" />}
+          link="/reservations"
+        >
+          <div className="flex flex-col gap-3 mt-2">
+            <DepartureRow
+              label="Expected"
+              rooms={stats.pendingCheckOuts}
+              adults={stats.pendingCheckOuts}
+              children={0}
+              color="text-amber-700"
+              bg="bg-amber-50"
+            />
+            <DepartureRow
+              label="Checked Out"
+              rooms={stats.todayCheckOuts}
+              adults={stats.todayCheckOuts}
+              children={0}
+              color="text-gray-600"
+              bg="bg-gray-50"
+            />
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-500">Scheduled</span>
+            <span className="text-lg font-bold text-gray-800">{stats.pendingCheckOuts + stats.todayCheckOuts}</span>
+          </div>
+        </OperaTile>
+
+        <OperaTile
+          title="In House (Occupied)"
+          accentColor="bg-blue-600"
+          icon={<Users className="w-5 h-5 text-white" />}
+          link="/reservations"
+        >
+          <div className="flex flex-col items-center justify-center flex-1 gap-2 py-3">
+            <div className="w-14 h-14 rounded-full bg-blue-50 border-4 border-blue-100 flex items-center justify-center">
+              <span className="text-2xl font-bold text-blue-700">{todayOccupied}</span>
+            </div>
+            <span className="text-xs text-gray-500 font-medium">Rooms Occupied</span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <GuestCountBox icon={<AdultIcon />} label="Adults" value={todayOccupied} color="text-blue-700" bg="bg-blue-50" />
+            <GuestCountBox icon={<Baby className="w-5 h-5" />} label="Children" value={0} color="text-purple-700" bg="bg-purple-50" />
+          </div>
+        </OperaTile>
+
+        <OperaTile
+          title="Arrivals"
+          accentColor="bg-emerald-600"
+          icon={<LogIn className="w-5 h-5 text-white" />}
+          link="/reservations"
+        >
+          <div className="flex flex-col gap-3 mt-2">
+            <ArrivalRow
+              label="Expected"
+              rooms={stats.pendingCheckIns}
+              color="text-emerald-700"
+              bg="bg-emerald-50"
+            />
+            <ArrivalRow
+              label="Checked In"
+              rooms={stats.todayCheckIns}
+              color="text-gray-600"
+              bg="bg-gray-50"
+            />
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-500">Total Today</span>
+            <span className="text-lg font-bold text-gray-800">{stats.pendingCheckIns + stats.todayCheckIns}</span>
+          </div>
+        </OperaTile>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {revenueCards.map((card, i) => (
-          <div key={card.label} className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-2">
-              <div className={`${card.bg} ${card.color} w-8 h-8 rounded-lg flex items-center justify-center`}>
-                <card.icon className="w-4 h-4" />
-              </div>
-              {i > 0 && <TrendBadge value={card.value} prev={revenueCards[i - 1].value} />}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {revenueCards.map(card => (
+          <div key={card.label} className={`bg-white rounded-xl border ${card.border} p-4 hover:shadow-md transition-shadow`}>
+            <div className={`${card.bg} ${card.color} w-8 h-8 rounded-lg flex items-center justify-center mb-3`}>
+              <card.icon className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold text-gray-900">{formatCurrency(card.value)}</div>
             <div className="text-xs text-gray-500 mt-0.5">{card.label}</div>
@@ -175,20 +198,12 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">Revenue Trend</h2>
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-              {(['7d', '14d'] as RevenueRange[]).map(r => (
-                <button key={r} onClick={() => setRevenueRange(r)}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${revenueRange === r ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  {r === '7d' ? '7 Days' : '14 Days'}
-                </button>
-              ))}
-            </div>
+            <h2 className="text-sm font-semibold text-gray-900">Revenue — Last 7 Days</h2>
           </div>
-          <div className="h-60">
+          <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={visibleRevenue} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <defs>
@@ -209,118 +224,148 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col">
-          <h2 className="text-base font-semibold text-gray-900 mb-2">Occupancy</h2>
-          <OccupancyGauge rate={stats.occupancyRate} occupied={stats.occupiedRooms} total={stats.totalRooms} />
-          <div className="mt-3 space-y-2 flex-1">
-            {roomStatusData.map(item => (
-              <div key={item.key} className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
-                <span className="text-xs text-gray-600 flex-1">{item.name}</span>
-                <span className="text-xs font-semibold text-gray-800">{item.value}</span>
-                <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${stats.totalRooms > 0 ? (item.value / stats.totalRooms) * 100 : 0}%`, background: item.color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="bg-white rounded-xl border border-gray-100 p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">14-Day Availability</h2>
-            <div className="flex items-center gap-3 text-xs text-gray-400">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Available</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-600 inline-block" /> High occ.</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" /> Near full</span>
-            </div>
-          </div>
-          <AvailabilityCalendar days={availabilityData} />
-        </div>
-
         <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Reservation Status</h2>
-          {reservationStatusData.length > 0 ? (
-            <>
-              <div className="h-44">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={reservationStatusData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
-                      {reservationStatusData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }}
-                      formatter={(v) => [`${Number(v)} reservations`, '']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="space-y-2 mt-2">
-                {reservationStatusData.map(entry => (
-                  <div key={entry.name} className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: entry.color }} />
-                    <span className="text-xs text-gray-600 flex-1">{entry.name}</span>
-                    <span className="text-xs font-semibold text-gray-800">{entry.value}</span>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-900">14-Day Forecast</h2>
+          </div>
+          <div className="space-y-1.5">
+            {availabilityData.slice(0, 10).map(day => {
+              const pct = day.total > 0 ? Math.round((day.occupied / day.total) * 100) : 0;
+              const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : pct >= 40 ? 'bg-blue-500' : 'bg-emerald-500';
+              return (
+                <div key={day.date} className="flex items-center gap-2">
+                  <span className={`text-xs w-8 font-medium ${day.isToday ? 'text-blue-600' : 'text-gray-500'}`}>{day.label}</span>
+                  <span className="text-xs text-gray-400 w-5">{day.dayNum}</span>
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
                   </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-44 text-sm text-gray-400">No reservation data</div>
-          )}
+                  <span className="text-xs text-gray-500 w-8 text-right">{day.available} av.</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex items-center gap-3 text-xs text-gray-400">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Low</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Med</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> High</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Full</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
             <Link to="/reservations" className="text-xs font-medium text-blue-600 hover:text-blue-700">View all</Link>
           </div>
           <ActivityFeed items={recentActivity} />
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Check-ins / Check-outs</h2>
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { label: 'Check-ins', completed: stats.todayCheckIns, pending: stats.pendingCheckIns },
-                { label: 'Check-outs', completed: stats.todayCheckOuts, pending: stats.pendingCheckOuts },
-              ]} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f8" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }} />
-                <Bar dataKey="completed" name="Completed" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                <Bar dataKey="pending" name="Pending" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="bg-emerald-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-emerald-700">{stats.todayCheckIns + stats.pendingCheckIns}</p>
-              <p className="text-xs text-emerald-600 mt-0.5">Today Check-ins</p>
-            </div>
-            <div className="bg-amber-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-amber-700">{stats.todayCheckOuts + stats.pendingCheckOuts}</p>
-              <p className="text-xs text-amber-600 mt-0.5">Today Check-outs</p>
-            </div>
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="space-y-2">
+            {[
+              { label: 'New Reservation', to: '/reservations', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700 text-white' },
+              { label: 'Quick Check-in', to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+              { label: 'Housekeeping', to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
+              { label: 'View Rooms', to: '/rooms', icon: BedDouble, color: 'bg-slate-700 hover:bg-slate-800 text-white' },
+              { label: 'Reports', to: '/reports', icon: BarChart3, color: 'bg-gray-600 hover:bg-gray-700 text-white' },
+            ].map(a => (
+              <Link key={a.label} to={a.to}
+                className={`${a.color} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm`}>
+                <a.icon className="w-4 h-4" />
+                {a.label}
+                <ArrowRightCircle className="w-4 h-4 ml-auto opacity-60" />
+              </Link>
+            ))}
           </div>
         </div>
-      </div>
-
-      <div className="sm:hidden grid grid-cols-2 gap-2">
-        {quickActions.map(a => (
-          <Link key={a.label} to={a.to}
-            className={`${a.color} flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors shadow-sm`}>
-            <a.icon className="w-4 h-4" />
-            {a.label}
-          </Link>
-        ))}
       </div>
     </div>
   );
 }
+
+function OperaTile({
+  title, accentColor, icon, children, link,
+}: {
+  title: string;
+  accentColor: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  link: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+      <div className={`${accentColor} px-4 py-2.5 flex items-center justify-between`}>
+        <span className="text-sm font-semibold text-white">{title}</span>
+        <div className="opacity-80">{icon}</div>
+      </div>
+      <div className="p-4 flex-1 flex flex-col">
+        {children}
+      </div>
+      <div className="px-4 pb-3">
+        <Link to={link} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+          View details <ArrowRightCircle className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function RoomStatusRow({ icon, label, value, valueColor }: { icon: React.ReactNode; label: string; value: number; valueColor: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-gray-400 flex-shrink-0">{icon}</span>
+      <span className="text-xs text-gray-600 flex-1 truncate">{label}</span>
+      <span className={`text-sm font-bold ${valueColor}`}>{value}</span>
+    </div>
+  );
+}
+
+function DepartureRow({ label, rooms, adults, children, color, bg }: { label: string; rooms: number; adults: number; children: number; color: string; bg: string }) {
+  return (
+    <div className={`${bg} rounded-lg p-3`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+        <span className={`text-lg font-bold ${color}`}>{rooms}</span>
+      </div>
+      <div className="flex items-center gap-3 text-xs text-gray-500">
+        <span className="flex items-center gap-1"><AdultIcon />{adults} adults</span>
+        <span className="flex items-center gap-1"><Baby className="w-3 h-3" />{children} children</span>
+      </div>
+    </div>
+  );
+}
+
+function ArrivalRow({ label, rooms, color, bg }: { label: string; rooms: number; color: string; bg: string }) {
+  return (
+    <div className={`${bg} rounded-lg p-3`}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+        <span className={`text-lg font-bold ${color}`}>{rooms}</span>
+      </div>
+      <div className="flex items-center gap-1 text-xs text-gray-400">
+        <AdultIcon />{rooms} guests expected
+      </div>
+    </div>
+  );
+}
+
+function GuestCountBox({ icon, label, value, color, bg }: { icon: React.ReactNode; label: string; value: number; color: string; bg: string }) {
+  return (
+    <div className={`${bg} rounded-lg p-2.5 flex flex-col items-center gap-1`}>
+      <span className={`${color}`}>{icon}</span>
+      <span className={`text-xl font-bold ${color}`}>{value}</span>
+      <span className="text-xs text-gray-500">{label}</span>
+    </div>
+  );
+}
+
+function OccupiedIcon() { return <CheckCircle2 className="w-4 h-4 text-blue-500" />; }
+function AvailableIcon() { return <BedDouble className="w-4 h-4 text-emerald-500" />; }
+function DirtyIcon() { return <SprayCan className="w-4 h-4 text-amber-500" />; }
+function CleanIcon() { return <CheckCircle2 className="w-4 h-4 text-emerald-400" />; }
+function WrenchIcon() { return <Wrench className="w-4 h-4 text-red-400" />; }
+function OOSIcon() { return <AlertTriangle className="w-4 h-4 text-gray-400" />; }
+function AdultIcon() { return <Users className="w-3.5 h-3.5" />; }
