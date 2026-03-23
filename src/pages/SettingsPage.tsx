@@ -572,6 +572,8 @@ function UsersPermissionsTab() {
   });
   const [editPassword, setEditPassword] = useState('');
   const [showEditPassword, setShowEditPassword] = useState(false);
+  const [addPassword, setAddPassword] = useState('');
+  const [showAddPassword, setShowAddPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchStaff = useCallback(async () => {
@@ -615,13 +617,32 @@ function UsersPermissionsTab() {
 
   const handleAddStaff = async () => {
     if (!currentHotel) return;
+    if (!addPassword || addPassword.length < 6) {
+      toast('error', 'Password must be at least 6 characters.');
+      return;
+    }
     setSubmitting(true);
-    const { error } = await supabase.from('staff_members').insert({ hotel_id: currentHotel.id, ...formData });
-    if (error) { toast('error', error.message); }
-    else {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-staff-member`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ ...formData, password: addPassword }),
+      }
+    );
+    const result = await res.json();
+    if (!res.ok) {
+      toast('error', result.error || 'Failed to add staff member');
+    } else {
       toast('success', 'Staff member added');
       setShowAddModal(false);
       setFormData({ first_name: '', last_name: '', email: '', phone: '', role: 'receptionist', is_active: true });
+      setAddPassword('');
+      setShowAddPassword(false);
       await fetchStaff();
     }
     setSubmitting(false);
@@ -714,7 +735,7 @@ function UsersPermissionsTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => { setFormData({ first_name: '', last_name: '', email: '', phone: '', role: 'receptionist', is_active: true }); setShowAddModal(true); }} className="btn-primary">
+        <button onClick={() => { setFormData({ first_name: '', last_name: '', email: '', phone: '', role: 'receptionist', is_active: true }); setAddPassword(''); setShowAddPassword(false); setShowAddModal(true); }} className="btn-primary">
           <Plus className="h-4 w-4" /> Add Staff Member
         </button>
       </div>
@@ -761,6 +782,28 @@ function UsersPermissionsTab() {
 
       <Modal open={showAddModal} onClose={() => setShowAddModal(false)} title="Add Staff Member">
         {renderForm()}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Password <span className="text-red-500">*</span></label>
+          <div className="relative">
+            <input
+              type={showAddPassword ? 'text' : 'password'}
+              value={addPassword}
+              onChange={e => setAddPassword(e.target.value)}
+              placeholder="Enter password"
+              className="input-field pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowAddPassword(v => !v)}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+            >
+              {showAddPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {addPassword && addPassword.length < 6 && (
+            <p className="text-xs text-red-500 mt-1">Password must be at least 6 characters.</p>
+          )}
+        </div>
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={() => setShowAddModal(false)} className="btn-secondary">Cancel</button>
           <button onClick={handleAddStaff} disabled={submitting} className="btn-primary">{submitting ? 'Adding...' : 'Add Staff'}</button>
