@@ -1,20 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Settings,
-  Building2,
-  Users,
-  Receipt,
-  Mail,
-  CreditCard,
-  Bell,
-  Globe,
-  DollarSign,
-  Save,
-  Plus,
-  Edit,
-  UserX,
-  Trash2,
-} from 'lucide-react';
+import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, DollarSign, Save, Plus, CreditCard as Edit, UserX, Trash2 } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -56,7 +41,8 @@ const TABS: { key: TabKey; label: string; icon: typeof Building2; adminOnly?: bo
 ];
 
 function HotelSettingsTab() {
-  const { currentHotel, refreshHotels } = useHotel();
+  const { currentHotel, refreshHotels, setCurrentHotel } = useHotel();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -96,10 +82,89 @@ function HotelSettingsTab() {
     }));
   };
 
-  const handleSave = async () => {
-    if (!currentHotel) return;
+  const handleCreate = async () => {
+    if (!user || !form.name.trim()) {
+      toast('error', 'Hotel name is required');
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.from('hotels').update(form).eq('id', currentHotel.id);
+    const { data: newHotel, error: hotelErr } = await supabase
+      .from('hotels')
+      .insert({
+        name: form.name,
+        address: form.address,
+        city: form.city,
+        country: form.country,
+        phone: form.phone,
+        email: form.email,
+        website: form.website,
+        star_rating: form.star_rating,
+        check_in_time: form.check_in_time,
+        check_out_time: form.check_out_time,
+        tax_rate: form.tax_rate,
+        currency: form.currency,
+        timezone: form.timezone,
+        cancellation_policy: form.cancellation_policy,
+      })
+      .select()
+      .single();
+
+    if (hotelErr || !newHotel) {
+      toast('error', hotelErr?.message || 'Failed to create hotel');
+      setSaving(false);
+      return;
+    }
+
+    const { data: existingStaff } = await supabase
+      .from('staff_members')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!existingStaff) {
+      await supabase.from('staff_members').insert({
+        hotel_id: newHotel.id,
+        user_id: user.id,
+        first_name: user.user_metadata?.first_name || 'Admin',
+        last_name: user.user_metadata?.last_name || '',
+        email: user.email || '',
+        role: 'admin',
+        is_active: true,
+      });
+    }
+
+    await refreshHotels();
+    setCurrentHotel(newHotel as any);
+    toast('success', 'Hotel created successfully');
+    setSaving(false);
+  };
+
+  const handleSave = async () => {
+    if (!currentHotel) {
+      await handleCreate();
+      return;
+    }
+    if (!form.name.trim()) {
+      toast('error', 'Hotel name is required');
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from('hotels').update({
+      name: form.name,
+      address: form.address,
+      city: form.city,
+      country: form.country,
+      phone: form.phone,
+      email: form.email,
+      website: form.website,
+      star_rating: form.star_rating,
+      check_in_time: form.check_in_time,
+      check_out_time: form.check_out_time,
+      tax_rate: form.tax_rate,
+      currency: form.currency,
+      timezone: form.timezone,
+      cancellation_policy: form.cancellation_policy,
+    }).eq('id', currentHotel.id);
     if (error) {
       toast('error', error.message || 'Failed to save settings');
     } else {
@@ -111,6 +176,11 @@ function HotelSettingsTab() {
 
   return (
     <div className="space-y-6">
+      {!currentHotel && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          No hotel configured yet. Fill in your hotel details and click "Create Hotel" to get started.
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
@@ -178,7 +248,7 @@ function HotelSettingsTab() {
       <div className="flex justify-end">
         <button onClick={handleSave} disabled={saving} className="btn-primary">
           <Save className="h-4 w-4" />
-          {saving ? 'Saving...' : 'Save Settings'}
+          {saving ? (currentHotel ? 'Saving...' : 'Creating...') : (currentHotel ? 'Save Settings' : 'Create Hotel')}
         </button>
       </div>
     </div>
