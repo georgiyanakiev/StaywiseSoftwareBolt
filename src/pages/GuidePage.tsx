@@ -469,7 +469,6 @@ Checklist — A structured list of tasks within a housekeeping job, used to ensu
 export default function GuidePage() {
   useEffect(() => {
     document.title = 'StayWise Software — User Guide';
-    setTimeout(() => window.print(), 500);
   }, []);
 
   return (
@@ -521,26 +520,39 @@ export default function GuidePage() {
         .section-body { font-size: 13.5px; line-height: 1.75; color: #2d3748; white-space: pre-wrap; }
 
         /* Screen-only print button */
-        .print-btn {
-          position: fixed; top: 20px; right: 20px;
+        .print-bar {
+          position: fixed; top: 0; left: 0; right: 0;
           background: #1e3a5f; color: #fff;
-          border: none; border-radius: 8px;
-          padding: 10px 20px; font-size: 14px;
-          cursor: pointer; font-family: Arial, sans-serif;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          display: flex; align-items: center; justify-content: center; gap: 16px;
+          padding: 12px 24px;
+          font-family: Arial, sans-serif; font-size: 14px;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.25);
           z-index: 9999;
         }
-        .print-btn:hover { background: #16304f; }
+        .print-bar-text { color: #cbd5e0; }
+        .print-btn {
+          background: #fff; color: #1e3a5f;
+          border: none; border-radius: 6px;
+          padding: 8px 20px; font-size: 14px; font-weight: 700;
+          cursor: pointer; font-family: Arial, sans-serif;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .print-btn:hover { background: #edf2f7; }
+        .guide-root { padding-top: 60px; }
 
         @media print {
-          .print-btn { display: none !important; }
+          .print-bar { display: none !important; }
           .section { page-break-before: always; }
           .cover { page-break-after: always; }
           .toc-page { page-break-after: always; }
         }
       `}</style>
 
-      <button className="print-btn" onClick={() => window.print()}>Save as PDF</button>
+      <div className="print-bar">
+        <span className="print-bar-text">To download this guide as a PDF:</span>
+        <button className="print-btn" onClick={() => window.print()}>Open Print / Save as PDF</button>
+        <span className="print-bar-text">then choose <strong style={{color:'#fff'}}>"Save as PDF"</strong> as the destination</span>
+      </div>
 
       {/* COVER */}
       <div className="cover">
