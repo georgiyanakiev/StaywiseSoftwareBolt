@@ -9,6 +9,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { formatCurrency, formatDate } from '../lib/utils';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useDashboardData } from './dashboard/useDashboardData';
@@ -16,6 +17,7 @@ import ActivityFeed from './dashboard/ActivityFeed';
 
 export default function DashboardPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const { loading, error, stats, revenueData, recentActivity, availabilityData, roomStatusData, refresh } = useDashboardData(currentHotel);
 
   if (loading) return <LoadingSpinner size="lg" />;
@@ -23,9 +25,9 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-3">
-        <p className="text-red-600 font-semibold">Error loading dashboard</p>
+        <p className="text-red-600 font-semibold">{t.dashboard.errorLoading}</p>
         <p className="text-gray-500 text-sm">{error}</p>
-        <button onClick={refresh} className="btn-primary">Try Again</button>
+        <button onClick={refresh} className="btn-primary">{t.dashboard.tryAgain}</button>
       </div>
     );
   }
@@ -33,8 +35,8 @@ export default function DashboardPage() {
   if (!currentHotel) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-2">
-        <p className="text-gray-600 text-lg font-medium">No hotel selected</p>
-        <p className="text-gray-400 text-sm">Go to Settings to configure your property</p>
+        <p className="text-gray-600 text-lg font-medium">{t.dashboard.noHotel}</p>
+        <p className="text-gray-400 text-sm">{t.dashboard.noHotelSub}</p>
       </div>
     );
   }
@@ -53,10 +55,10 @@ export default function DashboardPage() {
   const visibleRevenue = revenueData.slice(-7);
 
   const revenueCards = [
-    { label: "Today", value: stats.todayRevenue, icon: DollarSign, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { label: "This Week", value: stats.weekRevenue, icon: TrendingUp, color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    { label: "This Month", value: stats.monthRevenue, icon: BarChart3, color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { label: "Year to Date", value: stats.ytdRevenue, icon: Activity, color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { label: t.dashboard.today, value: stats.todayRevenue, icon: DollarSign, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: t.dashboard.thisWeek, value: stats.weekRevenue, icon: TrendingUp, color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: t.dashboard.thisMonth, value: stats.monthRevenue, icon: BarChart3, color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { label: t.dashboard.yearToDate, value: stats.ytdRevenue, icon: Activity, color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
   ];
 
   return (
@@ -68,10 +70,10 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
-            <LogIn className="w-3.5 h-3.5" /> Quick Check-in
+            <LogIn className="w-3.5 h-3.5" /> {t.dashboard.quickCheckIn}
           </Link>
           <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
-            <CalendarDays className="w-3.5 h-3.5" /> New Booking
+            <CalendarDays className="w-3.5 h-3.5" /> {t.dashboard.newBooking}
           </Link>
           <button onClick={refresh} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Refresh">
             <RefreshCw className="w-4 h-4" />
@@ -81,22 +83,23 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <OperaTile
-          title="Room Status"
+          title={t.dashboard.roomStatus}
           accentColor="bg-slate-700"
           icon={<BedDouble className="w-5 h-5 text-white" />}
           link="/rooms"
+          linkLabel={t.dashboard.viewDetails}
         >
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-1">
-            <RoomStatusRow icon={<OccupiedIcon />} label="Occupied" value={occupiedCount} valueColor="text-blue-700" />
-            <RoomStatusRow icon={<AvailableIcon />} label="Available" value={availableCount} valueColor="text-emerald-700" />
-            <RoomStatusRow icon={<DirtyIcon />} label="Needs Clean" value={dirtyCount} valueColor="text-amber-600" />
-            <RoomStatusRow icon={<CleanIcon />} label="Clean" value={cleanCount} valueColor="text-emerald-600" />
-            <RoomStatusRow icon={<WrenchIcon />} label="Maintenance" value={maintenanceCount} valueColor="text-red-600" />
-            <RoomStatusRow icon={<OOSIcon />} label="Out of Svc" value={outOfServiceCount} valueColor="text-gray-500" />
+            <RoomStatusRow icon={<OccupiedIcon />} label={t.dashboard.occupied} value={occupiedCount} valueColor="text-blue-700" />
+            <RoomStatusRow icon={<AvailableIcon />} label={t.dashboard.available} value={availableCount} valueColor="text-emerald-700" />
+            <RoomStatusRow icon={<DirtyIcon />} label={t.dashboard.needsClean} value={dirtyCount} valueColor="text-amber-600" />
+            <RoomStatusRow icon={<CleanIcon />} label={t.dashboard.clean} value={cleanCount} valueColor="text-emerald-600" />
+            <RoomStatusRow icon={<WrenchIcon />} label={t.dashboard.maintenance} value={maintenanceCount} valueColor="text-red-600" />
+            <RoomStatusRow icon={<OOSIcon />} label={t.dashboard.outOfSvc} value={outOfServiceCount} valueColor="text-gray-500" />
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100">
             <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-              <span>Occupancy</span>
+              <span>{t.dashboard.occupancy}</span>
               <span className="font-semibold text-gray-800">{stats.occupancyRate}%</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -112,75 +115,84 @@ export default function DashboardPage() {
         </OperaTile>
 
         <OperaTile
-          title="Departures"
+          title={t.dashboard.departures}
           accentColor="bg-amber-600"
           icon={<LogOut className="w-5 h-5 text-white" />}
           link="/reservations"
+          linkLabel={t.dashboard.viewDetails}
         >
           <div className="flex flex-col gap-3 mt-2">
             <DepartureRow
-              label="Expected"
+              label={t.dashboard.expected}
               rooms={stats.pendingCheckOuts}
               adults={stats.pendingCheckOuts}
               children={0}
               color="text-amber-700"
               bg="bg-amber-50"
+              adultsLabel={t.dashboard.adults}
+              childrenLabel={t.dashboard.children}
             />
             <DepartureRow
-              label="Checked Out"
+              label={t.dashboard.checkedOut}
               rooms={stats.todayCheckOuts}
               adults={stats.todayCheckOuts}
               children={0}
               color="text-gray-600"
               bg="bg-gray-50"
+              adultsLabel={t.dashboard.adults}
+              childrenLabel={t.dashboard.children}
             />
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-xs text-gray-500">Scheduled</span>
+            <span className="text-xs text-gray-500">{t.dashboard.scheduled}</span>
             <span className="text-lg font-bold text-gray-800">{stats.pendingCheckOuts + stats.todayCheckOuts}</span>
           </div>
         </OperaTile>
 
         <OperaTile
-          title="In House (Occupied)"
+          title={t.dashboard.inHouse}
           accentColor="bg-blue-600"
           icon={<Users className="w-5 h-5 text-white" />}
           link="/reservations"
+          linkLabel={t.dashboard.viewDetails}
         >
           <div className="flex flex-col items-center justify-center flex-1 gap-2 py-3">
             <div className="w-14 h-14 rounded-full bg-blue-50 border-4 border-blue-100 flex items-center justify-center">
               <span className="text-2xl font-bold text-blue-700">{todayOccupied}</span>
             </div>
-            <span className="text-xs text-gray-500 font-medium">Rooms Occupied</span>
+            <span className="text-xs text-gray-500 font-medium">{t.dashboard.roomsOccupied}</span>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <GuestCountBox icon={<AdultIcon />} label="Adults" value={todayOccupied} color="text-blue-700" bg="bg-blue-50" />
-            <GuestCountBox icon={<Baby className="w-5 h-5" />} label="Children" value={0} color="text-purple-700" bg="bg-purple-50" />
+            <GuestCountBox icon={<AdultIcon />} label={t.dashboard.adults} value={todayOccupied} color="text-blue-700" bg="bg-blue-50" />
+            <GuestCountBox icon={<Baby className="w-5 h-5" />} label={t.dashboard.children} value={0} color="text-purple-700" bg="bg-purple-50" />
           </div>
         </OperaTile>
 
         <OperaTile
-          title="Arrivals"
+          title={t.dashboard.arrivals}
           accentColor="bg-emerald-600"
           icon={<LogIn className="w-5 h-5 text-white" />}
           link="/reservations"
+          linkLabel={t.dashboard.viewDetails}
         >
           <div className="flex flex-col gap-3 mt-2">
             <ArrivalRow
-              label="Expected"
+              label={t.dashboard.expected}
               rooms={stats.pendingCheckIns}
               color="text-emerald-700"
               bg="bg-emerald-50"
+              guestsExpected={t.dashboard.guestsExpected}
             />
             <ArrivalRow
-              label="Checked In"
+              label={t.dashboard.checkedIn}
               rooms={stats.todayCheckIns}
               color="text-gray-600"
               bg="bg-gray-50"
+              guestsExpected={t.dashboard.guestsExpected}
             />
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-xs text-gray-500">Total Today</span>
+            <span className="text-xs text-gray-500">{t.dashboard.totalToday}</span>
             <span className="text-lg font-bold text-gray-800">{stats.pendingCheckIns + stats.todayCheckIns}</span>
           </div>
         </OperaTile>
@@ -201,7 +213,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900">Revenue — Last 7 Days</h2>
+            <h2 className="text-sm font-semibold text-gray-900">{t.dashboard.revenueLast7}</h2>
           </div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
@@ -217,7 +229,7 @@ export default function DashboardPage() {
                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false}
                   tickFormatter={(v: number) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
                 <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }}
-                  formatter={(v) => [formatCurrency(Number(v)), 'Revenue']} />
+                  formatter={(v) => [formatCurrency(Number(v)), t.dashboard.revenue]} />
                 <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fill="url(#revGrad)" dot={{ r: 3, fill: '#2563eb' }} activeDot={{ r: 5 }} />
               </AreaChart>
             </ResponsiveContainer>
@@ -226,7 +238,7 @@ export default function DashboardPage() {
 
         <div className="bg-white rounded-xl border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-900">14-Day Forecast</h2>
+            <h2 className="text-sm font-semibold text-gray-900">{t.dashboard.forecast14}</h2>
           </div>
           <div className="space-y-1.5">
             {availabilityData.slice(0, 10).map(day => {
@@ -239,16 +251,16 @@ export default function DashboardPage() {
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-xs text-gray-500 w-8 text-right">{day.available} av.</span>
+                  <span className="text-xs text-gray-500 w-8 text-right">{day.available} {t.dashboard.av}</span>
                 </div>
               );
             })}
           </div>
           <div className="mt-3 flex items-center gap-3 text-xs text-gray-400">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Low</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Med</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> High</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Full</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> {t.dashboard.low}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> {t.dashboard.med}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> {t.dashboard.high}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> {t.dashboard.full}</span>
           </div>
         </div>
       </div>
@@ -256,21 +268,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
-            <Link to="/reservations" className="text-xs font-medium text-blue-600 hover:text-blue-700">View all</Link>
+            <h2 className="text-sm font-semibold text-gray-900">{t.dashboard.recentActivity}</h2>
+            <Link to="/reservations" className="text-xs font-medium text-blue-600 hover:text-blue-700">{t.dashboard.viewAll}</Link>
           </div>
           <ActivityFeed items={recentActivity} />
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">{t.dashboard.quickActions}</h2>
           <div className="space-y-2">
             {[
-              { label: 'New Reservation', to: '/reservations', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700 text-white' },
-              { label: 'Quick Check-in', to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-              { label: 'Housekeeping', to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
-              { label: 'View Rooms', to: '/rooms', icon: BedDouble, color: 'bg-slate-700 hover:bg-slate-800 text-white' },
-              { label: 'Reports', to: '/reports', icon: BarChart3, color: 'bg-gray-600 hover:bg-gray-700 text-white' },
+              { label: t.dashboard.newReservation, to: '/reservations', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700 text-white' },
+              { label: t.dashboard.quickCheckIn, to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+              { label: t.nav.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
+              { label: t.dashboard.viewRooms, to: '/rooms', icon: BedDouble, color: 'bg-slate-700 hover:bg-slate-800 text-white' },
+              { label: t.nav.reports, to: '/reports', icon: BarChart3, color: 'bg-gray-600 hover:bg-gray-700 text-white' },
             ].map(a => (
               <Link key={a.label} to={a.to}
                 className={`${a.color} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm`}>
@@ -287,13 +299,14 @@ export default function DashboardPage() {
 }
 
 function OperaTile({
-  title, accentColor, icon, children, link,
+  title, accentColor, icon, children, link, linkLabel,
 }: {
   title: string;
   accentColor: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   link: string;
+  linkLabel: string;
 }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
@@ -306,7 +319,7 @@ function OperaTile({
       </div>
       <div className="px-4 pb-3">
         <Link to={link} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-          View details <ArrowRightCircle className="w-3.5 h-3.5" />
+          {linkLabel} <ArrowRightCircle className="w-3.5 h-3.5" />
         </Link>
       </div>
     </div>
@@ -323,7 +336,7 @@ function RoomStatusRow({ icon, label, value, valueColor }: { icon: React.ReactNo
   );
 }
 
-function DepartureRow({ label, rooms, adults, children, color, bg }: { label: string; rooms: number; adults: number; children: number; color: string; bg: string }) {
+function DepartureRow({ label, rooms, adults, children, color, bg, adultsLabel, childrenLabel }: { label: string; rooms: number; adults: number; children: number; color: string; bg: string; adultsLabel: string; childrenLabel: string }) {
   return (
     <div className={`${bg} rounded-lg p-3`}>
       <div className="flex items-center justify-between mb-1.5">
@@ -331,14 +344,14 @@ function DepartureRow({ label, rooms, adults, children, color, bg }: { label: st
         <span className={`text-lg font-bold ${color}`}>{rooms}</span>
       </div>
       <div className="flex items-center gap-3 text-xs text-gray-500">
-        <span className="flex items-center gap-1"><AdultIcon />{adults} adults</span>
-        <span className="flex items-center gap-1"><Baby className="w-3 h-3" />{children} children</span>
+        <span className="flex items-center gap-1"><AdultIcon />{adults} {adultsLabel}</span>
+        <span className="flex items-center gap-1"><Baby className="w-3 h-3" />{children} {childrenLabel}</span>
       </div>
     </div>
   );
 }
 
-function ArrivalRow({ label, rooms, color, bg }: { label: string; rooms: number; color: string; bg: string }) {
+function ArrivalRow({ label, rooms, color, bg, guestsExpected }: { label: string; rooms: number; color: string; bg: string; guestsExpected: string }) {
   return (
     <div className={`${bg} rounded-lg p-3`}>
       <div className="flex items-center justify-between mb-1">
@@ -346,7 +359,7 @@ function ArrivalRow({ label, rooms, color, bg }: { label: string; rooms: number;
         <span className={`text-lg font-bold ${color}`}>{rooms}</span>
       </div>
       <div className="flex items-center gap-1 text-xs text-gray-400">
-        <AdultIcon />{rooms} guests expected
+        <AdultIcon />{rooms} {guestsExpected}
       </div>
     </div>
   );

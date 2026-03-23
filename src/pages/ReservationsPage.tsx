@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import {
   formatCurrency,
@@ -14,20 +15,7 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
-import {
-  CalendarCheck,
-  Plus,
-  Search,
-  Filter,
-  MoreVertical,
-  Eye,
-  Edit,
-  XCircle,
-  LogIn,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { CalendarCheck, Plus, Search, Filter, MoreVertical, Eye, CreditCard as Edit, XCircle, LogIn, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -94,6 +82,7 @@ const emptyForm: ReservationForm = {
 export default function ReservationsPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -622,18 +611,18 @@ export default function ReservationsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reservations</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t.reservations.title}</h1>
             <p className="text-sm text-gray-500 mt-1">Manage bookings and guest stays</p>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center h-96 bg-white rounded-xl border border-gray-200">
-          <div className="text-red-600 text-lg font-semibold mb-2">Error loading reservations</div>
+          <div className="text-red-600 text-lg font-semibold mb-2">{t.dashboard.errorLoading}</div>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => fetchReservations()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Try Again
+            {t.dashboard.tryAgain}
           </button>
         </div>
       </div>
@@ -651,7 +640,7 @@ export default function ReservationsPage() {
         </div>
         <button onClick={openCreateModal} className="btn-primary">
           <Plus className="w-4 h-4" />
-          New Reservation
+          {t.reservations.newReservation}
         </button>
       </div>
 
@@ -662,7 +651,7 @@ export default function ReservationsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by guest name or confirmation code..."
+                placeholder={t.reservations.search}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="input-field pl-9 w-full"
@@ -684,7 +673,7 @@ export default function ReservationsPage() {
               className="btn-secondary"
             >
               <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">Filters</span>
+              <span className="hidden sm:inline">{t.common.filter}</span>
             </button>
           </div>
           {showFilters && (
@@ -721,7 +710,7 @@ export default function ReservationsPage() {
                   }}
                   className="btn-secondary text-sm"
                 >
-                  Clear All
+                  {t.common.filter} ✕
                 </button>
               </div>
             </div>
@@ -733,12 +722,12 @@ export default function ReservationsPage() {
         ) : reservations.length === 0 ? (
           <EmptyState
             icon={<CalendarCheck className="w-6 h-6" />}
-            title="No reservations found"
-            description="There are no reservations matching your criteria. Create a new reservation to get started."
+            title={t.reservations.noReservations}
+            description={t.reservations.noReservationsSub}
             action={
               <button onClick={openCreateModal} className="btn-primary">
                 <Plus className="w-4 h-4" />
-                New Reservation
+                {t.reservations.newReservation}
               </button>
             }
           />
@@ -748,15 +737,15 @@ export default function ReservationsPage() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    <th className="table-header">Confirmation</th>
-                    <th className="table-header">Guest</th>
-                    <th className="table-header">Room</th>
-                    <th className="table-header">Check-in</th>
-                    <th className="table-header">Check-out</th>
-                    <th className="table-header">Status</th>
-                    <th className="table-header">Amount</th>
-                    <th className="table-header">Payment</th>
-                    <th className="table-header">Actions</th>
+                    <th className="table-header">{t.reservations.confirmationCode}</th>
+                    <th className="table-header">{t.reservations.guest}</th>
+                    <th className="table-header">{t.reservations.room}</th>
+                    <th className="table-header">{t.reservations.checkIn}</th>
+                    <th className="table-header">{t.reservations.checkOut}</th>
+                    <th className="table-header">{t.reservations.status}</th>
+                    <th className="table-header">{t.reservations.amount}</th>
+                    <th className="table-header">{t.reservations.paymentStatus}</th>
+                    <th className="table-header">{t.reservations.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

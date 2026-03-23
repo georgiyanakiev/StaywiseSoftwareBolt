@@ -15,6 +15,7 @@ import {
   Award,
 } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { getStatusColor, getStatusLabel, formatDate, formatDateTime } from '../lib/utils';
 import type { HousekeepingTask, MaintenanceRequest, Room } from '../types';
@@ -156,6 +157,7 @@ const defaultMaintenanceForm: MaintenanceFormData = {
 export default function HousekeepingPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [viewMode, setViewMode] = useState<ViewMode>('tasks');
   const [tasks, setTasks] = useState<HousekeepingTask[]>([]);
@@ -585,7 +587,7 @@ export default function HousekeepingPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Housekeeping</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t.housekeeping.title}</h1>
           <p className="text-sm text-gray-500 mt-1">Manage cleaning tasks, room statuses, and maintenance</p>
         </div>
         <div className="flex items-center gap-2">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, formatDate } from '../lib/utils';
 import type { Guest, Reservation, GuestCommunication, GuestDocument } from '../types';
@@ -7,31 +8,7 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
-import {
-  Users,
-  Plus,
-  Search,
-  Edit,
-  Eye,
-  Mail,
-  Phone,
-  MapPin,
-  Star,
-  Crown,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  MessageSquare,
-  Send,
-  FileText,
-  Upload,
-  Trash2,
-  Settings,
-  Heart,
-  Calendar,
-  DollarSign,
-  Briefcase,
-} from 'lucide-react';
+import { Users, Plus, Search, CreditCard as Edit, Eye, Mail, Phone, MapPin, Star, Crown, ChevronLeft, ChevronRight, Download, MessageSquare, Send, FileText, Upload, Trash2, Settings, Heart, Calendar, DollarSign, Briefcase } from 'lucide-react';
 
 const VIP_OPTIONS: Guest['vip_status'][] = ['regular', 'silver', 'gold', 'platinum'];
 
@@ -90,6 +67,7 @@ const PAGE_SIZE = 10;
 export default function GuestsPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [guests, setGuests] = useState<Guest[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -469,7 +447,7 @@ export default function GuestsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Guests</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t.guests.title}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {totalCount} {totalCount === 1 ? 'guest' : 'guests'} total
           </p>

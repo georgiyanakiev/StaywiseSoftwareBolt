@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Building2, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
+  const { t, lang, setLang } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +22,7 @@ export default function LoginPage() {
 
     if (isSignUp) {
       if (!firstName.trim() || !lastName.trim()) {
-        setError('Please enter your name');
+        setError(t.login.nameRequired);
         setLoading(false);
         return;
       }
@@ -50,10 +52,10 @@ export default function LoginPage() {
             <span className="text-xl font-semibold text-white">StayWise</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-3 leading-tight">
-            Modern hotel management,<br />simplified.
+            {t.login.tagline}
           </h1>
           <p className="text-gray-300 text-base max-w-md leading-relaxed">
-            Manage reservations, rooms, guests, and operations all in one powerful platform designed for hospitality professionals.
+            {t.login.description}
           </p>
         </div>
       </div>
@@ -67,12 +69,30 @@ export default function LoginPage() {
             <span className="text-xl font-semibold text-gray-900">StayWise</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">
-            {isSignUp ? 'Create your account' : 'Welcome back'}
-          </h2>
-          <p className="text-gray-500 mb-8">
-            {isSignUp ? 'Get started with StayWise Software' : 'Sign in to your StayWise account'}
-          </p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                {isSignUp ? t.login.createAccount : t.login.welcomeBack}
+              </h2>
+              <p className="text-gray-500">
+                {isSignUp ? t.login.signUpSubtitle : t.login.signInSubtitle}
+              </p>
+            </div>
+            <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+              <button
+                onClick={() => setLang('en')}
+                className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'en' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLang('bg')}
+                className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'bg' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >
+                BG
+              </button>
+            </div>
+          </div>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -84,7 +104,7 @@ export default function LoginPage() {
             {isSignUp && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">First name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.firstName}</label>
                   <input
                     type="text"
                     value={firstName}
@@ -95,7 +115,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Last name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.lastName}</label>
                   <input
                     type="text"
                     value={lastName}
@@ -108,7 +128,7 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.email}</label>
               <input
                 type="email"
                 value={email}
@@ -119,14 +139,14 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.password}</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   className="input-field pr-10"
-                  placeholder="Enter your password"
+                  placeholder={t.login.enterPassword}
                   required
                   minLength={6}
                 />
@@ -142,23 +162,23 @@ export default function LoginPage() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isSignUp ? 'Create account' : 'Sign in'}
+              {isSignUp ? t.login.createAccountBtn : t.login.signIn}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-500">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            {isSignUp ? t.login.alreadyHaveAccount : t.login.dontHaveAccount}{' '}
             <button
               onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
               className="font-medium text-brand-600 hover:text-brand-700"
             >
-              {isSignUp ? 'Sign in' : 'Create one'}
+              {isSignUp ? t.login.signIn : t.login.createOne}
             </button>
           </p>
 
           {!isSignUp && (
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</p>
+              <p className="text-sm font-medium text-blue-900 mb-2">{t.login.demoCredentials}</p>
               <div className="space-y-1 text-sm text-blue-700">
                 <p><span className="font-medium">Email:</span> admin@demo.com</p>
                 <p><span className="font-medium">Password:</span> demo123456</p>

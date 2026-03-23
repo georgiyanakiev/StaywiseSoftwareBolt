@@ -5,17 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
-
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/reservations', icon: CalendarCheck, label: 'Reservations' },
-  { to: '/rooms', icon: BedDouble, label: 'Rooms' },
-  { to: '/guests', icon: Users, label: 'Guests' },
-  { to: '/billing', icon: Receipt, label: 'Billing' },
-  { to: '/housekeeping', icon: SprayCan, label: 'Housekeeping' },
-  { to: '/reports', icon: BarChart3, label: 'Reports' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-];
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -27,7 +17,19 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { signOut, staff } = useAuth();
   const { currentHotel } = useHotel();
+  const { t, lang, setLang } = useLanguage();
   const location = useLocation();
+
+  const navItems = [
+    { to: '/', icon: LayoutDashboard, label: t.nav.dashboard },
+    { to: '/reservations', icon: CalendarCheck, label: t.nav.reservations },
+    { to: '/rooms', icon: BedDouble, label: t.nav.rooms },
+    { to: '/guests', icon: Users, label: t.nav.guests },
+    { to: '/billing', icon: Receipt, label: t.nav.billing },
+    { to: '/housekeeping', icon: SprayCan, label: t.nav.housekeeping },
+    { to: '/reports', icon: BarChart3, label: t.nav.reports },
+    { to: '/settings', icon: Settings, label: t.nav.settings },
+  ];
 
   const content = (
     <div className="flex flex-col h-full">
@@ -48,7 +50,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {!collapsed && currentHotel && (
         <div className="px-4 py-3 border-b border-gray-100">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Property</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{t.nav.property}</p>
           <p className="text-sm font-medium text-gray-800 truncate mt-0.5">{currentHotel.name}</p>
         </div>
       )}
@@ -72,6 +74,22 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       </nav>
 
       <div className="px-3 pb-4 border-t border-gray-100 pt-3">
+        {!collapsed && (
+          <div className="flex items-center gap-1 mb-3 px-3">
+            <button
+              onClick={() => setLang('en')}
+              className={`flex-1 py-1 text-xs font-semibold rounded-l-md border transition-colors ${lang === 'en' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLang('bg')}
+              className={`flex-1 py-1 text-xs font-semibold rounded-r-md border-t border-b border-r transition-colors ${lang === 'bg' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+            >
+              BG
+            </button>
+          </div>
+        )}
         {!collapsed && staff && (
           <div className="flex items-center gap-2.5 px-3 py-2 mb-2">
             <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-sm font-medium text-brand-700">
@@ -88,7 +106,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           className={`sidebar-link sidebar-link-inactive w-full text-red-600 hover:text-red-700 hover:bg-red-50 ${collapsed ? 'justify-center px-2' : ''}`}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span>Sign out</span>}
+          {!collapsed && <span>{t.nav.signOut}</span>}
         </button>
       </div>
     </div>

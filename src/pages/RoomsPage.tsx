@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BedDouble, Plus, Search, Filter, Edit, Trash2, Wifi, Tv, Wind, Coffee, Bath, Star, Layers, ChevronDown, LayoutGrid, List } from 'lucide-react';
+import { BedDouble, Plus, Search, Filter, CreditCard as Edit, Trash2, Wifi, Tv, Wind, Coffee, Bath, Star, Layers, ChevronDown, LayoutGrid, List } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { formatCurrency, getStatusColor, getStatusLabel } from '../lib/utils';
 import type { Room, RoomType } from '../types';
@@ -80,6 +81,7 @@ const defaultRoomTypeForm: RoomTypeFormData = {
 export default function RoomsPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<TabView>('rooms');
   const [roomView, setRoomView] = useState<RoomView>('grid');
@@ -382,7 +384,7 @@ export default function RoomsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Room Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t.rooms.title}</h1>
             <p className="text-sm text-gray-500 mt-1">Manage rooms and room types</p>
           </div>
         </div>

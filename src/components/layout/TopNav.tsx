@@ -6,25 +6,27 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { format } from 'date-fns';
-
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/reservations', icon: CalendarCheck, label: 'Reservations' },
-  { to: '/rooms', icon: BedDouble, label: 'Rooms' },
-  { to: '/guests', icon: Users, label: 'Guests' },
-  { to: '/billing', icon: Receipt, label: 'Billing' },
-  { to: '/housekeeping', icon: SprayCan, label: 'Housekeeping' },
-  { to: '/reports', icon: BarChart3, label: 'Reports' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-];
 
 export default function TopNav() {
   const { signOut, staff } = useAuth();
   const { currentHotel } = useHotel();
+  const { t, lang, setLang } = useLanguage();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const navItems = [
+    { to: '/', icon: LayoutDashboard, label: t.nav.dashboard },
+    { to: '/reservations', icon: CalendarCheck, label: t.nav.reservations },
+    { to: '/rooms', icon: BedDouble, label: t.nav.rooms },
+    { to: '/guests', icon: Users, label: t.nav.guests },
+    { to: '/billing', icon: Receipt, label: t.nav.billing },
+    { to: '/housekeeping', icon: SprayCan, label: t.nav.housekeeping },
+    { to: '/reports', icon: BarChart3, label: t.nav.reports },
+    { to: '/settings', icon: Settings, label: t.nav.settings },
+  ];
 
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
@@ -71,6 +73,21 @@ export default function TopNav() {
                 <span>{format(new Date(), 'EEE, MMM d')}</span>
               </div>
 
+              <div className="hidden sm:flex items-center rounded-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setLang('en')}
+                  className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'en' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLang('bg')}
+                  className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'bg' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                >
+                  BG
+                </button>
+              </div>
+
               <button className="relative p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                 <Bell className="w-4.5 h-4.5 w-5 h-5" />
                 <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white" />
@@ -81,7 +98,7 @@ export default function TopNav() {
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-100"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden md:inline">Sign out</span>
+                <span className="hidden md:inline">{t.nav.signOut}</span>
               </button>
 
               {staff && (
@@ -114,14 +131,14 @@ export default function TopNav() {
                           className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           <Settings className="w-4 h-4 text-gray-400" />
-                          Settings
+                          {t.nav.settings}
                         </NavLink>
                         <button
                           onClick={() => { setUserMenuOpen(false); signOut(); }}
                           className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
-                          Sign out
+                          {t.nav.signOut}
                         </button>
                       </div>
                     </>
@@ -156,12 +173,26 @@ export default function TopNav() {
                 {item.label}
               </NavLink>
             ))}
+            <div className="flex items-center gap-1 px-3 pt-2">
+              <button
+                onClick={() => setLang('en')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-l-md border transition-colors ${lang === 'en' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLang('bg')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-r-md border-t border-b border-r transition-colors ${lang === 'bg' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'}`}
+              >
+                BG
+              </button>
+            </div>
             <button
               onClick={() => { setMobileOpen(false); signOut(); }}
               className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
               <LogOut className="w-5 h-5 flex-shrink-0" />
-              Sign out
+              {t.nav.signOut}
             </button>
           </div>
         )}

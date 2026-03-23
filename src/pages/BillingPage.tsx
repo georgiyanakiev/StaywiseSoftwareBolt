@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import {
   formatCurrency,
@@ -75,6 +76,7 @@ const createEmptyForm = (): InvoiceForm => ({
 export default function BillingPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -768,7 +770,7 @@ export default function BillingPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Billing & Invoices</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t.billing.title}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {totalCount} {totalCount === 1 ? 'invoice' : 'invoices'} total
           </p>

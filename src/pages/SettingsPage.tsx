@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, DollarSign, Save, Plus, CreditCard as Edit, UserX, Trash2 } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { StaffMember, RoomType } from '../types';
@@ -29,21 +30,22 @@ const ROLE_BADGE_MAP: Record<string, string> = {
   housekeeping: 'badge badge-success',
 };
 
-const TABS: { key: TabKey; label: string; icon: typeof Building2; adminOnly?: boolean }[] = [
-  { key: 'hotel', label: 'Hotel Settings', icon: Building2 },
-  { key: 'rooms', label: 'Room Types & Rates', icon: DollarSign },
-  { key: 'tax', label: 'Tax Configuration', icon: Receipt },
-  { key: 'users', label: 'Users & Permissions', icon: Users, adminOnly: true },
-  { key: 'emails', label: 'Email Templates', icon: Mail },
-  { key: 'payment', label: 'Payment Settings', icon: CreditCard, adminOnly: true },
-  { key: 'notifications', label: 'Notifications', icon: Bell },
-  { key: 'preferences', label: 'System Preferences', icon: Globe },
+const TABS_STATIC: { key: TabKey; icon: typeof Building2; adminOnly?: boolean }[] = [
+  { key: 'hotel', icon: Building2 },
+  { key: 'rooms', icon: DollarSign },
+  { key: 'tax', icon: Receipt },
+  { key: 'users', icon: Users, adminOnly: true },
+  { key: 'emails', icon: Mail },
+  { key: 'payment', icon: CreditCard, adminOnly: true },
+  { key: 'notifications', icon: Bell },
+  { key: 'preferences', icon: Globe },
 ];
 
 function HotelSettingsTab() {
   const { currentHotel, refreshHotels, setCurrentHotel } = useHotel();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '', address: '', city: '', country: '', phone: '', email: '',
@@ -178,77 +180,77 @@ function HotelSettingsTab() {
     <div className="space-y-6">
       {!currentHotel && (
         <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-          No hotel configured yet. Fill in your hotel details and click "Create Hotel" to get started.
+          {t.settings.noHotelYet}
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.hotelName}</label>
           <input type="text" name="name" value={form.name} onChange={handleChange} className="input-field" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Star Rating</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.starRating}</label>
           <select name="star_rating" value={form.star_rating} onChange={handleChange} className="input-field">
-            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} Star{n > 1 ? 's' : ''}</option>)}
+            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n > 1 ? t.settings.stars : t.settings.star}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.address}</label>
           <input type="text" name="address" value={form.address} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.city}</label>
           <input type="text" name="city" value={form.city} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.country}</label>
           <input type="text" name="country" value={form.country} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.phone}</label>
           <input type="tel" name="phone" value={form.phone} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.email}</label>
           <input type="email" name="email" value={form.email} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.website}</label>
           <input type="url" name="website" value={form.website} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.checkInTime}</label>
           <input type="time" name="check_in_time" value={form.check_in_time} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.checkOutTime}</label>
           <input type="time" name="check_out_time" value={form.check_out_time} onChange={handleChange} className="input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.currency}</label>
           <select name="currency" value={form.currency} onChange={handleChange} className="input-field">
             {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.timezone}</label>
           <select name="timezone" value={form.timezone} onChange={handleChange} className="input-field">
             {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>)}
           </select>
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Cancellation Policy</label>
-        <textarea name="cancellation_policy" value={form.cancellation_policy} onChange={handleChange} rows={3} className="input-field" placeholder="Free cancellation up to 24 hours before check-in..." />
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.cancellationPolicy}</label>
+        <textarea name="cancellation_policy" value={form.cancellation_policy} onChange={handleChange} rows={3} className="input-field" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Policy</label>
-        <textarea name="payment_policy" value={form.payment_policy} onChange={handleChange} rows={3} className="input-field" placeholder="Full payment required at check-in..." />
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t.settings.paymentPolicy}</label>
+        <textarea name="payment_policy" value={form.payment_policy} onChange={handleChange} rows={3} className="input-field" />
       </div>
       <div className="flex justify-end">
         <button onClick={handleSave} disabled={saving} className="btn-primary">
           <Save className="h-4 w-4" />
-          {saving ? (currentHotel ? 'Saving...' : 'Creating...') : (currentHotel ? 'Save Settings' : 'Create Hotel')}
+          {saving ? '...' : (currentHotel ? t.settings.saveChanges : t.settings.createHotel)}
         </button>
       </div>
     </div>
@@ -1175,7 +1177,21 @@ function PreferencesTab() {
 
 export default function SettingsPage() {
   const { staff } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabKey>('hotel');
+
+  const TAB_LABELS: Record<TabKey, string> = {
+    hotel: t.settings.hotelSettings,
+    rooms: t.settings.roomTypes,
+    tax: t.settings.taxConfig,
+    users: t.settings.users,
+    emails: t.settings.emails,
+    payment: t.settings.payment,
+    notifications: t.settings.notifications,
+    preferences: t.settings.preferences,
+  };
+
+  const TABS = TABS_STATIC.map(tab => ({ ...tab, label: TAB_LABELS[tab.key] }));
 
   const visibleTabs = TABS.filter(tab => {
     if (tab.adminOnly && staff?.role !== 'admin') return false;
@@ -1189,8 +1205,8 @@ export default function SettingsPage() {
           <Settings className="h-5 w-5 text-gray-600" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Settings</h1>
-          <p className="text-sm text-gray-500">Manage your hotel configuration and preferences</p>
+          <h1 className="text-xl font-bold text-gray-900">{t.settings.title}</h1>
+          <p className="text-sm text-gray-500">{t.settings.subtitle}</p>
         </div>
       </div>
 

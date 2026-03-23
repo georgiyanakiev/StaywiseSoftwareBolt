@@ -37,6 +37,7 @@ import {
 } from 'recharts';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/utils';
 import type { Reservation, Room, RoomType, Guest } from '../types';
@@ -69,14 +70,14 @@ const TOOLTIP_STYLE = {
   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
 };
 
-const TABS: { key: TabKey; label: string; icon: typeof BarChart3 }[] = [
-  { key: 'occupancy', label: 'Occupancy', icon: Building2 },
-  { key: 'revenue', label: 'Revenue', icon: DollarSign },
-  { key: 'guests', label: 'Guests', icon: Users },
-  { key: 'bookings', label: 'Booking Sources', icon: Globe },
-  { key: 'housekeeping', label: 'Housekeeping', icon: SprayCan },
-  { key: 'financial', label: 'Financial', icon: Receipt },
-  { key: 'cancellations', label: 'Cancellations', icon: XCircle },
+const TABS_KEYS: { key: TabKey; icon: typeof BarChart3 }[] = [
+  { key: 'occupancy', icon: Building2 },
+  { key: 'revenue', icon: DollarSign },
+  { key: 'guests', icon: Users },
+  { key: 'bookings', icon: Globe },
+  { key: 'housekeeping', icon: SprayCan },
+  { key: 'financial', icon: Receipt },
+  { key: 'cancellations', icon: XCircle },
 ];
 
 function seededRandom(seed: number) {
@@ -241,7 +242,18 @@ const VIP_COLORS: Record<string, string> = {
 
 export default function ReportsPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabKey>('occupancy');
+
+  const TABS = [
+    { key: 'occupancy' as TabKey, label: t.reports.occupancy, icon: Building2 },
+    { key: 'revenue' as TabKey, label: t.reports.revenue, icon: DollarSign },
+    { key: 'guests' as TabKey, label: t.reports.guests, icon: Users },
+    { key: 'bookings' as TabKey, label: t.reports.bookingSources, icon: Globe },
+    { key: 'housekeeping' as TabKey, label: t.reports.housekeeping, icon: SprayCan },
+    { key: 'financial' as TabKey, label: t.reports.financial, icon: Receipt },
+    { key: 'cancellations' as TabKey, label: t.reports.cancellations, icon: XCircle },
+  ];
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
@@ -506,7 +518,7 @@ export default function ReportsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t.reports.title}</h1>
             <p className="text-sm text-gray-500 mt-1">
               Performance insights for {currentHotel?.name}
             </p>
