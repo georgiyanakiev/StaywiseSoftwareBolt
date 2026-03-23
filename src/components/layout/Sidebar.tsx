@@ -29,6 +29,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/housekeeping', icon: SprayCan, label: t.nav.housekeeping },
     { to: '/reports', icon: BarChart3, label: t.nav.reports },
     { to: '/booking-com', icon: Link2, label: 'Booking.com' },
+    { to: '/expedia', icon: Link2, label: 'Expedia' },
     { to: '/settings', icon: Settings, label: t.nav.settings },
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];
