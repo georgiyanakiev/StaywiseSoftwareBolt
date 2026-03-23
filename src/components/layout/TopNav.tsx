@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, BedDouble, Users, Receipt,
-  SprayCan, BarChart3, Settings, Building2, Bell, LogOut, Menu, X, ChevronDown,
+  SprayCan, BarChart3, Settings, Building2, Bell, LogOut, Menu, X, ChevronDown, BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
@@ -26,6 +26,7 @@ export default function TopNav() {
     { to: '/housekeeping', icon: SprayCan, label: t.nav.housekeeping },
     { to: '/reports', icon: BarChart3, label: t.nav.reports },
     { to: '/settings', icon: Settings, label: t.nav.settings },
+    { to: '/guide', icon: BookOpen, label: 'Guide' },
   ];
 
   const isActive = (to: string) =>
