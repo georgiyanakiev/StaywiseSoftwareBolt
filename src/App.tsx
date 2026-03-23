@@ -11,6 +11,7 @@ import BillingPage from './pages/BillingPage';
 import HousekeepingPage from './pages/HousekeepingPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
+import GuidePage from './pages/GuidePage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
 function AuthenticatedApp() {
@@ -26,6 +27,7 @@ function AuthenticatedApp() {
           <Route path="/housekeeping" element={<HousekeepingPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/guide" element={<GuidePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
