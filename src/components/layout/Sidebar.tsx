@@ -32,6 +32,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/expedia', icon: Link2, label: 'Expedia' },
     { to: '/cloudbeds', icon: Link2, label: 'Cloudbeds' },
     { to: '/siteminder', icon: Link2, label: 'SiteMinder' },
+    { to: '/lodgify', icon: Link2, label: 'Lodgify' },
     { to: '/settings', icon: Settings, label: t.nav.settings },
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];

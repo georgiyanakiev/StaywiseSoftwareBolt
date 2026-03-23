@@ -16,6 +16,7 @@ import BookingComPage from './pages/BookingComPage';
 import ExpediaPage from './pages/ExpediaPage';
 import CloudbedsPage from './pages/CloudbedsPage';
 import SiteMinderPage from './pages/SiteMinderPage';
+import LodgifyPage from './pages/LodgifyPage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
 function AuthenticatedApp() {
@@ -36,6 +37,7 @@ function AuthenticatedApp() {
           <Route path="/expedia" element={<ExpediaPage />} />
           <Route path="/cloudbeds" element={<CloudbedsPage />} />
           <Route path="/siteminder" element={<SiteMinderPage />} />
+          <Route path="/lodgify" element={<LodgifyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
