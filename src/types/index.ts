@@ -333,3 +333,48 @@ export interface ExpediaRoomMapping {
   updated_at: string;
   room_type?: RoomType;
 }
+
+export interface CloudbedsSettings {
+  id: string;
+  hotel_id: string;
+  property_id: string;
+  client_id: string;
+  client_secret: string;
+  api_key: string;
+  is_enabled: boolean;
+  sync_reservations: boolean;
+  sync_availability: boolean;
+  last_sync_at: string | null;
+  last_sync_status: string;
+  sync_interval_minutes: number;
+  rate_multiplier: number;
+  min_advance_days: number;
+  max_advance_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CloudbedsSyncLog {
+  id: string;
+  hotel_id: string;
+  direction: 'inbound' | 'outbound';
+  status: 'success' | 'partial' | 'failed' | 'running';
+  records_processed: number;
+  error_message: string | null;
+  raw_payload: Record<string, unknown> | null;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface CloudbedsRoomMapping {
+  id: string;
+  hotel_id: string;
+  room_type_id: string;
+  cloudbeds_room_type_id: string;
+  cloudbeds_rate_plan_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  room_type?: RoomType;
+}

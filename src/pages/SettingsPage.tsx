@@ -12,8 +12,9 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
 import BookingComTab from './settings/BookingComTab';
 import ExpediaTab from './settings/ExpediaTab';
+import CloudbedsTab from './settings/CloudbedsTab';
 
-type TabKey = 'hotel' | 'rooms' | 'tax' | 'users' | 'emails' | 'payment' | 'notifications' | 'preferences' | 'bookingcom' | 'expedia';
+type TabKey = 'hotel' | 'rooms' | 'tax' | 'users' | 'emails' | 'payment' | 'notifications' | 'preferences' | 'bookingcom' | 'expedia' | 'cloudbeds';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR'];
 
@@ -43,6 +44,7 @@ const TABS_STATIC: { key: TabKey; icon: typeof Building2; adminOnly?: boolean }[
   { key: 'preferences', icon: Globe },
   { key: 'bookingcom', icon: Link2, adminOnly: true },
   { key: 'expedia', icon: Link2, adminOnly: true },
+  { key: 'cloudbeds', icon: Link2, adminOnly: true },
 ];
 
 function HotelSettingsTab() {
@@ -1195,6 +1197,7 @@ export default function SettingsPage() {
     preferences: t.settings.preferences,
     bookingcom: 'Booking.com',
     expedia: 'Expedia',
+    cloudbeds: 'Cloudbeds',
   };
 
   const TABS = TABS_STATIC.map(tab => ({ ...tab, label: TAB_LABELS[tab.key] }));
@@ -1246,6 +1249,7 @@ export default function SettingsPage() {
         {activeTab === 'preferences' && <PreferencesTab />}
         {activeTab === 'bookingcom' && <BookingComTab />}
         {activeTab === 'expedia' && <ExpediaTab />}
+        {activeTab === 'cloudbeds' && <CloudbedsTab />}
       </div>
     </div>
   );
