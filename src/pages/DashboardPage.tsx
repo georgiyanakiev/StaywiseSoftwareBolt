@@ -3,7 +3,7 @@ import {
   BedDouble, LogIn, LogOut, Users, SprayCan, RefreshCw,
   CalendarDays, DollarSign, TrendingUp, BarChart3, Activity,
   CheckCircle2, AlertTriangle, Wrench, Baby,
-  ArrowRightCircle, UserCheck,
+  ArrowRightCircle, UserCheck, ClipboardList,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -280,6 +280,7 @@ export default function DashboardPage() {
             {[
               { label: t.dashboard.newReservation, to: '/reservations', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700 text-white' },
               { label: t.dashboard.quickCheckIn, to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+              { label: t.nav.frontDesk, to: '/front-desk', icon: ClipboardList, color: 'bg-cyan-600 hover:bg-cyan-700 text-white' },
               { label: t.nav.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
               { label: t.dashboard.viewRooms, to: '/rooms', icon: BedDouble, color: 'bg-slate-700 hover:bg-slate-800 text-white' },
               { label: t.nav.reports, to: '/reports', icon: BarChart3, color: 'bg-gray-600 hover:bg-gray-700 text-white' },

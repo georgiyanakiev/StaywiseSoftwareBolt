@@ -14,6 +14,7 @@ const translations = {
       reports: 'Reports',
       settings: 'Settings',
       property: 'Property',
+      frontDesk: 'Front Desk',
       signOut: 'Sign out',
     },
     login: {
@@ -379,6 +380,7 @@ const translations = {
       reports: 'Отчети',
       settings: 'Настройки',
       property: 'Обект',
+      frontDesk: 'Рецепция',
       signOut: 'Изход',
     },
     login: {
