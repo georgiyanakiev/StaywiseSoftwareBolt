@@ -9,6 +9,7 @@ import RoomsPage from './pages/RoomsPage';
 import GuestsPage from './pages/GuestsPage';
 import BillingPage from './pages/BillingPage';
 import HousekeepingPage from './pages/HousekeepingPage';
+import MaintenancePage from './pages/maintenance/MaintenancePage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import GuidePage from './pages/GuidePage';
@@ -32,6 +33,7 @@ function AuthenticatedApp() {
           <Route path="/guests" element={<GuestsPage />} />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/housekeeping" element={<HousekeepingPage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/guide" element={<GuidePage />} />

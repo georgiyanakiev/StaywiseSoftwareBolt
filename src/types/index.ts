@@ -204,15 +204,33 @@ export interface HousekeepingTask {
   room?: Room;
 }
 
+export type MaintenanceCategory =
+  | 'plumbing'
+  | 'electrical'
+  | 'hvac'
+  | 'furniture'
+  | 'appliance'
+  | 'structural'
+  | 'it'
+  | 'other';
+
 export interface MaintenanceRequest {
   id: string;
   hotel_id: string;
   room_id: string;
   description: string;
+  category: MaintenanceCategory;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'reported' | 'in_progress' | 'completed';
   assigned_to: string;
+  reported_by: string;
   cost: number;
+  estimated_cost: number;
+  actual_cost: number;
+  vendor: string;
+  scheduled_for: string | null;
+  resolution_notes: string;
+  images: string[];
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
