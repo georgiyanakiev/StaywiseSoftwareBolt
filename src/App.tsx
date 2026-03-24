@@ -17,6 +17,7 @@ import ExpediaPage from './pages/ExpediaPage';
 import CloudbedsPage from './pages/CloudbedsPage';
 import SiteMinderPage from './pages/SiteMinderPage';
 import LodgifyPage from './pages/LodgifyPage';
+import FrontDeskPage from './pages/FrontDeskPage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
 function AuthenticatedApp() {
@@ -25,6 +26,7 @@ function AuthenticatedApp() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/front-desk" element={<FrontDeskPage />} />
           <Route path="/reservations" element={<ReservationsPage />} />
           <Route path="/rooms" element={<RoomsPage />} />
           <Route path="/guests" element={<GuestsPage />} />
