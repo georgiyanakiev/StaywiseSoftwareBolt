@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext';
 import { HotelProvider } from './contexts/HotelContext';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './pages/LoginPage';
+import PendingApprovalPage from './pages/PendingApprovalPage';
 import DashboardPage from './pages/DashboardPage';
 import ReservationsPage from './pages/ReservationsPage';
 import RoomsPage from './pages/RoomsPage';
@@ -50,7 +51,7 @@ function AuthenticatedApp() {
 }
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, pendingApproval } = useAuth();
 
   if (loading) {
     return (
@@ -61,6 +62,7 @@ export default function App() {
   }
 
   if (!user) return <LoginPage />;
+  if (pendingApproval) return <PendingApprovalPage />;
 
   return <AuthenticatedApp />;
 }

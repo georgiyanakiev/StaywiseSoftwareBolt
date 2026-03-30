@@ -247,6 +247,7 @@ export interface StaffMember {
   phone: string;
   role: 'admin' | 'manager' | 'receptionist' | 'housekeeping';
   is_active: boolean;
+  approval_status: 'pending' | 'approved' | 'rejected';
   avatar_url: string;
   created_at: string;
   updated_at: string;

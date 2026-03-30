@@ -9,6 +9,7 @@ interface AuthState {
   session: Session | null;
   staff: StaffMember | null;
   loading: boolean;
+  pendingApproval: boolean;
 }
 
 interface AuthContextValue extends AuthState {
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session: null,
     staff: null,
     loading: true,
+    pendingApproval: false,
   });
 
   const fetchStaff = useCallback(async (userId: string) => {
@@ -33,11 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('staff_members')
         .select('*')
         .eq('user_id', userId)
-        .eq('is_active', true)
         .maybeSingle();
       return data as StaffMember | null;
-    } catch (error) {
-      console.error('Error fetching staff:', error);
+    } catch {
       return null;
     }
   }, []);
@@ -46,12 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         fetchStaff(session.user.id).then(staff => {
-          setState({ user: session.user, session, staff, loading: false });
+          const isPending = staff?.approval_status === 'pending';
+          const activeStaff = staff?.is_active ? staff : null;
+          setState({ user: session.user, session, staff: isPending ? null : activeStaff, loading: false, pendingApproval: isPending });
         }).catch(() => {
-          setState({ user: session.user, session, staff: null, loading: false });
+          setState({ user: session.user, session, staff: null, loading: false, pendingApproval: false });
         });
       } else {
-        setState({ user: null, session: null, staff: null, loading: false });
+        setState({ user: null, session: null, staff: null, loading: false, pendingApproval: false });
       }
     });
 
@@ -59,10 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && session?.user) {
         (async () => {
           const staff = await fetchStaff(session.user.id);
-          setState({ user: session.user, session, staff, loading: false });
+          const isPending = staff?.approval_status === 'pending';
+          const activeStaff = staff?.is_active ? staff : null;
+          setState({ user: session.user, session, staff: isPending ? null : activeStaff, loading: false, pendingApproval: isPending });
         })();
       } else if (event === 'SIGNED_OUT') {
-        setState({ user: null, session: null, staff: null, loading: false });
+        setState({ user: null, session: null, staff: null, loading: false, pendingApproval: false });
       }
     });
 
@@ -109,14 +113,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         seedHotelData(hotelId).catch(() => {});
       }
 
-      await supabase.from('staff_members').insert({
-        hotel_id: hotelId,
-        user_id: data.user.id,
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        role: 'admin',
-      });
+      const { data: staffData } = await supabase
+        .from('staff_members')
+        .insert({
+          hotel_id: hotelId,
+          user_id: data.user.id,
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          role: 'receptionist',
+          is_active: false,
+          approval_status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (staffData) {
+        try {
+          await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-approval-request`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                staffMemberId: staffData.id,
+                firstName,
+                lastName,
+                email,
+              }),
+            }
+          );
+        } catch {
+          // notification failure is non-blocking
+        }
+      }
     }
 
     return { error: null };
