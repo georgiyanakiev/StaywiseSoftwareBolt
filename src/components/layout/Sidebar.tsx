@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, BedDouble, Users, Receipt,
   SprayCan, BarChart3, Settings, Building2, ChevronLeft, ChevronRight, LogOut, X, BookOpen, Link2, ClipboardList, Wrench,
+  GitBranch, Globe, CreditCard, FileText,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
@@ -14,13 +15,20 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
+interface NavItem {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  section?: string;
+}
+
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { signOut, staff } = useAuth();
   const { currentHotel } = useHotel();
   const { t, lang, setLang } = useLanguage();
   const location = useLocation();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { to: '/', icon: LayoutDashboard, label: t.nav.dashboard },
     { to: '/front-desk', icon: ClipboardList, label: 'Front Desk' },
     { to: '/reservations', icon: CalendarCheck, label: t.nav.reservations },
@@ -30,14 +38,52 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/housekeeping', icon: SprayCan, label: t.nav.housekeeping },
     { to: '/maintenance', icon: Wrench, label: 'Maintenance' },
     { to: '/reports', icon: BarChart3, label: t.nav.reports },
+  ];
+
+  const operationsItems: NavItem[] = [
+    { to: '/channel-manager', icon: GitBranch, label: 'Channel Manager' },
+    { to: '/booking-engine', icon: Globe, label: 'Booking Engine' },
+    { to: '/payment-automation', icon: CreditCard, label: 'Payments' },
+    { to: '/invoicing', icon: FileText, label: 'Invoicing' },
+  ];
+
+  const integrationItems: NavItem[] = [
     { to: '/booking-com', icon: Link2, label: 'Booking.com' },
     { to: '/expedia', icon: Link2, label: 'Expedia' },
     { to: '/cloudbeds', icon: Link2, label: 'Cloudbeds' },
     { to: '/siteminder', icon: Link2, label: 'SiteMinder' },
     { to: '/lodgify', icon: Link2, label: 'Lodgify' },
+  ];
+
+  const bottomItems: NavItem[] = [
     { to: '/settings', icon: Settings, label: t.nav.settings },
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];
+
+  const isActive = (to: string) =>
+    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
+
+  const renderNavItem = (item: NavItem) => (
+    <NavLink
+      key={item.to}
+      to={item.to}
+      onClick={onMobileClose}
+      className={() =>
+        `sidebar-link ${isActive(item.to) ? 'sidebar-link-active' : 'sidebar-link-inactive'} ${collapsed ? 'justify-center px-2' : ''}`
+      }
+      title={collapsed ? item.label : undefined}
+    >
+      <item.icon className="w-5 h-5 flex-shrink-0" />
+      {!collapsed && <span>{item.label}</span>}
+    </NavLink>
+  );
+
+  const renderSectionLabel = (label: string) =>
+    !collapsed ? (
+      <p className="px-3 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
+    ) : (
+      <div className="my-2 border-t border-gray-100" />
+    );
 
   const content = (
     <div className="flex flex-col h-full">
@@ -63,22 +109,24 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         </div>
       )}
 
-      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-        {navItems.map(item => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            onClick={onMobileClose}
-            className={() => {
-              const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
-              return `sidebar-link ${isActive ? 'sidebar-link-active' : 'sidebar-link-inactive'} ${collapsed ? 'justify-center px-2' : ''}`;
-            }}
-            title={collapsed ? item.label : undefined}
-          >
-            <item.icon className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
-          </NavLink>
-        ))}
+      <nav className="flex-1 px-3 py-3 overflow-y-auto">
+        <div className="space-y-0.5">
+          {navItems.map(renderNavItem)}
+        </div>
+
+        {renderSectionLabel('Operations')}
+        <div className="space-y-0.5">
+          {operationsItems.map(renderNavItem)}
+        </div>
+
+        {renderSectionLabel('Integrations')}
+        <div className="space-y-0.5">
+          {integrationItems.map(renderNavItem)}
+        </div>
+
+        <div className="mt-3 space-y-0.5">
+          {bottomItems.map(renderNavItem)}
+        </div>
       </nav>
 
       <div className="px-3 pb-4 border-t border-gray-100 pt-3">

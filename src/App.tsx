@@ -21,6 +21,11 @@ import SiteMinderPage from './pages/SiteMinderPage';
 import LodgifyPage from './pages/LodgifyPage';
 import FrontDeskPage from './pages/FrontDeskPage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
+import ChannelManagerPage from './pages/channel-manager/ChannelManagerPage';
+import BookingEngineAdminPage from './pages/booking-engine/BookingEngineAdminPage';
+import BookingWidgetPage from './pages/booking-engine/BookingWidgetPage';
+import PaymentAutomationPage from './pages/payments/PaymentAutomationPage';
+import InvoicingPage from './pages/invoicing/InvoicingPage';
 
 function AuthenticatedApp() {
   return (
@@ -43,8 +48,13 @@ function AuthenticatedApp() {
           <Route path="/cloudbeds" element={<CloudbedsPage />} />
           <Route path="/siteminder" element={<SiteMinderPage />} />
           <Route path="/lodgify" element={<LodgifyPage />} />
+          <Route path="/channel-manager" element={<ChannelManagerPage />} />
+          <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
+          <Route path="/payment-automation" element={<PaymentAutomationPage />} />
+          <Route path="/invoicing" element={<InvoicingPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
+        <Route path="/booking-engine/widget" element={<BookingWidgetPage />} />
       </Routes>
     </HotelProvider>
   );
