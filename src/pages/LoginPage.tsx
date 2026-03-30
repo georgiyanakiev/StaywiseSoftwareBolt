@@ -1,46 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Building2, Eye, EyeOff, Loader2, ShieldCheck, Users, Headphones, Sparkles } from 'lucide-react';
-
-const TEST_ACCOUNTS = [
-  {
-    role: 'Admin',
-    email: 'admin@demo.com',
-    description: 'Full system access',
-    icon: ShieldCheck,
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    border: 'border-blue-100',
-  },
-  {
-    role: 'Manager',
-    email: 'manager@demo.com',
-    description: 'Operations & reporting',
-    icon: Users,
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-100',
-  },
-  {
-    role: 'Receptionist',
-    email: 'receptionist@demo.com',
-    description: 'Front desk & bookings',
-    icon: Headphones,
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
-    border: 'border-amber-100',
-  },
-  {
-    role: 'Housekeeping',
-    email: 'housekeeping@demo.com',
-    description: 'Cleaning & task views',
-    icon: Sparkles,
-    color: 'text-rose-600',
-    bg: 'bg-rose-50',
-    border: 'border-rose-100',
-  },
-];
+import { Building2, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
@@ -214,32 +175,6 @@ export default function LoginPage() {
               {isSignUp ? t.login.signIn : t.login.createOne}
             </button>
           </p>
-
-          {!isSignUp && (
-            <div className="mt-6">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Test Accounts &mdash; password: <span className="font-bold text-gray-500">demo123456</span>
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {TEST_ACCOUNTS.map(({ role, email, description, icon: Icon, color, bg, border }) => (
-                  <button
-                    key={email}
-                    type="button"
-                    onClick={() => { setEmail(email); setPassword('demo123456'); }}
-                    className={`flex items-start gap-2.5 p-3 rounded-lg border ${bg} ${border} hover:shadow-sm transition-all text-left group`}
-                  >
-                    <div className={`mt-0.5 shrink-0 ${color}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className={`text-xs font-semibold ${color}`}>{role}</p>
-                      <p className="text-xs text-gray-500 truncate leading-tight">{description}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
