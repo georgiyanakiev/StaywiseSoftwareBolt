@@ -476,7 +476,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
         </div>
 
         {/* Desktop primary nav */}
-        <nav className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0 overflow-x-hidden">
+        <nav className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0">
           {PRIMARY_NAV.map(item => {
             const active = isActive(item.to);
             return (
