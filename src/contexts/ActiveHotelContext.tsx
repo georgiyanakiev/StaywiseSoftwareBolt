@@ -1,8 +1,31 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase, setActiveTenant } from '../lib/supabase';
 
 const SESSION_KEY = 'sw_active_hotel';
 
+export interface ActiveHotel {
+  tenant_id: string;
+  hotel_name: string;
+  subdomain: string;
+  logo_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  plan: string;
+  user_role: string;
+}
+
+export interface ActiveHotelContextType {
+  activeHotel: ActiveHotel | null;
+  setActiveHotel: (hotel: ActiveHotel | null) => void;
+  clearActiveHotel: () => void;
+  entering: boolean;
+}
+
+/**
+ * Legacy shape kept for backward-compat with LobbyPage.enter() calls and
+ * session-keyed consumers (TopNav, RequireHotel, ForbiddenPage).
+ */
 export interface ActiveHotelSession {
   tenantId: string;
   hotelId: string;
@@ -16,7 +39,7 @@ export interface ActiveHotelSession {
   plan: 'starter' | 'pro' | 'enterprise';
 }
 
-interface ActiveHotelContextValue {
+interface ActiveHotelContextValue extends ActiveHotelContextType {
   session: ActiveHotelSession | null;
   entering: boolean;
   enter: (payload: ActiveHotelSession) => Promise<void>;
@@ -24,6 +47,34 @@ interface ActiveHotelContextValue {
 }
 
 const ActiveHotelContext = createContext<ActiveHotelContextValue | null>(null);
+
+function toActiveHotel(s: ActiveHotelSession): ActiveHotel {
+  return {
+    tenant_id: s.tenantId,
+    hotel_name: s.hotelName,
+    subdomain: s.subdomain,
+    logo_url: s.hotelLogo,
+    primary_color: s.primaryColor,
+    secondary_color: s.secondaryColor,
+    plan: s.plan,
+    user_role: s.role,
+  };
+}
+
+function toSession(h: ActiveHotel): ActiveHotelSession {
+  return {
+    tenantId: h.tenant_id,
+    hotelId: '',
+    role: h.user_role,
+    hotelName: h.hotel_name,
+    hotelLogo: h.logo_url,
+    primaryColor: h.primary_color,
+    secondaryColor: h.secondary_color,
+    tenantName: h.hotel_name,
+    subdomain: h.subdomain,
+    plan: (h.plan as 'starter' | 'pro' | 'enterprise') ?? 'starter',
+  };
+}
 
 function loadSession(): ActiveHotelSession | null {
   try {
@@ -38,7 +89,7 @@ function saveSession(s: ActiveHotelSession) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
 }
 
-function clearSession() {
+function clearStoredSession() {
   sessionStorage.removeItem(SESSION_KEY);
 }
 
@@ -63,6 +114,7 @@ function applyBrandColor(primaryColor: string) {
 }
 
 export function ActiveHotelProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [session, setSession] = useState<ActiveHotelSession | null>(loadSession);
   const [entering, setEntering] = useState(false);
 
@@ -88,13 +140,37 @@ export function ActiveHotelProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const leave = useCallback(() => {
-    clearSession();
+    clearStoredSession();
     setSession(null);
     setActiveTenant(null);
   }, []);
 
+  const setActiveHotel = useCallback(async (hotel: ActiveHotel | null) => {
+    if (!hotel) {
+      leave();
+      return;
+    }
+    const payload = toSession(hotel);
+    await enter(payload);
+  }, [enter, leave]);
+
+  const clearActiveHotel = useCallback(() => {
+    leave();
+    navigate('/lobby');
+  }, [leave, navigate]);
+
+  const activeHotel = session ? toActiveHotel(session) : null;
+
   return (
-    <ActiveHotelContext.Provider value={{ session, entering, enter, leave }}>
+    <ActiveHotelContext.Provider value={{
+      activeHotel,
+      setActiveHotel,
+      clearActiveHotel,
+      session,
+      entering,
+      enter,
+      leave,
+    }}>
       {children}
     </ActiveHotelContext.Provider>
   );
