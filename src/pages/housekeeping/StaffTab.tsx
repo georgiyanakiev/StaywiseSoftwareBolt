@@ -21,7 +21,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function StaffTab({ staff, tasks, hotelId, tenantId, onChanged }: Props) {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [editTarget, setEditTarget] = useState<HKStaff | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export default function StaffTab({ staff, tasks, hotelId, tenantId, onChanged }:
     await supabase.from('housekeeping_staff').update({ active: !s.active }).eq('id', s.id);
     setTogglingId(null);
     onChanged();
-    showToast(`${s.name} ${!s.active ? 'activated' : 'deactivated'}`, 'success');
+    toast('success', `${s.name} ${!s.active ? 'activated' : 'deactivated'}`);
   };
 
   const active = staff.filter(s => s.active);
@@ -147,7 +147,7 @@ export default function StaffTab({ staff, tasks, hotelId, tenantId, onChanged }:
             setShowAdd(false);
             setEditTarget(null);
             onChanged();
-            showToast(editTarget ? 'Staff updated' : 'Staff added', 'success');
+            toast('success', editTarget ? 'Staff updated' : 'Staff added');
           }}
         />
       )}
@@ -186,7 +186,7 @@ function StaffModal({ existing, hotelId, tenantId, onClose, onSaved }: {
   };
 
   return (
-    <Modal isOpen onClose={onClose} title={existing ? 'Edit Staff Member' : 'Add Staff Member'} size="sm">
+    <Modal open onClose={onClose} title={existing ? 'Edit Staff Member' : 'Add Staff Member'} size="sm">
       <div className="space-y-4 p-1">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>

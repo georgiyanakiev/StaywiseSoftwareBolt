@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function MaintenanceTab({ issues, rooms, hotelId, tenantId, onChanged }: Props) {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [showResolved, setShowResolved] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export default function MaintenanceTab({ issues, rooms, hotelId, tenantId, onCha
     }).eq('id', id);
     setResolvingId(null);
     onChanged();
-    showToast('Issue resolved', 'success');
+    toast('success', 'Issue resolved');
   };
 
   return (
@@ -103,7 +103,7 @@ export default function MaintenanceTab({ issues, rooms, hotelId, tenantId, onCha
           hotelId={hotelId}
           tenantId={tenantId}
           onClose={() => setShowModal(false)}
-          onSaved={() => { setShowModal(false); onChanged(); showToast('Issue reported', 'success'); }}
+          onSaved={() => { setShowModal(false); onChanged(); toast('success', 'Issue reported'); }}
         />
       )}
     </div>
@@ -234,7 +234,7 @@ function ReportIssueModal({ rooms, hotelId, tenantId, onClose, onSaved }: {
   };
 
   return (
-    <Modal isOpen onClose={onClose} title="Report Maintenance Issue" size="md">
+    <Modal open onClose={onClose} title="Report Maintenance Issue" size="md">
       <div className="space-y-4 p-1">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Title</label>

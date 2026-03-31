@@ -18,7 +18,7 @@ interface Props {
 }
 
 export default function KanbanBoard({ tasks, staff, hotelId, tenantId, onTasksChanged }: Props) {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [selectedTask, setSelectedTask] = useState<HKTask | null>(null);
   const [filterStaff, setFilterStaff] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -117,9 +117,9 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, onTasksCh
 
     setGenerating(false);
     onTasksChanged();
-    showToast(
-      created > 0 ? `${created} task${created > 1 ? 's' : ''} generated for today` : 'No new tasks — all rooms already have tasks',
-      created > 0 ? 'success' : 'info'
+    toast(
+      created > 0 ? 'success' : 'info',
+      created > 0 ? `${created} task${created > 1 ? 's' : ''} generated for today` : 'No new tasks — all rooms already have tasks'
     );
   };
 

@@ -31,6 +31,8 @@ import BookingEngineAdminPage from './pages/booking-engine/BookingEngineAdminPag
 import BookingWidgetPage from './pages/booking-engine/BookingWidgetPage';
 import PaymentAutomationPage from './pages/payments/PaymentAutomationPage';
 import InvoicingPage from './pages/invoicing/InvoicingPage';
+import GuestPortalPage from './pages/guest-portal/GuestPortalPage';
+import GuestPortal from './pages/guest-portal/GuestPortal';
 
 function AuthenticatedApp() {
   return (
@@ -38,6 +40,7 @@ function AuthenticatedApp() {
       <Routes>
         <Route path="/lobby" element={<LobbyPage />} />
         <Route path="/booking-engine/widget" element={<BookingWidgetPage />} />
+        <Route path="/portal" element={<GuestPortal />} />
         <Route element={<AppLayout />}>
           <Route element={<RequireHotel />}>
             <Route path="/" element={<DashboardPage />} />
@@ -55,6 +58,7 @@ function AuthenticatedApp() {
             <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
             <Route path="/payment-automation" element={<PaymentAutomationPage />} />
             <Route path="/invoicing" element={<InvoicingPage />} />
+            <Route path="/guest-portal" element={<GuestPortalPage />} />
             <Route path="/booking-com" element={<BookingComPage />} />
             <Route path="/expedia" element={<ExpediaPage />} />
             <Route path="/cloudbeds" element={<CloudbedsPage />} />
