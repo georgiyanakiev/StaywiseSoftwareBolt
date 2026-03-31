@@ -35,6 +35,8 @@ import InvoiceSettingsPage from './pages/invoicing/InvoiceSettingsPage';
 import StaffSettingsPage from './pages/settings/staff/StaffSettingsPage';
 import GuestPortalPage from './pages/guest-portal/GuestPortalPage';
 import GuestPortal from './pages/guest-portal/GuestPortal';
+import OwnerPortalPage from './pages/owner-portal/OwnerPortalPage';
+import MyOwnerPortal from './pages/owner-portal/MyOwnerPortal';
 
 function AuthenticatedApp() {
   return (
@@ -63,6 +65,8 @@ function AuthenticatedApp() {
             <Route path="/invoicing" element={<InvoicingPage />} />
             <Route path="/invoicing/settings" element={<InvoiceSettingsPage />} />
             <Route path="/guest-portal" element={<GuestPortalPage />} />
+            <Route path="/owner-portal" element={<OwnerPortalPage />} />
+            <Route path="/owner-portal/my-portal" element={<MyOwnerPortal />} />
             <Route path="/booking-com" element={<BookingComPage />} />
             <Route path="/expedia" element={<ExpediaPage />} />
             <Route path="/cloudbeds" element={<CloudbedsPage />} />
