@@ -122,7 +122,7 @@ export function ActiveHotelProvider({ children }: { children: ReactNode }) {
     if (session) {
       setActiveTenant(session.tenantId);
       applyBrandColor(session.primaryColor);
-      supabase.rpc('set_tenant_context', { p_tenant_id: session.tenantId }).catch(() => {});
+      void supabase.rpc('set_tenant_context', { p_tenant_id: session.tenantId });
     }
   }, []);
 
