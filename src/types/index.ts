@@ -241,11 +241,16 @@ export interface StaffMember {
   id: string;
   hotel_id: string;
   user_id: string | null;
+  tenant_id: string | null;
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
-  role: 'admin' | 'manager' | 'receptionist' | 'housekeeping';
+  role: 'owner' | 'manager' | 'front_desk' | 'housekeeping' | 'maintenance' | 'accountant' | 'readonly';
+  department: string;
+  pin_code: string | null;
+  permissions: Record<string, unknown>;
+  last_login: string | null;
   is_active: boolean;
   approval_status: 'pending' | 'approved' | 'rejected';
   avatar_url: string;

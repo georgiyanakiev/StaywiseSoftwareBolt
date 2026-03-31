@@ -2,12 +2,13 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, BedDouble, Users, Receipt,
   SprayCan, BarChart3, Settings, Building2, ChevronLeft, ChevronRight, LogOut, X, BookOpen, Link2, ClipboardList, Wrench,
-  GitBranch, Globe, CreditCard, FileText, QrCode,
+  GitBranch, Globe, CreditCard, FileText, QrCode, UserCog,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTenant } from '../../contexts/TenantContext';
+import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -20,11 +21,10 @@ interface NavItem {
   to: string;
   icon: React.ElementType;
   label: string;
-  section?: string;
 }
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
-  const { signOut, staff } = useAuth();
+  const { signOut, staff, canAccess } = useAuth();
   const { currentHotel } = useHotel();
   const { t, lang, setLang } = useLanguage();
   const { tenant } = useTenant();
@@ -33,7 +33,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const brandColor = tenant?.primary_color ?? '#2563eb';
   const displayName = tenant?.name ?? 'StayWise PMS';
 
-  const navItems: NavItem[] = [
+  const allNavItems: NavItem[] = [
     { to: '/', icon: LayoutDashboard, label: t.nav.dashboard },
     { to: '/front-desk', icon: ClipboardList, label: 'Front Desk' },
     { to: '/reservations', icon: CalendarCheck, label: t.nav.reservations },
@@ -45,7 +45,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/reports', icon: BarChart3, label: t.nav.reports },
   ];
 
-  const operationsItems: NavItem[] = [
+  const allOperationsItems: NavItem[] = [
     { to: '/channel-manager', icon: GitBranch, label: 'Channel Manager' },
     { to: '/booking-engine', icon: Globe, label: 'Booking Engine' },
     { to: '/payment-automation', icon: CreditCard, label: 'Payments' },
@@ -53,7 +53,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/guest-portal', icon: QrCode, label: 'Digital Check-in' },
   ];
 
-  const integrationItems: NavItem[] = [
+  const allIntegrationItems: NavItem[] = [
     { to: '/booking-com', icon: Link2, label: 'Booking.com' },
     { to: '/expedia', icon: Link2, label: 'Expedia' },
     { to: '/cloudbeds', icon: Link2, label: 'Cloudbeds' },
@@ -61,10 +61,16 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/lodgify', icon: Link2, label: 'Lodgify' },
   ];
 
-  const bottomItems: NavItem[] = [
+  const allBottomItems: NavItem[] = [
     { to: '/settings', icon: Settings, label: t.nav.settings },
+    { to: '/settings/staff', icon: UserCog, label: 'Staff & Roles' },
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];
+
+  const navItems = allNavItems.filter(item => canAccess(item.to));
+  const operationsItems = allOperationsItems.filter(item => canAccess(item.to));
+  const integrationItems = allIntegrationItems.filter(item => canAccess(item.to));
+  const bottomItems = allBottomItems.filter(item => canAccess(item.to));
 
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
@@ -140,15 +146,23 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           {navItems.map(renderNavItem)}
         </div>
 
-        {renderSectionLabel('Operations')}
-        <div className="space-y-0.5">
-          {operationsItems.map(renderNavItem)}
-        </div>
+        {operationsItems.length > 0 && (
+          <>
+            {renderSectionLabel('Operations')}
+            <div className="space-y-0.5">
+              {operationsItems.map(renderNavItem)}
+            </div>
+          </>
+        )}
 
-        {renderSectionLabel('Integrations')}
-        <div className="space-y-0.5">
-          {integrationItems.map(renderNavItem)}
-        </div>
+        {integrationItems.length > 0 && (
+          <>
+            {renderSectionLabel('Integrations')}
+            <div className="space-y-0.5">
+              {integrationItems.map(renderNavItem)}
+            </div>
+          </>
+        )}
 
         <div className="mt-3 space-y-0.5">
           {bottomItems.map(renderNavItem)}
@@ -179,7 +193,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             </div>
             <div className="truncate">
               <p className="text-sm font-medium text-gray-900 truncate">{staff.first_name} {staff.last_name}</p>
-              <p className="text-xs text-gray-500 capitalize">{staff.role}</p>
+              <p className="text-xs text-gray-500">
+                {ROLE_LABELS[staff.role as StaffRole] ?? staff.role}
+              </p>
             </div>
           </div>
         )}

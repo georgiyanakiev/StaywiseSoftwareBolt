@@ -32,6 +32,7 @@ import BookingWidgetPage from './pages/booking-engine/BookingWidgetPage';
 import PaymentAutomationPage from './pages/payments/PaymentAutomationPage';
 import InvoicingPage from './pages/invoicing/InvoicingPage';
 import InvoiceSettingsPage from './pages/invoicing/InvoiceSettingsPage';
+import StaffSettingsPage from './pages/settings/staff/StaffSettingsPage';
 import GuestPortalPage from './pages/guest-portal/GuestPortalPage';
 import GuestPortal from './pages/guest-portal/GuestPortal';
 
@@ -54,6 +55,7 @@ function AuthenticatedApp() {
             <Route path="/maintenance" element={<MaintenancePage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/staff" element={<StaffSettingsPage />} />
             <Route path="/guide" element={<GuidePage />} />
             <Route path="/channel-manager" element={<ChannelManagerPage />} />
             <Route path="/booking-engine" element={<BookingEngineAdminPage />} />

@@ -1,48 +1,195 @@
-export type StaffRole = 'admin' | 'manager' | 'receptionist' | 'housekeeping';
+export type StaffRole =
+  | 'owner'
+  | 'manager'
+  | 'front_desk'
+  | 'housekeeping'
+  | 'maintenance'
+  | 'accountant'
+  | 'readonly';
 
-export interface RoutePermission {
-  path: string;
-  allowedRoles: StaffRole[];
+export type ModuleKey =
+  | 'dashboard'
+  | 'front_desk'
+  | 'reservations'
+  | 'rooms'
+  | 'guests'
+  | 'billing'
+  | 'housekeeping'
+  | 'maintenance'
+  | 'reports'
+  | 'settings'
+  | 'channel_manager'
+  | 'booking_engine'
+  | 'payments'
+  | 'invoicing'
+  | 'guest_portal';
+
+export interface ModulePermission {
+  can_view: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
 }
 
-const ALL: StaffRole[] = ['admin', 'manager', 'receptionist', 'housekeeping'];
-const MANAGEMENT: StaffRole[] = ['admin', 'manager'];
-const FRONT_OF_HOUSE: StaffRole[] = ['admin', 'manager', 'receptionist'];
-const ADMIN_ONLY: StaffRole[] = ['admin'];
+export type PermissionsMap = Partial<Record<ModuleKey, ModulePermission>>;
 
-export const ROUTE_PERMISSIONS: RoutePermission[] = [
-  { path: '/',                    allowedRoles: ALL },
-  { path: '/front-desk',          allowedRoles: FRONT_OF_HOUSE },
-  { path: '/reservations',        allowedRoles: FRONT_OF_HOUSE },
-  { path: '/rooms',               allowedRoles: ALL },
-  { path: '/guests',              allowedRoles: FRONT_OF_HOUSE },
-  { path: '/billing',             allowedRoles: FRONT_OF_HOUSE },
-  { path: '/housekeeping',        allowedRoles: ALL },
-  { path: '/maintenance',         allowedRoles: ALL },
-  { path: '/reports',             allowedRoles: MANAGEMENT },
-  { path: '/settings',            allowedRoles: MANAGEMENT },
-  { path: '/guide',               allowedRoles: ALL },
-  { path: '/channel-manager',     allowedRoles: MANAGEMENT },
-  { path: '/booking-engine',      allowedRoles: MANAGEMENT },
-  { path: '/payment-automation',  allowedRoles: MANAGEMENT },
-  { path: '/invoicing',           allowedRoles: MANAGEMENT },
-  { path: '/booking-com',         allowedRoles: ADMIN_ONLY },
-  { path: '/expedia',             allowedRoles: ADMIN_ONLY },
-  { path: '/cloudbeds',           allowedRoles: ADMIN_ONLY },
-  { path: '/siteminder',          allowedRoles: ADMIN_ONLY },
-  { path: '/lodgify',             allowedRoles: ADMIN_ONLY },
+export const ROUTE_TO_MODULE: Record<string, ModuleKey> = {
+  '/':                   'dashboard',
+  '/front-desk':         'front_desk',
+  '/reservations':       'reservations',
+  '/rooms':              'rooms',
+  '/guests':             'guests',
+  '/billing':            'billing',
+  '/housekeeping':       'housekeeping',
+  '/maintenance':        'maintenance',
+  '/reports':            'reports',
+  '/settings':           'settings',
+  '/settings/staff':     'settings',
+  '/channel-manager':    'channel_manager',
+  '/booking-engine':     'booking_engine',
+  '/payment-automation': 'payments',
+  '/invoicing':          'invoicing',
+  '/invoicing/settings': 'invoicing',
+  '/guest-portal':       'guest_portal',
+  '/booking-com':        'settings',
+  '/expedia':            'settings',
+  '/cloudbeds':          'settings',
+  '/siteminder':         'settings',
+  '/lodgify':            'settings',
+};
+
+export const ROLE_LABELS: Record<StaffRole, string> = {
+  owner:        'Owner',
+  manager:      'Manager',
+  front_desk:   'Front Desk',
+  housekeeping: 'Housekeeping',
+  maintenance:  'Maintenance',
+  accountant:   'Accountant',
+  readonly:     'Read Only',
+};
+
+export const ROLE_DESCRIPTIONS: Record<StaffRole, string> = {
+  owner:        'Full access to all features, settings, and staff management.',
+  manager:      'Full operational access. Can manage staff but cannot delete critical settings.',
+  front_desk:   'Manages reservations, check-ins, guests, and billing. View-only for reports.',
+  housekeeping: 'Full access to housekeeping and maintenance tasks. View-only for rooms.',
+  maintenance:  'Full access to maintenance requests. View-only for housekeeping dashboard.',
+  accountant:   'Full access to payments, invoicing, and reports. View-only for reservations.',
+  readonly:     'View-only access to all modules. Cannot create, edit, or delete anything.',
+};
+
+export const ROLE_BADGE_COLORS: Record<StaffRole, string> = {
+  owner:        'bg-red-100 text-red-700',
+  manager:      'bg-amber-100 text-amber-700',
+  front_desk:   'bg-blue-100 text-blue-700',
+  housekeeping: 'bg-emerald-100 text-emerald-700',
+  maintenance:  'bg-orange-100 text-orange-700',
+  accountant:   'bg-cyan-100 text-cyan-700',
+  readonly:     'bg-gray-100 text-gray-600',
+};
+
+export const ALL_MODULES: ModuleKey[] = [
+  'dashboard', 'front_desk', 'reservations', 'rooms', 'guests', 'billing',
+  'housekeeping', 'maintenance', 'reports', 'settings', 'channel_manager',
+  'booking_engine', 'payments', 'invoicing', 'guest_portal',
 ];
 
-export function getRoutePermission(pathname: string): RoutePermission | undefined {
-  return ROUTE_PERMISSIONS.find(rp =>
-    rp.path === '/'
-      ? pathname === '/'
-      : pathname === rp.path || pathname.startsWith(rp.path + '/')
-  );
+export const MODULE_LABELS: Record<ModuleKey, string> = {
+  dashboard:       'Dashboard',
+  front_desk:      'Front Desk',
+  reservations:    'Reservations',
+  rooms:           'Rooms',
+  guests:          'Guests',
+  billing:         'Billing',
+  housekeeping:    'Housekeeping',
+  maintenance:     'Maintenance',
+  reports:         'Reports',
+  settings:        'Settings',
+  channel_manager: 'Channel Manager',
+  booking_engine:  'Booking Engine',
+  payments:        'Payments',
+  invoicing:       'Invoicing',
+  guest_portal:    'Digital Check-in',
+};
+
+function makePerms(full: ModuleKey[], view: ModuleKey[]): Record<ModuleKey, ModulePermission> {
+  return ALL_MODULES.reduce((acc, m) => {
+    if (full.includes(m)) {
+      acc[m] = { can_view: true, can_create: true, can_edit: true, can_delete: false };
+    } else if (view.includes(m)) {
+      acc[m] = { can_view: true, can_create: false, can_edit: false, can_delete: false };
+    } else {
+      acc[m] = { can_view: false, can_create: false, can_edit: false, can_delete: false };
+    }
+    return acc;
+  }, {} as Record<ModuleKey, ModulePermission>);
 }
 
-export function canAccess(role: string, pathname: string): boolean {
-  const permission = getRoutePermission(pathname);
-  if (!permission) return true;
-  return (permission.allowedRoles as string[]).includes(role);
+export const DEFAULT_PERMISSIONS: Record<StaffRole, Record<ModuleKey, ModulePermission>> = {
+  owner: ALL_MODULES.reduce((acc, m) => {
+    acc[m] = { can_view: true, can_create: true, can_edit: true, can_delete: true };
+    return acc;
+  }, {} as Record<ModuleKey, ModulePermission>),
+
+  manager: ALL_MODULES.reduce((acc, m) => {
+    acc[m] = {
+      can_view: true,
+      can_create: true,
+      can_edit: true,
+      can_delete: !['settings', 'payments'].includes(m),
+    };
+    return acc;
+  }, {} as Record<ModuleKey, ModulePermission>),
+
+  front_desk: makePerms(
+    ['dashboard', 'front_desk', 'reservations', 'rooms', 'guests', 'billing', 'guest_portal'],
+    ['housekeeping', 'maintenance', 'reports', 'invoicing', 'channel_manager', 'booking_engine']
+  ),
+
+  housekeeping: makePerms(
+    ['housekeeping', 'maintenance'],
+    ['dashboard', 'rooms']
+  ),
+
+  maintenance: makePerms(
+    ['maintenance', 'housekeeping'],
+    ['dashboard']
+  ),
+
+  accountant: makePerms(
+    ['payments', 'invoicing', 'billing', 'reports'],
+    ['dashboard', 'reservations', 'rooms', 'guests']
+  ),
+
+  readonly: ALL_MODULES.reduce((acc, m) => {
+    acc[m] = m !== 'settings'
+      ? { can_view: true, can_create: false, can_edit: false, can_delete: false }
+      : { can_view: false, can_create: false, can_edit: false, can_delete: false };
+    return acc;
+  }, {} as Record<ModuleKey, ModulePermission>),
+};
+
+export function getModuleForPath(pathname: string): ModuleKey | undefined {
+  const exact = ROUTE_TO_MODULE[pathname];
+  if (exact) return exact;
+  for (const [route, module] of Object.entries(ROUTE_TO_MODULE)) {
+    if (route !== '/' && pathname.startsWith(route + '/')) return module;
+  }
+  return undefined;
+}
+
+export function canAccessPath(permissions: PermissionsMap | null, pathname: string): boolean {
+  if (!permissions) return true;
+  const module = getModuleForPath(pathname);
+  if (!module) return true;
+  return permissions[module]?.can_view ?? false;
+}
+
+export function hasPerm(
+  permissions: PermissionsMap | null,
+  module: ModuleKey,
+  action: keyof ModulePermission
+): boolean {
+  if (!permissions) return false;
+  return permissions[module]?.[action] ?? false;
 }

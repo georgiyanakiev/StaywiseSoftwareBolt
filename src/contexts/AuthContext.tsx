@@ -3,11 +3,21 @@ import { supabase, getActiveTenantId } from '../lib/supabase';
 import { seedHotelData } from '../lib/seedData';
 import type { User, Session } from '@supabase/supabase-js';
 import type { StaffMember } from '../types';
+import {
+  DEFAULT_PERMISSIONS,
+  canAccessPath,
+  hasPerm,
+  type PermissionsMap,
+  type ModuleKey,
+  type ModulePermission,
+  type StaffRole,
+} from '../lib/permissions';
 
 interface AuthState {
   user: User | null;
   session: Session | null;
   staff: StaffMember | null;
+  permissions: PermissionsMap | null;
   loading: boolean;
   pendingApproval: boolean;
 }
@@ -16,15 +26,45 @@ interface AuthContextValue extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  canView: (module: ModuleKey) => boolean;
+  canCreate: (module: ModuleKey) => boolean;
+  canEdit: (module: ModuleKey) => boolean;
+  canDelete: (module: ModuleKey) => boolean;
+  canAccess: (pathname: string) => boolean;
+  checkPerm: (module: ModuleKey, action: keyof ModulePermission) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+async function loadPermissions(hotelId: string, role: StaffRole): Promise<PermissionsMap> {
+  const { data } = await supabase
+    .from('role_permissions')
+    .select('module, can_view, can_create, can_edit, can_delete')
+    .eq('hotel_id', hotelId)
+    .eq('role', role);
+
+  if (!data || data.length === 0) {
+    return DEFAULT_PERMISSIONS[role] ?? {};
+  }
+
+  const map: PermissionsMap = {};
+  for (const row of data) {
+    map[row.module as ModuleKey] = {
+      can_view: row.can_view,
+      can_create: row.can_create,
+      can_edit: row.can_edit,
+      can_delete: row.can_delete,
+    };
+  }
+  return map;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     session: null,
     staff: null,
+    permissions: null,
     loading: true,
     pendingApproval: false,
   });
@@ -42,36 +82,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const initSession = useCallback(async (session: Session | null) => {
+    if (!session?.user) {
+      setState({ user: null, session: null, staff: null, permissions: null, loading: false, pendingApproval: false });
+      return;
+    }
+    try {
+      const staff = await fetchStaff(session.user.id);
+      const isPending = staff?.approval_status === 'pending';
+      const activeStaff = staff?.is_active ? staff : null;
+
+      let permissions: PermissionsMap | null = null;
+      if (activeStaff && !isPending) {
+        permissions = await loadPermissions(activeStaff.hotel_id, activeStaff.role as StaffRole);
+      }
+
+      setState({
+        user: session.user,
+        session,
+        staff: isPending ? null : activeStaff,
+        permissions,
+        loading: false,
+        pendingApproval: isPending,
+      });
+    } catch {
+      setState({ user: session.user, session, staff: null, permissions: null, loading: false, pendingApproval: false });
+    }
+  }, [fetchStaff]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchStaff(session.user.id).then(staff => {
-          const isPending = staff?.approval_status === 'pending';
-          const activeStaff = staff?.is_active ? staff : null;
-          setState({ user: session.user, session, staff: isPending ? null : activeStaff, loading: false, pendingApproval: isPending });
-        }).catch(() => {
-          setState({ user: session.user, session, staff: null, loading: false, pendingApproval: false });
-        });
-      } else {
-        setState({ user: null, session: null, staff: null, loading: false, pendingApproval: false });
-      }
+      initSession(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        (async () => {
-          const staff = await fetchStaff(session.user.id);
-          const isPending = staff?.approval_status === 'pending';
-          const activeStaff = staff?.is_active ? staff : null;
-          setState({ user: session.user, session, staff: isPending ? null : activeStaff, loading: false, pendingApproval: isPending });
-        })();
+      if (event === 'SIGNED_IN') {
+        (async () => { await initSession(session); })();
       } else if (event === 'SIGNED_OUT') {
-        setState({ user: null, session: null, staff: null, loading: false, pendingApproval: false });
+        setState({ user: null, session: null, staff: null, permissions: null, loading: false, pendingApproval: false });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchStaff]);
+  }, [initSession]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -126,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         first_name: firstName,
         last_name: lastName,
         email,
-        role: 'receptionist',
+        role: 'front_desk',
         is_active: false,
         approval_status: 'pending',
       };
@@ -169,8 +222,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const { permissions } = state;
+
+  const value: AuthContextValue = {
+    ...state,
+    canView:   (module) => hasPerm(permissions, module, 'can_view'),
+    canCreate: (module) => hasPerm(permissions, module, 'can_create'),
+    canEdit:   (module) => hasPerm(permissions, module, 'can_edit'),
+    canDelete: (module) => hasPerm(permissions, module, 'can_delete'),
+    canAccess: (pathname) => canAccessPath(permissions, pathname),
+    checkPerm: (module, action) => hasPerm(permissions, module, action),
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
