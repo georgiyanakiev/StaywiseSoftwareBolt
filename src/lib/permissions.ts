@@ -23,7 +23,8 @@ export type ModuleKey =
   | 'payments'
   | 'invoicing'
   | 'guest_portal'
-  | 'owner_portal';
+  | 'owner_portal'
+  | 'dynamic_pricing';
 
 export interface ModulePermission {
   can_view: boolean;
@@ -54,6 +55,7 @@ export const ROUTE_TO_MODULE: Record<string, ModuleKey> = {
   '/guest-portal':       'guest_portal',
   '/owner-portal':       'owner_portal',
   '/owner-portal/my-portal': 'owner_portal',
+  '/dynamic-pricing':    'dynamic_pricing',
   '/booking-com':        'settings',
   '/expedia':            'settings',
   '/cloudbeds':          'settings',
@@ -94,7 +96,7 @@ export const ROLE_BADGE_COLORS: Record<StaffRole, string> = {
 export const ALL_MODULES: ModuleKey[] = [
   'dashboard', 'front_desk', 'reservations', 'rooms', 'guests', 'billing',
   'housekeeping', 'maintenance', 'reports', 'settings', 'channel_manager',
-  'booking_engine', 'payments', 'invoicing', 'guest_portal', 'owner_portal',
+  'booking_engine', 'payments', 'invoicing', 'guest_portal', 'owner_portal', 'dynamic_pricing',
 ];
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
@@ -114,6 +116,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   invoicing:       'Invoicing',
   guest_portal:    'Digital Check-in',
   owner_portal:    'Owner Portal',
+  dynamic_pricing: 'Dynamic Pricing',
 };
 
 function makePerms(full: ModuleKey[], view: ModuleKey[]): Record<ModuleKey, ModulePermission> {
