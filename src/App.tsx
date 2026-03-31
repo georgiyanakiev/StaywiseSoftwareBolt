@@ -5,6 +5,7 @@ import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { ActiveHotelProvider } from './contexts/ActiveHotelContext';
 import SuperAdminPage from './pages/superadmin/SuperAdminPage';
 import AppLayout from './components/layout/AppLayout';
+import RequireHotel from './components/guards/RequireHotel';
 import LoginPage from './pages/LoginPage';
 import PendingApprovalPage from './pages/PendingApprovalPage';
 import DashboardPage from './pages/DashboardPage';
@@ -36,30 +37,32 @@ function AuthenticatedApp() {
     <HotelProvider>
       <Routes>
         <Route path="/lobby" element={<LobbyPage />} />
+        <Route path="/booking-engine/widget" element={<BookingWidgetPage />} />
         <Route element={<AppLayout />}>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/front-desk" element={<FrontDeskPage />} />
-          <Route path="/reservations" element={<ReservationsPage />} />
-          <Route path="/rooms" element={<RoomsPage />} />
-          <Route path="/guests" element={<GuestsPage />} />
-          <Route path="/billing" element={<BillingPage />} />
-          <Route path="/housekeeping" element={<HousekeepingPage />} />
-          <Route path="/maintenance" element={<MaintenancePage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/guide" element={<GuidePage />} />
-          <Route path="/booking-com" element={<BookingComPage />} />
-          <Route path="/expedia" element={<ExpediaPage />} />
-          <Route path="/cloudbeds" element={<CloudbedsPage />} />
-          <Route path="/siteminder" element={<SiteMinderPage />} />
-          <Route path="/lodgify" element={<LodgifyPage />} />
-          <Route path="/channel-manager" element={<ChannelManagerPage />} />
-          <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
-          <Route path="/payment-automation" element={<PaymentAutomationPage />} />
-          <Route path="/invoicing" element={<InvoicingPage />} />
+          <Route element={<RequireHotel />}>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/front-desk" element={<FrontDeskPage />} />
+            <Route path="/reservations" element={<ReservationsPage />} />
+            <Route path="/rooms" element={<RoomsPage />} />
+            <Route path="/guests" element={<GuestsPage />} />
+            <Route path="/billing" element={<BillingPage />} />
+            <Route path="/housekeeping" element={<HousekeepingPage />} />
+            <Route path="/maintenance" element={<MaintenancePage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/guide" element={<GuidePage />} />
+            <Route path="/channel-manager" element={<ChannelManagerPage />} />
+            <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
+            <Route path="/payment-automation" element={<PaymentAutomationPage />} />
+            <Route path="/invoicing" element={<InvoicingPage />} />
+            <Route path="/booking-com" element={<BookingComPage />} />
+            <Route path="/expedia" element={<ExpediaPage />} />
+            <Route path="/cloudbeds" element={<CloudbedsPage />} />
+            <Route path="/siteminder" element={<SiteMinderPage />} />
+            <Route path="/lodgify" element={<LodgifyPage />} />
+          </Route>
           <Route path="*" element={<Navigate to="/lobby" replace />} />
         </Route>
-        <Route path="/booking-engine/widget" element={<BookingWidgetPage />} />
       </Routes>
     </HotelProvider>
   );
