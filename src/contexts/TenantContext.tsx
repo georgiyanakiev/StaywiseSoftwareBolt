@@ -24,38 +24,46 @@ interface TenantContextValue {
 
 const TenantContext = createContext<TenantContextValue | null>(null);
 
-function detectSubdomain(): string | null {
+export type TenantLookup =
+  | { type: 'subdomain'; value: string }
+  | { type: 'custom_domain'; value: string }
+  | { type: 'none' };
+
+function detectTenantLookup(): TenantLookup {
   const hostname = window.location.hostname;
 
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     const params = new URLSearchParams(window.location.search);
     const tenantParam = params.get('tenant');
-    if (tenantParam) return tenantParam;
-    return 'demo';
+    return { type: 'subdomain', value: tenantParam || 'demo' };
   }
 
-  const boltPreviewMatch = hostname.match(/^([^.]+)\.bolt\.new$/);
-  if (boltPreviewMatch) return null;
-
-  const webcontainerMatch = hostname.match(/^([^.]+)\.webcontainer-api\.io$/);
-  if (webcontainerMatch) return null;
+  if (hostname.match(/\.bolt\.new$/) || hostname.match(/\.webcontainer-api\.io$/)) {
+    return { type: 'none' };
+  }
 
   const parts = hostname.split('.');
   if (parts.length >= 3) {
-    return parts[0];
+    return { type: 'subdomain', value: parts[0] };
   }
 
-  return null;
+  return { type: 'custom_domain', value: hostname };
+}
+
+function detectSubdomain(): string | null {
+  const lookup = detectTenantLookup();
+  return lookup.type === 'subdomain' ? lookup.value : null;
 }
 
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const subdomain = detectSubdomain();
+  const lookup = detectTenantLookup();
+  const subdomain = lookup.type === 'subdomain' ? lookup.value : null;
 
   useEffect(() => {
-    if (!subdomain) {
+    if (lookup.type === 'none') {
       setLoading(false);
       return;
     }
@@ -64,12 +72,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('subdomain', subdomain)
-        .eq('active', true)
-        .maybeSingle();
+      let query = supabase.from('tenants').select('*').eq('active', true);
+
+      if (lookup.type === 'subdomain') {
+        query = query.eq('subdomain', lookup.value);
+      } else {
+        query = query.eq('custom_domain', lookup.value);
+      }
+
+      const { data, error: fetchError } = await query.maybeSingle();
 
       if (fetchError) {
         setError('Failed to load tenant configuration.');
@@ -83,6 +94,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      await supabase.rpc('set_tenant_context', { p_tenant_id: (data as Tenant).id });
+
       setTenant(data as Tenant);
       setActiveTenant((data as Tenant).id);
       applyTenantBranding(data as Tenant);
@@ -90,7 +103,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     };
 
     fetchTenant();
-  }, [subdomain]);
+  }, [lookup.type, lookup.type !== 'none' ? lookup.value : '']);
 
   return (
     <TenantContext.Provider value={{ tenant, loading, error, subdomain }}>
