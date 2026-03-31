@@ -484,8 +484,8 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
           </div>
         </div>
 
-        {/* Nav row: flat buttons */}
-        <nav className="hidden lg:flex items-center gap-0.5 px-4 lg:px-6 pb-2 overflow-x-auto scrollbar-hide">
+        {/* Nav rows: flat buttons wrapping to 2 lines */}
+        <nav className="hidden lg:flex flex-wrap items-center gap-0.5 px-4 lg:px-6 pb-2">
           {allNavItems.map(item => (
             <FlatNavButton key={item.to} item={item} brandColor={brandColor} />
           ))}
