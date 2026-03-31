@@ -11,7 +11,8 @@ import PendingApprovalPage from './pages/PendingApprovalPage';
 import DashboardPage from './pages/DashboardPage';
 import ReservationsPage from './pages/ReservationsPage';
 import RoomsPage from './pages/RoomsPage';
-import GuestsPage from './pages/GuestsPage';
+import GuestListPage from './pages/crm/GuestListPage';
+import GuestProfilePage from './pages/crm/GuestProfilePage';
 import BillingPage from './pages/BillingPage';
 import HousekeepingPage from './pages/HousekeepingPage';
 import MaintenancePage from './pages/maintenance/MaintenancePage';
@@ -53,7 +54,8 @@ function AuthenticatedApp() {
             <Route path="/front-desk" element={<FrontDeskPage />} />
             <Route path="/reservations" element={<ReservationsPage />} />
             <Route path="/rooms" element={<RoomsPage />} />
-            <Route path="/guests" element={<GuestsPage />} />
+            <Route path="/guests" element={<GuestListPage />} />
+            <Route path="/guests/:id" element={<GuestProfilePage />} />
             <Route path="/billing" element={<BillingPage />} />
             <Route path="/housekeeping" element={<HousekeepingPage />} />
             <Route path="/maintenance" element={<MaintenancePage />} />
