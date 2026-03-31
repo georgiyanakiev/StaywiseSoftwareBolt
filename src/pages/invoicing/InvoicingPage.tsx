@@ -1,116 +1,206 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, Plus, Search, Eye, Send, CheckCircle2, Printer, Download, XCircle, DollarSign, TrendingUp, AlertCircle, Clock, Loader2, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import {
+  FileText, Plus, Search, Eye, Send, CheckCircle2, Printer, XCircle,
+  AlertCircle, Clock, Loader2, ChevronLeft, ChevronRight, Copy,
+  Ban, Settings, TrendingUp
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
-import { formatDate, formatCurrency, generateInvoiceNumber } from '../../lib/utils';
+import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import Modal from '../../components/ui/Modal';
 import InvoiceEditorModal from './InvoiceEditorModal';
 import InvoicePrintView from './InvoicePrintView';
+import { Link } from 'react-router-dom';
 
-interface InvoiceLine {
+export interface InvoiceLine {
   id: string;
   description: string;
+  category: string;
   quantity: number;
+  unit: string;
   unit_price: number;
   tax_rate: number;
+  discount_pct: number;
   line_total: number;
+  sort_order: number;
 }
 
-interface Invoice {
+export interface Invoice {
   id: string;
   invoice_number: string;
+  type: string;
   guest_name: string;
   guest_email: string;
   guest_address: string;
+  guest_city: string;
+  guest_country: string;
   guest_vat_number: string;
+  booking_reference: string;
+  reservation_id: string | null;
   issue_date: string;
   due_date: string;
+  service_date_from: string;
+  service_date_to: string;
   status: string;
   currency: string;
   subtotal: number;
+  discount_type: string;
+  discount_value: number;
+  discount_amount: number;
   tax_rate: number;
   tax_amount: number;
-  discount_amount: number;
   total_amount: number;
   paid_amount: number;
   notes: string;
+  internal_notes: string;
   created_at: string;
+  sent_at: string | null;
+  paid_at: string | null;
   lines?: InvoiceLine[];
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  draft: { label: 'Draft', color: 'bg-gray-100 text-gray-600', icon: FileText },
-  sent: { label: 'Sent', color: 'bg-blue-50 text-blue-700', icon: Send },
-  paid: { label: 'Paid', color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
-  overdue: { label: 'Overdue', color: 'bg-red-50 text-red-700', icon: AlertCircle },
-  cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-400', icon: XCircle },
+  draft:          { label: 'Draft',     color: 'bg-gray-100 text-gray-600',      icon: FileText },
+  sent:           { label: 'Sent',      color: 'bg-blue-50 text-blue-700',       icon: Send },
+  paid:           { label: 'Paid',      color: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
+  partially_paid: { label: 'Partial',   color: 'bg-amber-50 text-amber-700',     icon: TrendingUp },
+  overdue:        { label: 'Overdue',   color: 'bg-red-50 text-red-700',         icon: AlertCircle },
+  cancelled:      { label: 'Cancelled', color: 'bg-gray-100 text-gray-400',      icon: XCircle },
+  void:           { label: 'Void',      color: 'bg-gray-100 text-gray-400',      icon: Ban },
 };
 
-const PAGE_SIZE = 10;
+const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+  invoice:     { label: 'Invoice',     color: 'bg-blue-50 text-blue-700' },
+  receipt:     { label: 'Receipt',     color: 'bg-emerald-50 text-emerald-700' },
+  credit_note: { label: 'Credit Note', color: 'bg-orange-50 text-orange-700' },
+  proforma:    { label: 'Proforma',    color: 'bg-gray-100 text-gray-600' },
+};
+
+const PAGE_SIZE = 15;
 
 export default function InvoicingPage() {
   const { currentHotel } = useHotel();
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [showEditor, setShowEditor] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
+  const [actioning, setActioning] = useState<string | null>(null);
 
   const loadInvoices = useCallback(async () => {
     if (!currentHotel) return;
     setLoading(true);
     let q = supabase
-      .from('invoices_v2')
-      .select('*, lines:invoice_lines(*)', { count: 'exact' })
+      .from('invoices')
+      .select('*, lines:invoice_line_items(*)', { count: 'exact' })
       .eq('hotel_id', currentHotel.id)
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
     if (statusFilter) q = q.eq('status', statusFilter);
+    if (typeFilter) q = q.eq('type', typeFilter);
     if (search) q = q.ilike('guest_name', `%${search}%`);
     const { data, count } = await q;
     setInvoices((data ?? []) as Invoice[]);
     setTotal(count ?? 0);
     setLoading(false);
-  }, [currentHotel, page, statusFilter, search]);
+  }, [currentHotel, page, statusFilter, typeFilter, search]);
 
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
-  const markPaid = async (id: string, total: number) => {
-    await supabase.from('invoices_v2').update({ status: 'paid', paid_amount: total }).eq('id', id);
-    setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status: 'paid', paid_amount: total } : inv));
-    showToast('Invoice marked as paid', 'success');
+  const markPaid = async (inv: Invoice) => {
+    setActioning(inv.id);
+    await supabase.from('invoices').update({ status: 'paid', paid_amount: inv.total_amount, paid_at: new Date().toISOString() }).eq('id', inv.id);
+    setActioning(null);
+    loadInvoices();
+    toast('success', 'Invoice marked as paid');
   };
 
-  const sendInvoice = async (id: string) => {
-    await supabase.from('invoices_v2').update({ status: 'sent' }).eq('id', id);
-    setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status: 'sent' } : inv));
-    showToast('Invoice marked as sent', 'success');
+  const sendInvoice = async (inv: Invoice) => {
+    setActioning(inv.id);
+    await supabase.from('invoices').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', inv.id);
+    setActioning(null);
+    loadInvoices();
+    toast('success', 'Invoice marked as sent');
   };
 
-  const deleteInvoice = async (id: string) => {
-    await supabase.from('invoices_v2').delete().eq('id', id);
-    setInvoices(prev => prev.filter(inv => inv.id !== id));
-    showToast('Invoice deleted', 'success');
+  const voidInvoice = async (inv: Invoice) => {
+    if (!confirm(`Void invoice ${inv.invoice_number}? This cannot be undone.`)) return;
+    setActioning(inv.id);
+    await supabase.from('invoices').update({ status: 'void' }).eq('id', inv.id);
+    setActioning(null);
+    loadInvoices();
+    toast('success', 'Invoice voided');
   };
 
-  const thisMonth = invoices.filter(i => {
+  const duplicateInvoice = async (inv: Invoice) => {
+    setActioning(inv.id);
+    const now = new Date();
+    const num = `INV-${now.getFullYear()}-${String(now.getTime()).slice(-4)}`;
+    const { data: newInv } = await supabase.from('invoices').insert({
+      hotel_id: currentHotel!.id,
+      invoice_number: num,
+      type: inv.type,
+      guest_name: inv.guest_name,
+      guest_email: inv.guest_email,
+      guest_address: inv.guest_address,
+      guest_city: inv.guest_city,
+      guest_country: inv.guest_country,
+      guest_vat_number: inv.guest_vat_number,
+      issue_date: new Date().toISOString().split('T')[0],
+      due_date: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+      status: 'draft',
+      currency: inv.currency,
+      discount_type: inv.discount_type,
+      discount_value: inv.discount_value,
+      discount_amount: inv.discount_amount,
+      tax_rate: inv.tax_rate,
+      subtotal: inv.subtotal,
+      tax_amount: inv.tax_amount,
+      total_amount: inv.total_amount,
+      paid_amount: 0,
+      notes: inv.notes,
+      guest_id: null,
+    }).select('id').single();
+
+    if (newInv && inv.lines?.length) {
+      await supabase.from('invoice_line_items').insert(
+        inv.lines.map(l => ({
+          hotel_id: currentHotel!.id,
+          invoice_id: newInv.id,
+          description: l.description,
+          category: l.category,
+          quantity: l.quantity,
+          unit: l.unit,
+          unit_price: l.unit_price,
+          tax_rate: l.tax_rate,
+          discount_pct: l.discount_pct,
+          line_total: l.line_total,
+          sort_order: l.sort_order,
+        }))
+      );
+    }
+    setActioning(null);
+    loadInvoices();
+    toast('success', `Duplicated as ${num}`);
+  };
+
+  const allInvoices = invoices;
+  const curMonth = new Date();
+  const monthlyInvs = allInvoices.filter(i => {
     const d = new Date(i.created_at);
-    const n = new Date();
-    return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+    return d.getMonth() === curMonth.getMonth() && d.getFullYear() === curMonth.getFullYear();
   });
-
-  const totalInvoiced = thisMonth.reduce((s, i) => s + Number(i.total_amount), 0);
-  const totalPaid = thisMonth.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total_amount), 0);
-  const totalOutstanding = thisMonth.filter(i => ['sent', 'overdue'].includes(i.status)).reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
-  const overdueCount = invoices.filter(i => i.status === 'overdue').length;
-
+  const totalInvoiced = monthlyInvs.reduce((s, i) => s + Number(i.total_amount), 0);
+  const totalCollected = allInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.paid_amount), 0);
+  const totalOutstanding = allInvoices.filter(i => ['sent','partially_paid'].includes(i.status)).reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
+  const overdueCount = allInvoices.filter(i => i.status === 'overdue').length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -123,22 +213,29 @@ export default function InvoicingPage() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">Create, send, and manage invoices and receipts</p>
         </div>
-        <button onClick={() => { setEditingInvoice(null); setShowEditor(true); }} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> New Invoice
-        </button>
+        <div className="flex items-center gap-2">
+          <Link to="/invoicing/settings" className="btn-secondary flex items-center gap-2 py-2">
+            <Settings className="w-4 h-4" /> Settings
+          </Link>
+          <button onClick={() => { setEditingInvoice(null); setShowEditor(true); }} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> New Invoice
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Invoiced This Month', value: formatCurrency(totalInvoiced), color: 'text-gray-900', icon: FileText },
-          { label: 'Paid', value: formatCurrency(totalPaid), color: 'text-emerald-600', icon: CheckCircle2 },
-          { label: 'Outstanding', value: formatCurrency(totalOutstanding), color: 'text-amber-600', icon: Clock },
-          { label: 'Overdue', value: overdueCount, color: 'text-red-600', icon: AlertCircle },
+          { label: 'Invoiced This Month', value: formatCurrency(totalInvoiced), color: 'text-gray-900', bg: 'bg-blue-50', icon: FileText, iconColor: 'text-blue-600' },
+          { label: 'Collected', value: formatCurrency(totalCollected), color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CheckCircle2, iconColor: 'text-emerald-600' },
+          { label: 'Outstanding', value: formatCurrency(totalOutstanding), color: 'text-amber-700', bg: 'bg-amber-50', icon: Clock, iconColor: 'text-amber-600' },
+          { label: 'Overdue', value: overdueCount, color: 'text-red-700', bg: 'bg-red-50', icon: AlertCircle, iconColor: 'text-red-600' },
         ].map(s => (
           <div key={s.label} className="stat-card">
-            <div className="flex items-center gap-2 mb-1">
-              <s.icon className={`w-4 h-4 ${s.color}`} />
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{s.label}</p>
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`w-7 h-7 rounded-lg ${s.bg} flex items-center justify-center`}>
+                <s.icon className={`w-4 h-4 ${s.iconColor}`} />
+              </div>
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide leading-tight">{s.label}</p>
             </div>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
           </div>
@@ -154,83 +251,92 @@ export default function InvoicingPage() {
           <option value="">All Statuses</option>
           {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
+        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input-field py-2 w-36">
+          <option value="">All Types</option>
+          {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <table className="w-full">
-            <thead className="border-b border-gray-100">
-              <tr>
-                <th className="table-header">Invoice #</th>
-                <th className="table-header">Guest</th>
-                <th className="table-header">Issue Date</th>
-                <th className="table-header">Due Date</th>
-                <th className="table-header text-right">Total</th>
-                <th className="table-header">Status</th>
-                <th className="table-header">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map(inv => {
-                const cfg = STATUS_CONFIG[inv.status] ?? STATUS_CONFIG.draft;
-                const StatusIcon = cfg.icon;
-                return (
-                  <tr key={inv.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                    <td className="table-cell font-mono text-xs font-semibold text-blue-700">{inv.invoice_number}</td>
-                    <td className="table-cell">
-                      <p className="font-medium text-gray-900">{inv.guest_name}</p>
-                      <p className="text-xs text-gray-400">{inv.guest_email}</p>
-                    </td>
-                    <td className="table-cell text-gray-600 text-sm">{formatDate(inv.issue_date)}</td>
-                    <td className="table-cell text-gray-600 text-sm">{formatDate(inv.due_date)}</td>
-                    <td className="table-cell text-right font-semibold text-gray-900">{formatCurrency(Number(inv.total_amount))}</td>
-                    <td className="table-cell">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {cfg.label}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setPrintInvoice(inv)} className="text-gray-400 hover:text-gray-700 transition-colors p-1" title="Print">
-                          <Printer className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => { setEditingInvoice(inv); setShowEditor(true); }} className="text-gray-400 hover:text-blue-600 transition-colors p-1" title="Edit">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {inv.status === 'draft' && (
-                          <button onClick={() => sendInvoice(inv.id)} className="text-gray-400 hover:text-blue-600 transition-colors p-1" title="Send">
-                            <Send className="w-4 h-4" />
-                          </button>
-                        )}
-                        {inv.status === 'sent' && (
-                          <button onClick={() => markPaid(inv.id, Number(inv.total_amount))} className="text-gray-400 hover:text-emerald-600 transition-colors p-1" title="Mark Paid">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        {inv.status === 'draft' && (
-                          <button onClick={() => deleteInvoice(inv.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1" title="Delete">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-gray-100">
+                <tr>
+                  <th className="table-header">Invoice #</th>
+                  <th className="table-header">Type</th>
+                  <th className="table-header">Guest</th>
+                  <th className="table-header">Issue Date</th>
+                  <th className="table-header">Due Date</th>
+                  <th className="table-header text-right">Total</th>
+                  <th className="table-header text-right">Paid</th>
+                  <th className="table-header text-right">Balance</th>
+                  <th className="table-header">Status</th>
+                  <th className="table-header">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map(inv => {
+                  const sCfg = STATUS_CONFIG[inv.status] ?? STATUS_CONFIG.draft;
+                  const tCfg = TYPE_CONFIG[inv.type] ?? TYPE_CONFIG.invoice;
+                  const balance = Number(inv.total_amount) - Number(inv.paid_amount);
+                  const isActioning = actioning === inv.id;
+                  return (
+                    <tr key={inv.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/40 transition-colors">
+                      <td className="table-cell font-mono text-xs font-semibold text-blue-700">{inv.invoice_number}</td>
+                      <td className="table-cell">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${tCfg.color}`}>{tCfg.label}</span>
+                      </td>
+                      <td className="table-cell">
+                        <p className="font-medium text-gray-900 text-sm">{inv.guest_name}</p>
+                        {inv.guest_email && <p className="text-xs text-gray-400">{inv.guest_email}</p>}
+                      </td>
+                      <td className="table-cell text-gray-600 text-sm">{inv.issue_date ? formatDate(inv.issue_date) : '—'}</td>
+                      <td className="table-cell text-gray-600 text-sm">{inv.due_date ? formatDate(inv.due_date) : '—'}</td>
+                      <td className="table-cell text-right font-semibold text-gray-900">{formatCurrency(Number(inv.total_amount))}</td>
+                      <td className="table-cell text-right text-gray-600">{Number(inv.paid_amount) > 0 ? formatCurrency(Number(inv.paid_amount)) : '—'}</td>
+                      <td className={`table-cell text-right font-medium ${balance > 0 && inv.status !== 'paid' ? 'text-red-600' : 'text-gray-400'}`}>
+                        {balance > 0 && inv.status !== 'paid' ? formatCurrency(balance) : '—'}
+                      </td>
+                      <td className="table-cell">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${sCfg.color}`}>
+                          <sCfg.icon className="w-3 h-3" />
+                          {sCfg.label}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <div className="flex items-center gap-0.5">
+                          {isActioning ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                          ) : (
+                            <>
+                              <Btn icon={Eye} title="View / Edit" onClick={() => { setEditingInvoice(inv); setShowEditor(true); }} />
+                              <Btn icon={Printer} title="Print / PDF" onClick={() => setPrintInvoice(inv)} />
+                              {inv.status === 'draft' && <Btn icon={Send} title="Mark as Sent" onClick={() => sendInvoice(inv)} hoverColor="hover:text-blue-600" />}
+                              {['sent','overdue','partially_paid'].includes(inv.status) && <Btn icon={CheckCircle2} title="Mark as Paid" onClick={() => markPaid(inv)} hoverColor="hover:text-emerald-600" />}
+                              <Btn icon={Copy} title="Duplicate" onClick={() => duplicateInvoice(inv)} />
+                              {!['void','paid'].includes(inv.status) && <Btn icon={Ban} title="Void" onClick={() => voidInvoice(inv)} hoverColor="hover:text-red-500" />}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {invoices.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="py-16 text-center text-gray-400">
+                      <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                      <p className="font-medium">No invoices found</p>
+                      <p className="text-sm mt-1">Create your first invoice to get started</p>
                     </td>
                   </tr>
-                );
-              })}
-              {invoices.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-16 text-center text-gray-400">
-                    <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                    <p className="font-medium">No invoices found</p>
-                    <p className="text-sm mt-1">Create your first invoice to get started</p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
@@ -253,7 +359,7 @@ export default function InvoicingPage() {
           hotelId={currentHotel.id}
           invoice={editingInvoice}
           onClose={() => setShowEditor(false)}
-          onSaved={() => { setShowEditor(false); loadInvoices(); showToast('Invoice saved', 'success'); }}
+          onSaved={() => { setShowEditor(false); loadInvoices(); toast('success', 'Invoice saved'); }}
         />
       )}
 
@@ -265,5 +371,15 @@ export default function InvoicingPage() {
         />
       )}
     </div>
+  );
+}
+
+function Btn({ icon: Icon, title, onClick, hoverColor = 'hover:text-gray-700' }: {
+  icon: React.ElementType; title: string; onClick: () => void; hoverColor?: string;
+}) {
+  return (
+    <button onClick={onClick} title={title} className={`p-1.5 rounded text-gray-400 ${hoverColor} hover:bg-gray-100 transition-colors`}>
+      <Icon className="w-3.5 h-3.5" />
+    </button>
   );
 }

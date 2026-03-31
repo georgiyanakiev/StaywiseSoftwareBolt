@@ -31,6 +31,7 @@ import BookingEngineAdminPage from './pages/booking-engine/BookingEngineAdminPag
 import BookingWidgetPage from './pages/booking-engine/BookingWidgetPage';
 import PaymentAutomationPage from './pages/payments/PaymentAutomationPage';
 import InvoicingPage from './pages/invoicing/InvoicingPage';
+import InvoiceSettingsPage from './pages/invoicing/InvoiceSettingsPage';
 import GuestPortalPage from './pages/guest-portal/GuestPortalPage';
 import GuestPortal from './pages/guest-portal/GuestPortal';
 
@@ -58,6 +59,7 @@ function AuthenticatedApp() {
             <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
             <Route path="/payment-automation" element={<PaymentAutomationPage />} />
             <Route path="/invoicing" element={<InvoicingPage />} />
+            <Route path="/invoicing/settings" element={<InvoiceSettingsPage />} />
             <Route path="/guest-portal" element={<GuestPortalPage />} />
             <Route path="/booking-com" element={<BookingComPage />} />
             <Route path="/expedia" element={<ExpediaPage />} />
