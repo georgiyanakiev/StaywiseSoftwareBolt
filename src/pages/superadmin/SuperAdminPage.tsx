@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Shield, Plus, RefreshCw, LogOut, AlertTriangle } from 'lucide-react';
+import { Shield, Plus, RefreshCw, LogOut, AlertTriangle, Building2, Users } from 'lucide-react';
 import { supabaseAdmin, supabase } from '../../lib/supabase';
 import StatsBar from './StatsBar';
 import TenantTable from './TenantTable';
 import TenantFormModal from './TenantFormModal';
+import StaffAssignmentsTab from './StaffAssignmentsTab';
 import type { Tenant, TenantFormData } from './types';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'changeme';
@@ -72,6 +73,8 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
+type Tab = 'hotels' | 'staff';
+
 export default function SuperAdminPage() {
   const autoUnlocked = isAdminSubdomain();
   const [unlocked, setUnlocked] = useState(autoUnlocked || sessionStorage.getItem(SESSION_KEY) === '1');
@@ -80,6 +83,8 @@ export default function SuperAdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<{ mode: 'add' | 'edit'; tenant?: Tenant } | null>(null);
   const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<Tab>('hotels');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const db = supabaseAdmin ?? supabase;
 
@@ -90,11 +95,26 @@ export default function SuperAdminPage() {
       .from('tenants')
       .select('*')
       .order('created_at', { ascending: false });
+
     if (err) {
       setError(err.message);
-    } else {
-      setTenants((data as Tenant[]) ?? []);
+      setLoading(false);
+      return;
     }
+
+    const tenantsData = (data as Tenant[]) ?? [];
+
+    const { data: assignmentCounts } = await db
+      .from('user_hotel_assignments')
+      .select('tenant_id')
+      .eq('active', true);
+
+    const countMap: Record<string, number> = {};
+    (assignmentCounts ?? []).forEach((a: { tenant_id: string }) => {
+      countMap[a.tenant_id] = (countMap[a.tenant_id] ?? 0) + 1;
+    });
+
+    setTenants(tenantsData.map(t => ({ ...t, staff_count: countMap[t.id] ?? 0 })));
     setLoading(false);
   }, [db]);
 
@@ -104,7 +124,7 @@ export default function SuperAdminPage() {
 
   const handleSave = async (formData: TenantFormData) => {
     if (modal?.mode === 'add') {
-      const payload = {
+      const { error: err } = await db.from('tenants').insert({
         name: formData.name,
         subdomain: formData.subdomain,
         owner_email: formData.owner_email || null,
@@ -113,11 +133,10 @@ export default function SuperAdminPage() {
         secondary_color: formData.secondary_color,
         logo_url: formData.logo_url || null,
         active: true,
-      };
-      const { error: err } = await db.from('tenants').insert(payload);
+      });
       if (err) throw new Error(err.message);
     } else if (modal?.mode === 'edit' && modal.tenant) {
-      const payload = {
+      const { error: err } = await db.from('tenants').update({
         name: formData.name,
         owner_email: formData.owner_email || null,
         plan: formData.plan,
@@ -125,11 +144,22 @@ export default function SuperAdminPage() {
         secondary_color: formData.secondary_color,
         logo_url: formData.logo_url || null,
         active: formData.active,
-      };
-      const { error: err } = await db.from('tenants').update(payload).eq('id', modal.tenant.id);
+      }).eq('id', modal.tenant.id);
       if (err) throw new Error(err.message);
     }
     await fetchTenants();
+  };
+
+  const handleToggleActive = async (tenant: Tenant) => {
+    setTogglingId(tenant.id);
+    const { error: err } = await db
+      .from('tenants')
+      .update({ active: !tenant.active })
+      .eq('id', tenant.id);
+    if (!err) {
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, active: !tenant.active } : t));
+    }
+    setTogglingId(null);
   };
 
   const lock = () => {
@@ -173,56 +203,88 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Hotels</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage all tenant accounts on the platform</p>
-          </div>
-          <button
-            onClick={() => setModal({ mode: 'add' })}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Hotel
-          </button>
-        </div>
-
         <StatsBar tenants={tenants} />
 
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search hotels, subdomains, owners..."
-            className="flex-1 max-w-sm border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          />
-          <button
-            onClick={fetchTenants}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+            <button
+              onClick={() => setTab('hotels')}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${tab === 'hotels' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <Building2 className="w-4 h-4" />
+              Hotels
+              <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${tab === 'hotels' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                {tenants.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setTab('staff')}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${tab === 'staff' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <Users className="w-4 h-4" />
+              Staff & Assignments
+            </button>
+          </div>
+
+          {tab === 'hotels' && (
+            <button
+              onClick={() => setModal({ mode: 'add' })}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add Hotel
+            </button>
+          )}
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            {error}
-            {!supabaseAdmin && (
-              <span className="ml-1 text-red-500">(VITE_SUPABASE_SERVICE_KEY not set — RLS may block results)</span>
+        {tab === 'hotels' && (
+          <>
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search hotels, subdomains, owners..."
+                className="flex-1 max-w-sm border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              />
+              <button
+                onClick={fetchTenants}
+                disabled={loading}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                {error}
+                {!supabaseAdmin && (
+                  <span className="ml-1 text-red-500">(VITE_SUPABASE_SERVICE_KEY not set — RLS may block results)</span>
+                )}
+              </div>
             )}
-          </div>
+
+            <TenantTable
+              tenants={filtered}
+              onEdit={t => setModal({ mode: 'edit', tenant: t })}
+              onManageStaff={() => setTab('staff')}
+              onToggleActive={handleToggleActive}
+              togglingId={togglingId}
+            />
+
+            {!supabaseAdmin && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                VITE_SUPABASE_SERVICE_KEY is not configured. Set the service role key to bypass RLS.
+              </p>
+            )}
+          </>
         )}
 
-        <TenantTable tenants={filtered} onEdit={t => setModal({ mode: 'edit', tenant: t })} />
-
-        {!supabaseAdmin && (
-          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            VITE_SUPABASE_SERVICE_KEY is not configured. The admin client is using the anon key — RLS policies will apply. Set the service role key to bypass RLS.
-          </p>
+        {tab === 'staff' && (
+          <StaffAssignmentsTab tenants={tenants} />
         )}
       </main>
 

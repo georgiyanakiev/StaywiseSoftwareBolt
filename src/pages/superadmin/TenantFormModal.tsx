@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { supabaseAdmin, supabase } from '../../lib/supabase';
 import type { Tenant, TenantFormData } from './types';
 
 interface TenantFormModalProps {
@@ -20,10 +21,15 @@ const DEFAULT_FORM: TenantFormData = {
   active: true,
 };
 
+type SubdomainStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+
 export default function TenantFormModal({ mode, tenant, onClose, onSave }: TenantFormModalProps) {
   const [form, setForm] = useState<TenantFormData>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subdomainStatus, setSubdomainStatus] = useState<SubdomainStatus>('idle');
+  const checkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const db = supabaseAdmin ?? supabase;
 
   useEffect(() => {
     if (mode === 'edit' && tenant) {
@@ -43,10 +49,38 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
   const set = (key: keyof TenantFormData, value: string | boolean) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
+  const handleSubdomainChange = (raw: string) => {
+    const val = raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    set('subdomain', val);
+    setSubdomainStatus('idle');
+
+    if (checkTimer.current) clearTimeout(checkTimer.current);
+    if (!val || val.length < 2) return;
+
+    if (val.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(val)) {
+      setSubdomainStatus('invalid');
+      return;
+    }
+
+    setSubdomainStatus('checking');
+    checkTimer.current = setTimeout(async () => {
+      const { data } = await db
+        .from('tenants')
+        .select('id')
+        .eq('subdomain', val)
+        .maybeSingle();
+      setSubdomainStatus(data ? 'taken' : 'available');
+    }, 400);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.subdomain.trim()) {
       setError('Name and subdomain are required.');
+      return;
+    }
+    if (mode === 'add' && subdomainStatus === 'taken') {
+      setError('That subdomain is already in use.');
       return;
     }
     setSaving(true);
@@ -61,12 +95,44 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
     }
   };
 
+  const subdomainHint = () => {
+    if (mode === 'edit') return null;
+    switch (subdomainStatus) {
+      case 'checking':
+        return (
+          <span className="flex items-center gap-1 text-gray-400 text-xs mt-1">
+            <Loader2 className="w-3 h-3 animate-spin" /> Checking availability...
+          </span>
+        );
+      case 'available':
+        return (
+          <span className="flex items-center gap-1 text-green-600 text-xs mt-1">
+            <CheckCircle className="w-3 h-3" /> Available
+          </span>
+        );
+      case 'taken':
+        return (
+          <span className="flex items-center gap-1 text-red-500 text-xs mt-1">
+            <AlertCircle className="w-3 h-3" /> Already taken
+          </span>
+        );
+      case 'invalid':
+        return (
+          <span className="flex items-center gap-1 text-amber-600 text-xs mt-1">
+            <AlertCircle className="w-3 h-3" /> Use lowercase letters, numbers, and hyphens only
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">
-            {mode === 'add' ? 'Add New Hotel' : 'Edit Hotel'}
+            {mode === 'add' ? 'Add New Hotel' : `Edit — ${tenant?.name}`}
           </h2>
           <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100">
             <X className="w-5 h-5" />
@@ -97,11 +163,18 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
               <input
                 type="text"
                 value={form.subdomain}
-                onChange={e => set('subdomain', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={e => handleSubdomainChange(e.target.value)}
+                className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
+                  subdomainStatus === 'taken' || subdomainStatus === 'invalid'
+                    ? 'border-red-300 focus:ring-red-400'
+                    : subdomainStatus === 'available'
+                    ? 'border-green-300 focus:ring-green-400'
+                    : 'border-gray-200 focus:ring-blue-500'
+                }`}
                 placeholder="grand-metro"
                 disabled={mode === 'edit'}
               />
+              {subdomainHint()}
             </div>
 
             <div>
@@ -146,7 +219,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
                   type="color"
                   value={form.primary_color}
                   onChange={e => set('primary_color', e.target.value)}
-                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer"
+                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer p-0.5"
                 />
                 <input
                   type="text"
@@ -164,7 +237,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
                   type="color"
                   value={form.secondary_color}
                   onChange={e => set('secondary_color', e.target.value)}
-                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer"
+                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer p-0.5"
                 />
                 <input
                   type="text"
@@ -176,7 +249,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
             </div>
 
             {mode === 'edit' && (
-              <div className="col-span-2 flex items-center gap-3">
+              <div className="col-span-2 flex items-center gap-3 py-1">
                 <button
                   type="button"
                   onClick={() => set('active', !form.active)}
@@ -195,7 +268,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || (mode === 'add' && subdomainStatus === 'taken')}
               className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
             >
               {saving ? 'Saving...' : mode === 'add' ? 'Create Hotel' : 'Save Changes'}
