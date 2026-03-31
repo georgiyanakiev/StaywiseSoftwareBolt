@@ -10,37 +10,30 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
+import { ROLE_LABELS, DEFAULT_PERMISSIONS, canAccessPath, type StaffRole } from '../../lib/permissions';
 
 interface NavItem {
   to: string;
   label: string;
   icon: React.ElementType;
-  roles?: StaffRole[];
 }
 
 const ROW1_NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  {
-    to: '/reservations', label: 'Reservations', icon: CalendarCheck,
-    roles: ['manager', 'owner', 'super_admin', 'front_desk'],
-  },
-  {
-    to: '/housekeeping', label: 'Housekeeping', icon: SprayCan,
-    roles: ['manager', 'owner', 'super_admin', 'housekeeping'],
-  },
+  { to: '/reservations', label: 'Reservations', icon: CalendarCheck },
+  { to: '/housekeeping', label: 'Housekeeping', icon: SprayCan },
 ];
 
 const ROW2_NAV: NavItem[] = [
-  { to: '/channel-manager', label: 'Channel Manager', icon: GitBranch, roles: ['manager', 'owner', 'super_admin'] },
-  { to: '/payment-automation', label: 'Payments', icon: CreditCard, roles: ['manager', 'owner', 'super_admin', 'accountant'] },
-  { to: '/invoicing', label: 'Invoicing', icon: FileText, roles: ['manager', 'owner', 'super_admin', 'accountant'] },
-  { to: '/booking-engine', label: 'Booking Engine', icon: Globe, roles: ['manager', 'owner', 'super_admin', 'front_desk'] },
-  { to: '/dynamic-pricing', label: 'Dynamic Pricing', icon: TrendingUp, roles: ['manager', 'owner', 'super_admin'] },
-  { to: '/upselling', label: 'Upselling', icon: ShoppingBag, roles: ['manager', 'owner', 'super_admin'] },
-  { to: '/guest-portal', label: 'Guest Portal', icon: QrCode, roles: ['manager', 'owner', 'super_admin'] },
-  { to: '/reports', label: 'Reports', icon: BarChart3, roles: ['manager', 'owner', 'super_admin', 'accountant'] },
-  { to: '/guests', label: 'Guests', icon: Users, roles: ['manager', 'owner', 'super_admin'] },
+  { to: '/channel-manager', label: 'Channel Manager', icon: GitBranch },
+  { to: '/payment-automation', label: 'Payments', icon: CreditCard },
+  { to: '/invoicing', label: 'Invoicing', icon: FileText },
+  { to: '/booking-engine', label: 'Booking Engine', icon: Globe },
+  { to: '/dynamic-pricing', label: 'Dynamic Pricing', icon: TrendingUp },
+  { to: '/upselling', label: 'Upselling', icon: ShoppingBag },
+  { to: '/guest-portal', label: 'Guest Portal', icon: QrCode },
+  { to: '/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/guests', label: 'Guests', icon: Users },
 ];
 
 interface MobileSection {
@@ -141,9 +134,12 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
   }, [ref, onClose]);
 }
 
-function filterByRole(items: NavItem[], role: StaffRole | string | null): NavItem[] {
-  if (!role) return items.filter(i => !i.roles);
-  return items.filter(i => !i.roles || i.roles.includes(role as StaffRole));
+function filterByRole(items: NavItem[], role: string | null): NavItem[] {
+  if (!role) return items;
+  if (role === 'super_admin') return items;
+  const perms = DEFAULT_PERMISSIONS[role as StaffRole];
+  if (!perms) return items;
+  return items.filter(item => canAccessPath(perms, item.to));
 }
 
 function HotelSwitcherButton({ brandColor, hotelName, hotelLogo }: { brandColor: string; hotelName: string; hotelLogo: string | null }) {
