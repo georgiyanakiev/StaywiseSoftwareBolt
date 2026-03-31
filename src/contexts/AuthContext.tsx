@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, getActiveTenantId } from '../lib/supabase';
 import { seedHotelData } from '../lib/seedData';
 import type { User, Session } from '@supabase/supabase-js';
 import type { StaffMember } from '../types';
@@ -87,25 +87,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) return { error: error.message };
 
     if (data.user) {
-      const { data: existingHotels } = await supabase.from('hotels').select('id').limit(1);
+      const tenantId = getActiveTenantId();
+
+      const hotelsQuery = supabase.from('hotels').select('id');
+      if (tenantId) hotelsQuery.eq('tenant_id', tenantId);
+      const { data: existingHotels } = await hotelsQuery.limit(1);
       let hotelId: string;
 
       if (existingHotels && existingHotels.length > 0) {
         hotelId = existingHotels[0].id;
       } else {
+        const hotelPayload: Record<string, unknown> = {
+          name: 'The Grand Metropolitan',
+          address: '500 Park Avenue',
+          city: 'New York',
+          country: 'United States',
+          phone: '+1 (212) 555-0100',
+          email: email,
+          website: 'https://grandmetropolitan.example.com',
+          star_rating: 5,
+          tax_rate: 10,
+        };
+        if (tenantId) hotelPayload.tenant_id = tenantId;
+
         const { data: newHotel, error: hotelErr } = await supabase
           .from('hotels')
-          .insert({
-            name: 'The Grand Metropolitan',
-            address: '500 Park Avenue',
-            city: 'New York',
-            country: 'United States',
-            phone: '+1 (212) 555-0100',
-            email: email,
-            website: 'https://grandmetropolitan.example.com',
-            star_rating: 5,
-            tax_rate: 10,
-          })
+          .insert(hotelPayload)
           .select()
           .single();
         if (hotelErr) return { error: hotelErr.message };
@@ -113,18 +120,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         seedHotelData(hotelId).catch(() => {});
       }
 
+      const staffPayload: Record<string, unknown> = {
+        hotel_id: hotelId,
+        user_id: data.user.id,
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        role: 'receptionist',
+        is_active: false,
+        approval_status: 'pending',
+      };
+      if (tenantId) staffPayload.tenant_id = tenantId;
+
       const { data: staffData } = await supabase
         .from('staff_members')
-        .insert({
-          hotel_id: hotelId,
-          user_id: data.user.id,
-          first_name: firstName,
-          last_name: lastName,
-          email,
-          role: 'receptionist',
-          is_active: false,
-          approval_status: 'pending',
-        })
+        .insert(staffPayload)
         .select()
         .single();
 
