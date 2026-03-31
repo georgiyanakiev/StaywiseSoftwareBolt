@@ -37,11 +37,14 @@ export default function BookingWidgetPage() {
   const [loading, setLoading] = useState(false);
   const [confirmationNumber, setConfirmationNumber] = useState('');
   const [hotelId, setHotelId] = useState('');
+  const [tenantId, setTenantId] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hid = params.get('hotel') ?? '';
+    const tid = params.get('tenant') ?? '';
     setHotelId(hid);
+    setTenantId(tid);
   }, []);
 
   const searchRooms = async () => {
@@ -80,6 +83,7 @@ export default function BookingWidgetPage() {
       source: 'direct',
     };
     if (hotelId) payload.hotel_id = hotelId;
+    if (tenantId) payload.tenant_id = tenantId;
 
     await supabase.from('direct_bookings').insert(payload);
     setConfirmationNumber(confNum);

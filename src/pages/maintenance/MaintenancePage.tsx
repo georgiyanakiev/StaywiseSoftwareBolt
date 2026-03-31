@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useHotel } from '../../contexts/HotelContext';
 import { supabase } from '../../lib/supabase';
+import { useTenantId } from '../../hooks/useTenantQuery';
 import { getStatusColor, getStatusLabel, formatDate, formatDateTime } from '../../lib/utils';
 import type { MaintenanceRequest, MaintenanceCategory, Room, StaffMember } from '../../types';
 import Modal from '../../components/ui/Modal';
@@ -104,6 +105,7 @@ type ViewTab = 'list' | 'kanban';
 
 export default function MaintenancePage() {
   const { currentHotel } = useHotel();
+  const tenantId = useTenantId();
   const { toast } = useToast();
 
   const [issues, setIssues] = useState<MaintenanceRequest[]>([]);
@@ -222,6 +224,7 @@ export default function MaintenancePage() {
       vendor: issueForm.vendor.trim(),
       scheduled_for: issueForm.scheduled_for || null,
       resolution_notes: '',
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     });
     if (error) { toast('error', 'Failed to create issue'); setSaving(false); return; }
     toast('success', 'Maintenance issue created');

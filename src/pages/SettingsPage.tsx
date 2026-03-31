@@ -4,6 +4,7 @@ import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useTenantId } from '../hooks/useTenantQuery';
 import type { StaffMember, RoomType } from '../types';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -56,6 +57,7 @@ function HotelSettingsTab() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const tenantId = useTenantId();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '', address: '', city: '', country: '', phone: '', email: '',
@@ -117,6 +119,7 @@ function HotelSettingsTab() {
         currency: form.currency,
         timezone: form.timezone,
         cancellation_policy: form.cancellation_policy,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       })
       .select()
       .single();
@@ -142,6 +145,7 @@ function HotelSettingsTab() {
         email: user.email || '',
         role: 'admin',
         is_active: true,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       });
     }
 

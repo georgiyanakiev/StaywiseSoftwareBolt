@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { useTenantId } from '../hooks/useTenantQuery';
 import {
   formatCurrency,
   formatDate,
@@ -75,6 +76,7 @@ const createEmptyForm = (): InvoiceForm => ({
 
 export default function BillingPage() {
   const { currentHotel } = useHotel();
+  const tenantId = useTenantId();
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -303,6 +305,7 @@ export default function BillingPage() {
       amount_paid: 0,
       status: 'draft' as const,
       notes: form.notes.trim(),
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     };
 
     const { data: invoiceData, error: invoiceError } = await supabase
@@ -324,6 +327,7 @@ export default function BillingPage() {
       quantity: item.quantity,
       unit_price: item.unit_price,
       total_price: item.quantity * item.unit_price,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     }));
 
     const { error: itemsError } = await supabase.from('invoice_items').insert(itemsPayload);
@@ -397,6 +401,7 @@ export default function BillingPage() {
         reference_number: '',
         notes: paymentNotes.trim(),
         processed_by: currentHotel.name,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       };
 
       const { error: paymentError } = await supabase

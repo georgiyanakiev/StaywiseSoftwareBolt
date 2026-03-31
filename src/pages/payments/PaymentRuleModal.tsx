@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Modal from '../../components/ui/Modal';
+import { useTenantId } from '../../hooks/useTenantQuery';
 
 interface Props {
   hotelId: string;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function PaymentRuleModal({ hotelId, onClose, onSaved }: Props) {
+  const tenantId = useTenantId();
   const [form, setForm] = useState({
     name: '',
     trigger: 'on_booking',
@@ -28,6 +30,7 @@ export default function PaymentRuleModal({ hotelId, onClose, onSaved }: Props) {
       hotel_id: hotelId,
       ...form,
       days_before: form.trigger === 'days_before_arrival' ? form.days_before : null,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     });
     setSaving(false);
     onSaved();

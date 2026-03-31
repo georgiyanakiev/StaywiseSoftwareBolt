@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Save, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
+import { useTenantId } from '../../hooks/useTenantQuery';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useToast } from '../../components/ui/Toast';
 
@@ -35,6 +36,7 @@ interface Props {
 
 export default function RateCalendar({ hotelId, channels }: Props) {
   const { showToast } = useToast();
+  const tenantId = useTenantId();
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [rates, setRates] = useState<ChannelRate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +119,7 @@ export default function RateCalendar({ hotelId, channels }: Props) {
         availability: 1,
         min_stay: 1,
         status: 'pending',
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       }).select().single();
       if (data) setRates(prev => [...prev, data as ChannelRate]);
     }

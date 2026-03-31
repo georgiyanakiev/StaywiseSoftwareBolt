@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { useTenantId } from '../hooks/useTenantQuery';
 import { formatCurrency, formatDate } from '../lib/utils';
 import type { Guest, Reservation, GuestCommunication, GuestDocument } from '../types';
 import Modal from '../components/ui/Modal';
@@ -66,6 +67,7 @@ const PAGE_SIZE = 10;
 
 export default function GuestsPage() {
   const { currentHotel } = useHotel();
+  const tenantId = useTenantId();
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -311,6 +313,7 @@ export default function GuestsPage() {
       newsletter_opt_in: form.newsletter_opt_in,
       communication_preference: form.communication_preference,
       complaint_history: form.complaint_history.trim(),
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     };
 
     if (editingGuest) {
@@ -414,6 +417,7 @@ export default function GuestsPage() {
       message: communicationMessage.trim(),
       sent_by: (await supabase.auth.getUser()).data.user?.id || null,
       status: 'sent',
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     });
 
     if (error) {

@@ -3,6 +3,7 @@ import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Modal from '../../components/ui/Modal';
 import { formatCurrency, generateInvoiceNumber } from '../../lib/utils';
+import { useTenantId } from '../../hooks/useTenantQuery';
 
 interface InvoiceLine {
   id: string;
@@ -49,6 +50,7 @@ const emptyLine = (): InvoiceLine => ({
 const CURRENCIES = ['EUR', 'USD', 'GBP', 'BGN', 'CHF', 'CAD'];
 
 export default function InvoiceEditorModal({ hotelId, invoice, onClose, onSaved }: Props) {
+  const tenantId = useTenantId();
   const [form, setForm] = useState<Invoice>({
     invoice_number: generateInvoiceNumber(),
     guest_name: '',
@@ -98,6 +100,7 @@ export default function InvoiceEditorModal({ hotelId, invoice, onClose, onSaved 
       tax_amount: taxTotal,
       total_amount: grandTotal,
       updated_at: new Date().toISOString(),
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     };
 
     let invoiceId = invoice?.id;
@@ -118,6 +121,7 @@ export default function InvoiceEditorModal({ hotelId, invoice, onClose, onSaved 
           unit_price: l.unit_price,
           tax_rate: l.tax_rate,
           line_total: l.line_total,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
         }))
       );
     }

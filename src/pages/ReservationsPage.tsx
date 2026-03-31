@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { useTenantId } from '../hooks/useTenantQuery';
 import {
   formatCurrency,
   formatDate,
@@ -83,6 +84,7 @@ export default function ReservationsPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const tenantId = useTenantId();
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -387,6 +389,7 @@ export default function ReservationsPage() {
           nationality: '',
           notes: '',
           preferences: {},
+          ...(tenantId ? { tenant_id: tenantId } : {}),
         })
         .select()
         .single();
@@ -421,6 +424,7 @@ export default function ReservationsPage() {
       booking_source: form.booking_source,
       special_requests: form.special_requests,
       confirmation_code: form.confirmation_code,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     };
 
     if (editingReservation) {
@@ -506,6 +510,7 @@ export default function ReservationsPage() {
             total_amount: reservation.total_amount,
             amount_paid: reservation.amount_paid,
             status: reservation.payment_status === 'paid' ? ('paid' as const) : ('sent' as const),
+            ...(tenantId ? { tenant_id: tenantId } : {}),
           })
           .select()
           .single();
@@ -518,6 +523,7 @@ export default function ReservationsPage() {
             quantity: 1,
             unit_price: subtotal,
             total_price: subtotal,
+            ...(tenantId ? { tenant_id: tenantId } : {}),
           });
         }
       }
@@ -529,6 +535,7 @@ export default function ReservationsPage() {
         priority: 'high',
         status: 'pending',
         assigned_to: '',
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       });
     }
 

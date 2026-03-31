@@ -23,6 +23,7 @@ import {
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { useTenantId } from '../hooks/useTenantQuery';
 import { getStatusColor, getStatusLabel, formatDate, formatDateTime } from '../lib/utils';
 import type { HousekeepingTask, MaintenanceRequest, Room, StaffMember } from '../types';
 import Modal from '../components/ui/Modal';
@@ -178,6 +179,7 @@ const defaultMaintenanceForm: MaintenanceFormData = {
 
 export default function HousekeepingPage() {
   const { currentHotel } = useHotel();
+  const tenantId = useTenantId();
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -359,6 +361,7 @@ export default function HousekeepingPage() {
       status: 'pending' as const,
       assigned_to: assignedTo,
       notes: taskForm.notes.trim(),
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     };
 
     const { error } = await supabase.from('housekeeping_tasks').insert(payload);
@@ -443,6 +446,7 @@ export default function HousekeepingPage() {
       status: 'reported' as const,
       assigned_to: maintenanceForm.assigned_to.trim(),
       cost: 0,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     };
 
     const { error } = await supabase.from('maintenance_requests').insert(payload);
@@ -526,6 +530,7 @@ export default function HousekeepingPage() {
         item_name: name,
         is_completed: false,
         completed_by: '',
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       }));
 
       const { data: newItems, error: insertError } = await supabase

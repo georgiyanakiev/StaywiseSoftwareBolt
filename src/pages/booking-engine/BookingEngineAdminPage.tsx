@@ -3,6 +3,7 @@ import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, DollarSign, Eye
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
+import { useTenantId } from '../../hooks/useTenantQuery';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
@@ -34,6 +35,7 @@ type Tab = 'overview' | 'config' | 'bookings' | 'embed';
 
 export default function BookingEngineAdminPage() {
   const { currentHotel } = useHotel();
+  const tenantId = useTenantId();
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>('overview');
   const [bookings, setBookings] = useState<DirectBooking[]>([]);
@@ -66,7 +68,7 @@ export default function BookingEngineAdminPage() {
   const saveConfig = async () => {
     if (!currentHotel) return;
     setSaving(true);
-    const payload = { ...form, hotel_id: currentHotel.id, updated_at: new Date().toISOString() };
+    const payload = { ...form, hotel_id: currentHotel.id, updated_at: new Date().toISOString(), ...(tenantId ? { tenant_id: tenantId } : {}) };
     const { error } = config
       ? await supabase.from('booking_engine_config').update(payload).eq('id', config.id)
       : await supabase.from('booking_engine_config').insert(payload);

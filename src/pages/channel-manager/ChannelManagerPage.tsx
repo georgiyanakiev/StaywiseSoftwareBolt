@@ -3,6 +3,7 @@ import { GitBranch, RefreshCw, Calendar, Activity, Plus, CheckCircle2, XCircle, 
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
+import { useTenantId } from '../../hooks/useTenantQuery';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ChannelCard from './ChannelCard';
 import RateCalendar from './RateCalendar';
@@ -32,6 +33,7 @@ interface SyncLog {
 export default function ChannelManagerPage() {
   const { currentHotel } = useHotel();
   const { showToast } = useToast();
+  const tenantId = useTenantId();
   const [activeTab, setActiveTab] = useState<TabId>('channels');
   const [channels, setChannels] = useState<Channel[]>([]);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
@@ -85,6 +87,7 @@ export default function ChannelManagerPage() {
         rooms_affected: roomsAffected,
         status: 'success',
         error_message: '',
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       }),
     ]);
 

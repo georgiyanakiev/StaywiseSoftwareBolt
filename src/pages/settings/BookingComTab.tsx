@@ -3,6 +3,7 @@ import { Save, RefreshCw, Link2, Eye, EyeOff, AlertCircle, CheckCircle2, XCircle
 import { useHotel } from '../../contexts/HotelContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useTenantId } from '../../hooks/useTenantQuery';
 import { useToast } from '../../components/ui/Toast';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import type { BookingComSettings, BookingComSyncLog, BookingComRoomMapping, RoomType } from '../../types';
@@ -41,6 +42,7 @@ export default function BookingComTab() {
   const { currentHotel } = useHotel();
   const { staff } = useAuth();
   const { toast } = useToast();
+  const tenantId = useTenantId();
 
   const [settings, setSettings] = useState<BookingComSettings | null>(null);
   const [syncLogs, setSyncLogs] = useState<BookingComSyncLog[]>([]);
@@ -161,6 +163,7 @@ export default function BookingComTab() {
         room_type_id: roomTypeId,
         bdc_room_type_id: field === 'bdc_room_type_id' ? value : '',
         bdc_rate_plan_id: field === 'bdc_rate_plan_id' ? value : '',
+        ...(tenantId ? { tenant_id: tenantId } : {}),
       });
     }
     const { data } = await supabase.from('booking_com_room_mappings').select('*').eq('hotel_id', currentHotel.id);
