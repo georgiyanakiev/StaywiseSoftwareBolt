@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Building2, ChevronRight, Check, Users, Calendar, Loader2, ArrowLeft } from 'lucide-react';
+import { Building2, ChevronRight, Check, Users, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useTenant } from '../../contexts/TenantContext';
 
 interface RoomType {
   id: string;
@@ -23,6 +24,9 @@ const ROOM_IMAGES = [
 ];
 
 export default function BookingWidgetPage() {
+  const { tenant } = useTenant();
+  const primaryColor = tenant?.primary_color ?? '#1d4ed8';
+  const hotelName = tenant?.name ?? 'Direct Booking';
   const [step, setStep] = useState<Step>(1);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -100,20 +104,27 @@ export default function BookingWidgetPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-5">
+        <div className="px-6 py-5" style={{ background: `linear-gradient(to right, ${primaryColor}dd, ${primaryColor})` }}>
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
+            {tenant?.logo_url ? (
+              <img src={tenant.logo_url} alt={hotelName} className="w-9 h-9 rounded-lg object-contain bg-white/10 p-0.5" />
+            ) : (
+              <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+            )}
             <div>
-              <p className="text-white font-semibold">Direct Booking</p>
-              <p className="text-blue-200 text-xs">Best rate guaranteed — no commission</p>
+              <p className="text-white font-semibold">{hotelName}</p>
+              <p className="text-white/70 text-xs">Best rate guaranteed — no commission</p>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-1">
             {[1, 2, 3, 4].map(s => (
               <div key={s} className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s ? 'bg-white text-blue-700' : 'bg-white/20 text-white/60'}`}>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step >= s ? 'bg-white' : 'bg-white/20 text-white/60'}`}
+                  style={step >= s ? { color: primaryColor } : undefined}
+                >
                   {step > s ? <Check className="w-3.5 h-3.5" /> : s}
                 </div>
                 {s < 4 && <div className={`h-0.5 w-8 transition-all ${step > s ? 'bg-white' : 'bg-white/20'}`} />}
@@ -157,7 +168,8 @@ export default function BookingWidgetPage() {
               <button
                 onClick={searchRooms}
                 disabled={!checkIn || !checkOut || nights <= 0}
-                className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
+                style={{ backgroundColor: primaryColor }}
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Search Available Rooms
@@ -259,7 +271,8 @@ export default function BookingWidgetPage() {
               <button
                 onClick={submitBooking}
                 disabled={!guestName || !guestEmail || loading}
-                className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
+                style={{ backgroundColor: primaryColor }}
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Confirm Booking · ${(selectedRoom.base_rate * nights).toFixed(0)}

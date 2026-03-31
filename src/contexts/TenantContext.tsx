@@ -31,20 +31,27 @@ export type TenantLookup =
 
 function detectTenantLookup(): TenantLookup {
   const hostname = window.location.hostname;
+  const urlParams = new URLSearchParams(window.location.search);
+  const tenantParam = urlParams.get('tenant');
 
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    const params = new URLSearchParams(window.location.search);
-    const tenantParam = params.get('tenant');
     return { type: 'subdomain', value: tenantParam || 'demo' };
   }
 
   if (hostname.match(/\.bolt\.new$/) || hostname.match(/\.webcontainer-api\.io$/)) {
+    if (tenantParam) {
+      return { type: 'subdomain', value: tenantParam };
+    }
     return { type: 'none' };
   }
 
   const parts = hostname.split('.');
   if (parts.length >= 3) {
     return { type: 'subdomain', value: parts[0] };
+  }
+
+  if (tenantParam) {
+    return { type: 'subdomain', value: tenantParam };
   }
 
   return { type: 'custom_domain', value: hostname };
