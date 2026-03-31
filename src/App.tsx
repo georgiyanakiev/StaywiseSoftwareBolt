@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { HotelProvider } from './contexts/HotelContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
+import { ActiveHotelProvider } from './contexts/ActiveHotelContext';
 import SuperAdminPage from './pages/superadmin/SuperAdminPage';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './pages/LoginPage';
@@ -111,16 +112,18 @@ function AppWithAuth() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/superadmin" element={<SuperAdminPage />} />
-      <Route
-        path="*"
-        element={
-          <TenantProvider>
-            <AppWithAuth />
-          </TenantProvider>
-        }
-      />
-    </Routes>
+    <ActiveHotelProvider>
+      <Routes>
+        <Route path="/superadmin" element={<SuperAdminPage />} />
+        <Route
+          path="*"
+          element={
+            <TenantProvider>
+              <AppWithAuth />
+            </TenantProvider>
+          }
+        />
+      </Routes>
+    </ActiveHotelProvider>
   );
 }

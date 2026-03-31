@@ -1,7 +1,7 @@
 import { Building2, Plus, LogOut, Hotel } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useHotel } from '../../contexts/HotelContext';
+import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLobbyData, type LobbyHotel } from './useLobbyData';
 import HotelCard from './HotelCard';
 import HotelCardSkeleton from './HotelCardSkeleton';
@@ -19,35 +19,25 @@ function getAvatarInitials(email: string): string {
 
 export default function LobbyPage() {
   const { user, signOut } = useAuth();
-  const { setCurrentHotel } = useHotel();
+  const { enter, entering } = useActiveHotel();
   const navigate = useNavigate();
   const { hotels, loading, error } = useLobbyData();
 
   const superAdmin = isSuperAdmin(user?.email);
 
-  function handleEnterHotel(hotel: LobbyHotel) {
-    const hotelForContext = {
-      id: hotel.id,
-      name: hotel.name,
-      address: hotel.address,
-      city: hotel.city,
-      country: hotel.country,
-      logo_url: hotel.logo_url ?? '',
-      star_rating: hotel.star_rating,
-      currency: hotel.currency,
-      phone: '',
-      email: '',
-      website: '',
-      check_in_time: '14:00',
-      check_out_time: '11:00',
-      cover_image_url: '',
-      timezone: 'UTC',
-      tax_rate: 0,
-      cancellation_policy: '',
-      created_at: '',
-      updated_at: '',
-    };
-    setCurrentHotel(hotelForContext);
+  async function handleEnterHotel(hotel: LobbyHotel) {
+    await enter({
+      tenantId: hotel.tenant_id ?? hotel.id,
+      hotelId: hotel.id,
+      role: hotel.staff_role,
+      hotelName: hotel.name,
+      hotelLogo: hotel.logo_url,
+      primaryColor: hotel.tenant?.primary_color ?? '#2563eb',
+      secondaryColor: hotel.tenant?.secondary_color ?? '#1e40af',
+      tenantName: hotel.tenant?.name ?? hotel.name,
+      subdomain: hotel.tenant?.subdomain ?? '',
+      plan: hotel.tenant?.plan ?? 'starter',
+    });
     navigate('/');
   }
 
@@ -56,7 +46,15 @@ export default function LobbyPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f4f6f9' }}>
+    <div className="min-h-screen relative" style={{ backgroundColor: '#f4f6f9' }}>
+      {entering && (
+        <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-500 font-medium">Loading hotel...</p>
+          </div>
+        </div>
+      )}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
