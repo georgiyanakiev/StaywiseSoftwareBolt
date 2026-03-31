@@ -1,0 +1,165 @@
+import { Building2, Plus, LogOut, Hotel } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useHotel } from '../../contexts/HotelContext';
+import { useLobbyData, type LobbyHotel } from './useLobbyData';
+import HotelCard from './HotelCard';
+import HotelCardSkeleton from './HotelCardSkeleton';
+
+const SUPERADMIN_EMAILS = (import.meta.env.VITE_SUPERADMIN_EMAILS ?? '').split(',').map((e: string) => e.trim()).filter(Boolean);
+
+function isSuperAdmin(email: string | undefined): boolean {
+  if (!email) return false;
+  return SUPERADMIN_EMAILS.includes(email) || email.endsWith('@staywisesoftware.com');
+}
+
+function getAvatarInitials(email: string): string {
+  return email.slice(0, 2).toUpperCase();
+}
+
+export default function LobbyPage() {
+  const { user, signOut } = useAuth();
+  const { setCurrentHotel } = useHotel();
+  const navigate = useNavigate();
+  const { hotels, loading, error } = useLobbyData();
+
+  const superAdmin = isSuperAdmin(user?.email);
+
+  function handleEnterHotel(hotel: LobbyHotel) {
+    const hotelForContext = {
+      id: hotel.id,
+      name: hotel.name,
+      address: hotel.address,
+      city: hotel.city,
+      country: hotel.country,
+      logo_url: hotel.logo_url ?? '',
+      star_rating: hotel.star_rating,
+      currency: hotel.currency,
+      phone: '',
+      email: '',
+      website: '',
+      check_in_time: '14:00',
+      check_out_time: '11:00',
+      cover_image_url: '',
+      timezone: 'UTC',
+      tax_rate: 0,
+      cancellation_policy: '',
+      created_at: '',
+      updated_at: '',
+    };
+    setCurrentHotel(hotelForContext);
+    navigate('/');
+  }
+
+  async function handleSignOut() {
+    await signOut();
+  }
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: '#f4f6f9' }}>
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Hotel className="w-4.5 h-4.5 text-white" style={{ width: '18px', height: '18px' }} />
+            </div>
+            <span className="text-[15px] font-semibold text-gray-900 tracking-tight">StayWise</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-semibold text-white">{getAvatarInitials(user?.email ?? 'U')}</span>
+              </div>
+              <span className="text-sm text-gray-600 hidden sm:block">{user?.email}</span>
+            </div>
+
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex items-end justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Your properties</h1>
+            {!loading && (
+              <p className="text-sm text-gray-400 mt-1">
+                {hotels.length === 0
+                  ? 'No hotels assigned'
+                  : hotels.length === 1
+                  ? '1 hotel'
+                  : `${hotels.length} hotels`}
+              </p>
+            )}
+          </div>
+
+          {superAdmin && (
+            <button
+              onClick={() => navigate('/superadmin')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add Hotel
+            </button>
+          )}
+        </div>
+
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div
+            className="grid gap-6"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
+          >
+            {[0, 1, 2].map(i => <HotelCardSkeleton key={i} />)}
+          </div>
+        ) : hotels.length === 0 ? (
+          <EmptyState superAdmin={superAdmin} onAddHotel={() => navigate('/superadmin')} />
+        ) : (
+          <div
+            className="grid gap-6"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
+          >
+            {hotels.map(hotel => (
+              <HotelCard key={hotel.id} hotel={hotel} onEnter={handleEnterHotel} />
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function EmptyState({ superAdmin, onAddHotel }: { superAdmin: boolean; onAddHotel: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
+        <Building2 className="w-9 h-9 text-gray-300" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-700 mb-1.5">No hotels assigned yet</h3>
+      <p className="text-sm text-gray-400 max-w-xs mb-6">
+        Contact your administrator to get access to a hotel, or create one if you have admin rights.
+      </p>
+      {superAdmin && (
+        <button
+          onClick={onAddHotel}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Hotel
+        </button>
+      )}
+    </div>
+  );
+}

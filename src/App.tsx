@@ -23,6 +23,7 @@ import SiteMinderPage from './pages/SiteMinderPage';
 import LodgifyPage from './pages/LodgifyPage';
 import FrontDeskPage from './pages/FrontDeskPage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
+import LobbyPage from './pages/lobby/LobbyPage';
 import ChannelManagerPage from './pages/channel-manager/ChannelManagerPage';
 import BookingEngineAdminPage from './pages/booking-engine/BookingEngineAdminPage';
 import BookingWidgetPage from './pages/booking-engine/BookingWidgetPage';
@@ -33,6 +34,7 @@ function AuthenticatedApp() {
   return (
     <HotelProvider>
       <Routes>
+        <Route path="/lobby" element={<LobbyPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/front-desk" element={<FrontDeskPage />} />
@@ -54,7 +56,7 @@ function AuthenticatedApp() {
           <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
           <Route path="/payment-automation" element={<PaymentAutomationPage />} />
           <Route path="/invoicing" element={<InvoicingPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/lobby" replace />} />
         </Route>
         <Route path="/booking-engine/widget" element={<BookingWidgetPage />} />
       </Routes>
