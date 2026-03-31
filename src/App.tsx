@@ -15,7 +15,7 @@ import GuestsPage from './pages/GuestsPage';
 import BillingPage from './pages/BillingPage';
 import HousekeepingPage from './pages/HousekeepingPage';
 import MaintenancePage from './pages/maintenance/MaintenancePage';
-import ReportsPage from './pages/ReportsPage';
+import ReportsPage from './pages/reports/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import GuidePage from './pages/GuidePage';
 import BookingComPage from './pages/BookingComPage';
