@@ -10,7 +10,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ROLE_LABELS, DEFAULT_PERMISSIONS, canAccessPath, type StaffRole } from '../../lib/permissions';
+import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
 
 interface NavItem {
   to: string;
@@ -112,13 +112,6 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
   }, [ref, onClose]);
 }
 
-function filterByRole(items: NavItem[], role: string | null): NavItem[] {
-  if (!role) return items;
-  if (role === 'super_admin') return items;
-  const perms = DEFAULT_PERMISSIONS[role as StaffRole];
-  if (!perms) return items;
-  return items.filter(item => canAccessPath(perms, item.to));
-}
 
 function HotelSwitcherButton({ brandColor, hotelName, hotelLogo }: { brandColor: string; hotelName: string; hotelLogo: string | null }) {
   const [open, setOpen] = useState(false);
@@ -264,10 +257,9 @@ function UserMenu({ brandColor, userRole }: { brandColor: string; userRole: stri
 
 function MobileDrawer({ onClose, brandColor, userRole }: { onClose: () => void; brandColor: string; userRole: string | null }) {
   const isActive = useIsActive();
-  const { signOut, user } = useAuth();
+  const { signOut, user, canAccess, staff } = useAuth();
   const { session, clearActiveHotel } = useActiveHotel();
   const { lang, setLang } = useLanguage();
-  const { staff } = useAuth();
   const role = session?.role ?? staff?.role ?? userRole ?? null;
   const hotelName = session?.hotelName ?? 'StayWise';
 
@@ -292,7 +284,7 @@ function MobileDrawer({ onClose, brandColor, userRole }: { onClose: () => void; 
 
         <nav className="flex-1 px-2 py-3">
           {MOBILE_SECTIONS.map(section => {
-            const visibleItems = filterByRole(section.items, role);
+            const visibleItems = section.items.filter(item => canAccess(item.to));
             if (visibleItems.length === 0) return null;
             return (
               <div key={section.label} className="mb-3">
@@ -371,15 +363,14 @@ function MobileDrawer({ onClose, brandColor, userRole }: { onClose: () => void; 
 function GroupDropdown({
   group,
   brandColor,
-  userRole,
 }: {
   group: NavGroup;
   brandColor: string;
-  userRole: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isActive = useIsActive();
+  const { canAccess } = useAuth();
   useClickOutside(ref, () => setOpen(false));
 
   useEffect(() => {
@@ -388,7 +379,7 @@ function GroupDropdown({
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  const visibleItems = filterByRole(group.items, userRole);
+  const visibleItems = group.items.filter(item => canAccess(item.to));
   if (visibleItems.length === 0) return null;
 
   const hasActive = visibleItems.some(item => isActive(item.to));
@@ -538,7 +529,6 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
               key={group.label}
               group={group}
               brandColor={brandColor}
-              userRole={userRole}
             />
           ))}
         </nav>
