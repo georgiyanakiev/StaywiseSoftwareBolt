@@ -32,6 +32,7 @@ export default function HousekeepingPage() {
   const [staff, setStaff] = useState<HKStaff[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const [upsellByRoom, setUpsellByRoom] = useState<Record<string, string[]>>({});
 
   const load = useCallback(async () => {
     if (!currentHotel) return;
@@ -61,6 +62,33 @@ export default function HousekeepingPage() {
     setIssues((i ?? []) as MaintenanceIssue[]);
     setStaff((s ?? []) as HKStaff[]);
     setRooms((r ?? []) as Room[]);
+
+    const { data: upsellOrders } = await supabase
+      .from('upsell_orders')
+      .select('booking_id, item_name, status')
+      .eq('hotel_id', currentHotel.id)
+      .in('status', ['confirmed', 'delivered']);
+
+    if (upsellOrders && upsellOrders.length > 0) {
+      const bookingIds = [...new Set(upsellOrders.map(o => o.booking_id).filter(Boolean))];
+      const { data: reservations } = await supabase
+        .from('reservations')
+        .select('id, room_id')
+        .in('id', bookingIds as string[]);
+
+      const roomMap: Record<string, string[]> = {};
+      for (const order of upsellOrders) {
+        if (!order.booking_id) continue;
+        const resv = (reservations ?? []).find(rv => rv.id === order.booking_id);
+        if (!resv) continue;
+        if (!roomMap[resv.room_id]) roomMap[resv.room_id] = [];
+        roomMap[resv.room_id].push(order.item_name);
+      }
+      setUpsellByRoom(roomMap);
+    } else {
+      setUpsellByRoom({});
+    }
+
     setLoading(false);
   }, [currentHotel]);
 
@@ -140,6 +168,7 @@ export default function HousekeepingPage() {
           staff={staff}
           hotelId={currentHotel!.id}
           tenantId={tenantId}
+          upsellByRoom={upsellByRoom}
           onTasksChanged={load}
         />
       )}

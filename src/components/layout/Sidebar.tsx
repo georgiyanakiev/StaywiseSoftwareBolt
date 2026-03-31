@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, BedDouble, Users, Receipt,
   SprayCan, BarChart3, Settings, Building2, ChevronLeft, ChevronRight, LogOut, X, BookOpen, Link2, ClipboardList, Wrench,
-  GitBranch, Globe, CreditCard, FileText, QrCode, UserCog, KeyRound, TrendingUp,
+  GitBranch, Globe, CreditCard, FileText, QrCode, UserCog, KeyRound, TrendingUp, ShoppingBag,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
@@ -53,6 +53,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/guest-portal', icon: QrCode, label: 'Digital Check-in' },
     { to: '/owner-portal', icon: KeyRound, label: 'Owner Portal' },
     { to: '/dynamic-pricing', icon: TrendingUp, label: 'Dynamic Pricing' },
+    { to: '/upselling', icon: ShoppingBag, label: 'Upselling' },
   ];
 
   const allIntegrationItems: NavItem[] = [

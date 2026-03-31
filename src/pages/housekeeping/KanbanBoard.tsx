@@ -14,10 +14,11 @@ interface Props {
   staff: HKStaff[];
   hotelId: string;
   tenantId: string | null;
+  upsellByRoom?: Record<string, string[]>;
   onTasksChanged: () => void;
 }
 
-export default function KanbanBoard({ tasks, staff, hotelId, tenantId, onTasksChanged }: Props) {
+export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByRoom = {}, onTasksChanged }: Props) {
   const { toast } = useToast();
   const [selectedTask, setSelectedTask] = useState<HKTask | null>(null);
   const [filterStaff, setFilterStaff] = useState('');
@@ -174,6 +175,7 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, onTasksCh
                   <TaskCard
                     key={task.id}
                     task={task}
+                    upsells={upsellByRoom[task.room_id] ?? []}
                     onClick={() => setSelectedTask(task)}
                     onAdvance={advanceTask}
                   />
@@ -202,8 +204,9 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, onTasksCh
   );
 }
 
-function TaskCard({ task, onClick, onAdvance }: {
+function TaskCard({ task, upsells, onClick, onAdvance }: {
   task: HKTask;
+  upsells: string[];
   onClick: () => void;
   onAdvance: (e: React.MouseEvent, task: HKTask) => void;
 }) {
@@ -244,6 +247,16 @@ function TaskCard({ task, onClick, onAdvance }: {
 
       {task.notes && (
         <p className="text-xs text-gray-400 truncate mb-2">{task.notes}</p>
+      )}
+
+      {upsells.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1">
+          {upsells.map((u, i) => (
+            <span key={i} className="text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-1.5 py-0.5 leading-tight">
+              {u}
+            </span>
+          ))}
+        </div>
       )}
 
       {nextLabel && (

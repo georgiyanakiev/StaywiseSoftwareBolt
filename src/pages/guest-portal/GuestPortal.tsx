@@ -81,6 +81,9 @@ export default function GuestPortal() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [upsells, setUpsells] = useState({ lateCheckout: false, breakfast: false, parking: false });
+  const [dbUpsellItems, setDbUpsellItems] = useState<Array<{id:string;name:string;description:string;price:number;price_type:string;image_url:string}>>([]);
+  const [selectedDbUpsells, setSelectedDbUpsells] = useState<Set<string>>(new Set());
+  const [savingDbUpsell, setSavingDbUpsell] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) { setError('Invalid or missing check-in link.'); setLoading(false); return; }
@@ -102,6 +105,11 @@ export default function GuestPortal() {
     ]);
     setHotel(h as Hotel | null);
     setReservation(r as Reservation | null);
+
+    const { data: upsellData } = await supabase.from('upsell_items')
+      .select('id, name, description, price, price_type, image_url')
+      .eq('hotel_id', sess.hotel_id).eq('active', true).order('sort_order').limit(6);
+    if (upsellData) setDbUpsellItems(upsellData);
 
     if (r?.guest) {
       setPersonal(p => ({
@@ -320,7 +328,36 @@ export default function GuestPortal() {
             />
           )}
           {step === 6 && (
-            <StepDone hotel={hotel} reservation={reservation} upsells={upsells} setUpsells={setUpsells} />
+            <StepDone
+              hotel={hotel}
+              reservation={reservation}
+              upsells={upsells}
+              setUpsells={setUpsells}
+              dbUpsellItems={dbUpsellItems}
+              selectedDbUpsells={selectedDbUpsells}
+              savingDbUpsell={savingDbUpsell}
+              onToggleDbUpsell={async (item) => {
+                const next = new Set(selectedDbUpsells);
+                if (next.has(item.id)) { next.delete(item.id); setSelectedDbUpsells(next); return; }
+                next.add(item.id);
+                setSelectedDbUpsells(next);
+                if (!session?.hotel_id) return;
+                setSavingDbUpsell(true);
+                const payload: Record<string, unknown> = {
+                  hotel_id: session.hotel_id,
+                  guest_name: personal.fullName || session.guest_name,
+                  upsell_item_id: item.id,
+                  item_name: item.name,
+                  quantity: 1,
+                  unit_price: item.price,
+                  total_price: item.price,
+                  status: 'pending',
+                };
+                if (session.reservation_id) payload.booking_id = session.reservation_id;
+                await supabase.from('upsell_orders').insert(payload);
+                setSavingDbUpsell(false);
+              }}
+            />
           )}
         </div>
       </div>
@@ -622,17 +659,22 @@ function StepSignature({ terms, agreed, onAgreeChange, signatureRef, hasSignatur
   );
 }
 
-function StepDone({ hotel, reservation, upsells, setUpsells }: {
+function StepDone({ hotel, reservation, dbUpsellItems, selectedDbUpsells, savingDbUpsell, onToggleDbUpsell }: {
   hotel: Hotel | null;
   reservation: Reservation | null;
   upsells: { lateCheckout: boolean; breakfast: boolean; parking: boolean };
-  setUpsells: (u: typeof upsells) => void;
+  setUpsells: (u: { lateCheckout: boolean; breakfast: boolean; parking: boolean }) => void;
+  dbUpsellItems: Array<{id:string;name:string;description:string;price:number;price_type:string;image_url:string}>;
+  selectedDbUpsells: Set<string>;
+  savingDbUpsell: boolean;
+  onToggleDbUpsell: (item: {id:string;name:string;description:string;price:number;price_type:string;image_url:string}) => void;
 }) {
-  const UPSELL_OPTIONS = [
-    { key: 'lateCheckout', icon: Clock, label: 'Late Check-out', desc: 'Extend your stay until 14:00', price: 25 },
-    { key: 'breakfast',    icon: Coffee, label: 'Breakfast',     desc: 'Continental breakfast daily',  price: 15 },
-    { key: 'parking',      icon: Car,    label: 'Parking',       desc: 'Secure car park on-site',      price: 10 },
-  ] as const;
+  const fallbackUpsells = [
+    { id: 'late', name: 'Late Check-out', description: 'Extend your stay until 14:00', price: 25 },
+    { id: 'bfast', name: 'Breakfast', description: 'Continental breakfast daily', price: 15 },
+    { id: 'park', name: 'Parking', description: 'Secure car park on-site', price: 10 },
+  ];
+  const displayItems = dbUpsellItems.length > 0 ? dbUpsellItems : fallbackUpsells;
 
   return (
     <div className="p-6 space-y-6 text-center">
@@ -654,21 +696,26 @@ function StepDone({ hotel, reservation, upsells, setUpsells }: {
 
       <div className="text-left space-y-3">
         <p className="text-sm font-semibold text-gray-700">Enhance your stay</p>
-        {UPSELL_OPTIONS.map(opt => {
-          const active = upsells[opt.key];
+        {displayItems.map(item => {
+          const active = selectedDbUpsells.has(item.id);
           return (
-            <div key={opt.key} className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${active ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-blue-600' : 'bg-white border border-gray-200'}`}>
-                <opt.icon className={`w-5 h-5 ${active ? 'text-white' : 'text-gray-500'}`} />
+            <div key={item.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${active ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
+              {'image_url' in item && item.image_url ? (
+                <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+              ) : (
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-blue-600' : 'bg-white border border-gray-200'}`}>
+                  <Star className={`w-5 h-5 ${active ? 'text-white' : 'text-gray-400'}`} />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800">{item.name}</p>
+                <p className="text-xs text-gray-500">{item.description}</p>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-800">{opt.label}</p>
-                <p className="text-xs text-gray-500">{opt.desc}</p>
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <p className="text-sm font-bold text-gray-900">+€{opt.price}</p>
+              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <p className="text-sm font-bold text-gray-900">+€{item.price}</p>
                 <button
-                  onClick={() => setUpsells({ ...upsells, [opt.key]: !active })}
+                  onClick={() => dbUpsellItems.length > 0 && onToggleDbUpsell(item as typeof dbUpsellItems[0])}
+                  disabled={savingDbUpsell && dbUpsellItems.length > 0}
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
                     active ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
                   }`}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, ChevronRight, Check, Users, Loader2, ArrowLeft, Tag, CalendarDays, MapPin, Phone, Mail, Star } from 'lucide-react';
+import { Building2, ChevronRight, Check, Users, Loader2, ArrowLeft, Tag, CalendarDays, MapPin, Phone, Mail, Star, Plus, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useTenant } from '../../contexts/TenantContext';
 
@@ -12,6 +12,16 @@ interface RoomType {
   bed_type: string;
   amenities: string[];
   image_url: string;
+}
+
+interface UpsellItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  price_type: string;
+  image_url: string;
+  category: string;
 }
 
 interface Config {
@@ -101,8 +111,12 @@ export default function BookingWidgetPage() {
 
   const [loading, setLoading] = useState(false);
   const [confirmationNumber, setConfirmationNumber] = useState('');
+  const [bookingId, setBookingId] = useState('');
   const [hotelId, setHotelId] = useState('');
   const [tenantId, setTenantId] = useState('');
+  const [upsellItems, setUpsellItems] = useState<UpsellItem[]>([]);
+  const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
+  const [savingUpsell, setSavingUpsell] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -114,6 +128,9 @@ export default function BookingWidgetPage() {
     if (hid) {
       supabase.from('booking_engine_config').select('*').eq('hotel_id', hid).maybeSingle()
         .then(({ data }) => { if (data) setConfig(data as Config); });
+      supabase.from('upsell_items').select('id, name, description, price, price_type, image_url, category')
+        .eq('hotel_id', hid).eq('active', true).order('sort_order').limit(3)
+        .then(({ data }) => { if (data) setUpsellItems(data as UpsellItem[]); });
     }
   }, []);
 
@@ -182,7 +199,8 @@ export default function BookingWidgetPage() {
     if (hotelId) payload.hotel_id = hotelId;
     if (tenantId) payload.tenant_id = tenantId;
 
-    await supabase.from('direct_bookings').insert(payload);
+    const { data: inserted } = await supabase.from('direct_bookings').insert(payload).select('id').maybeSingle();
+    if (inserted?.id) setBookingId(inserted.id);
     setConfirmationNumber(confNum);
     setLoading(false);
     setStep(4);
@@ -206,6 +224,33 @@ export default function BookingWidgetPage() {
     URL.revokeObjectURL(url);
   };
 
+  const toggleUpsell = async (item: UpsellItem) => {
+    const next = new Set(selectedUpsells);
+    if (next.has(item.id)) {
+      next.delete(item.id);
+      setSelectedUpsells(next);
+      return;
+    }
+    next.add(item.id);
+    setSelectedUpsells(next);
+    if (!hotelId) return;
+    setSavingUpsell(true);
+    const orderPayload: Record<string, unknown> = {
+      hotel_id: hotelId,
+      guest_name: guestName,
+      upsell_item_id: item.id,
+      item_name: item.name,
+      quantity: 1,
+      unit_price: item.price,
+      total_price: item.price,
+      status: 'pending',
+    };
+    if (bookingId) orderPayload.booking_id = bookingId;
+    if (tenantId) orderPayload.tenant_id = tenantId;
+    await supabase.from('upsell_orders').insert(orderPayload);
+    setSavingUpsell(false);
+  };
+
   const resetWidget = () => {
     setStep(1);
     setCheckIn(''); setCheckOut('');
@@ -214,6 +259,8 @@ export default function BookingWidgetPage() {
     setGuestName(''); setGuestEmail(''); setGuestPhone('');
     setGuestCountry(''); setSpecialRequests(''); setPromoCode('');
     setConfirmationNumber('');
+    setBookingId('');
+    setSelectedUpsells(new Set());
   };
 
   return (
@@ -630,6 +677,45 @@ export default function BookingWidgetPage() {
 
                 {config?.cancellation_policy && (
                   <p className="text-xs text-gray-400 mb-5 px-2">{config.cancellation_policy}</p>
+                )}
+
+                {upsellItems.length > 0 && (
+                  <div className="mb-6 text-left">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Enhance your stay</p>
+                    <div className="space-y-2">
+                      {upsellItems.map(item => {
+                        const added = selectedUpsells.has(item.id);
+                        return (
+                          <div
+                            key={item.id}
+                            className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${added ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}
+                          >
+                            {item.image_url && (
+                              <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800">{item.name}</p>
+                              {item.description && <p className="text-xs text-gray-500 truncate">{item.description}</p>}
+                            </div>
+                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                              <p className="text-sm font-bold text-gray-900">+{formatAmount(item.price)}</p>
+                              <button
+                                onClick={() => toggleUpsell(item)}
+                                disabled={savingUpsell}
+                                className={`flex items-center gap-1 text-xs px-3 py-1 rounded-full font-medium transition-colors ${
+                                  added
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
+                                }`}
+                              >
+                                {added ? <><CheckCircle className="w-3 h-3" /> Added</> : <><Plus className="w-3 h-3" /> Add</>}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
