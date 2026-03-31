@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTenant } from '../../contexts/TenantContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -26,7 +27,11 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { signOut, staff } = useAuth();
   const { currentHotel } = useHotel();
   const { t, lang, setLang } = useLanguage();
+  const { tenant } = useTenant();
   const location = useLocation();
+
+  const brandColor = tenant?.primary_color ?? '#2563eb';
+  const displayName = tenant?.name ?? 'StayWise PMS';
 
   const navItems: NavItem[] = [
     { to: '/', icon: LayoutDashboard, label: t.nav.dashboard },
@@ -63,20 +68,24 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
 
-  const renderNavItem = (item: NavItem) => (
-    <NavLink
-      key={item.to}
-      to={item.to}
-      onClick={onMobileClose}
-      className={() =>
-        `sidebar-link ${isActive(item.to) ? 'sidebar-link-active' : 'sidebar-link-inactive'} ${collapsed ? 'justify-center px-2' : ''}`
-      }
-      title={collapsed ? item.label : undefined}
-    >
-      <item.icon className="w-5 h-5 flex-shrink-0" />
-      {!collapsed && <span>{item.label}</span>}
-    </NavLink>
-  );
+  const renderNavItem = (item: NavItem) => {
+    const active = isActive(item.to);
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        onClick={onMobileClose}
+        className={() =>
+          `sidebar-link ${active ? 'sidebar-link-active' : 'sidebar-link-inactive'} ${collapsed ? 'justify-center px-2' : ''}`
+        }
+        style={active ? { color: brandColor, backgroundColor: `${brandColor}14` } : undefined}
+        title={collapsed ? item.label : undefined}
+      >
+        <item.icon className="w-5 h-5 flex-shrink-0" />
+        {!collapsed && <span>{item.label}</span>}
+      </NavLink>
+    );
+  };
 
   const renderSectionLabel = (label: string) =>
     !collapsed ? (
@@ -87,12 +96,28 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
   const content = (
     <div className="flex flex-col h-full">
-      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-4 py-5 border-b border-gray-100`}>
-        <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''}`}>
-          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-4 h-4 text-white" />
-          </div>
-          {!collapsed && <span className="text-base font-semibold text-gray-900 truncate">StayWise</span>}
+      <div
+        className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-4 py-5 border-b border-gray-100`}
+        style={{ borderLeftColor: brandColor, borderLeftWidth: 3 }}
+      >
+        <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''} min-w-0`}>
+          {tenant?.logo_url ? (
+            <img
+              src={tenant.logo_url}
+              alt={displayName}
+              className="w-8 h-8 rounded-lg object-contain flex-shrink-0"
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: brandColor }}
+            >
+              <Building2 className="w-4 h-4 text-white" />
+            </div>
+          )}
+          {!collapsed && (
+            <span className="text-base font-semibold text-gray-900 truncate">{displayName}</span>
+          )}
         </div>
         <button onClick={onMobileClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-600">
           <X className="w-5 h-5" />
