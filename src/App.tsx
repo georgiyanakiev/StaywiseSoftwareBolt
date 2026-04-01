@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import CookieConsent from './components/legal/CookieConsent';
 import { HotelProvider } from './contexts/HotelContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { ActiveHotelProvider } from './contexts/ActiveHotelContext';
@@ -145,6 +146,7 @@ export default function App() {
           }
         />
       </Routes>
+      <CookieConsent />
     </ActiveHotelProvider>
   );
 }
