@@ -41,6 +41,7 @@ import OwnerPortalPage from './pages/owner-portal/OwnerPortalPage';
 import MyOwnerPortal from './pages/owner-portal/MyOwnerPortal';
 import DynamicPricingPage from './pages/dynamic-pricing/DynamicPricingPage';
 import UpsellPage from './pages/upselling/UpsellPage';
+import TermsPage from './pages/legal/TermsPage';
 
 function AuthenticatedApp() {
   return (
@@ -49,6 +50,8 @@ function AuthenticatedApp() {
         <Route path="/lobby" element={<LobbyPage />} />
         <Route path="/booking-engine/widget" element={<BookingWidgetPage />} />
         <Route path="/portal" element={<GuestPortal />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/terms-of-service" element={<TermsPage />} />
         <Route element={<AppLayout />}>
           <Route element={<RequireHotel />}>
             <Route path="/" element={<DashboardPage />} />
@@ -137,6 +140,8 @@ export default function App() {
     <ActiveHotelProvider>
       <Routes>
         <Route path="/superadmin" element={<SuperAdminPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/terms-of-service" element={<TermsPage />} />
         <Route
           path="*"
           element={

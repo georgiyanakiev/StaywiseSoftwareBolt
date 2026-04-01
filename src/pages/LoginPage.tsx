@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Building2, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
@@ -220,6 +221,18 @@ export default function LoginPage() {
                 >
                   {isSignUp ? t.login.signIn : t.login.createOne}
                 </button>
+              </p>
+
+              <p className="mt-8 text-center text-xs text-gray-400">
+                By using StayWise you agree to our{' '}
+                <Link to="/terms" className="text-gray-500 hover:text-gray-700 underline">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy" className="text-gray-500 hover:text-gray-700 underline">
+                  Privacy Policy
+                </Link>
+                .
               </p>
             </>
           )}
