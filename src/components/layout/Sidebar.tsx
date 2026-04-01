@@ -111,7 +111,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         onClick={onMobileClose}
         className={() =>
           `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-            active ? 'font-medium' : 'text-gray-800 hover:bg-gray-50 hover:text-gray-900'
+            active ? 'font-medium' : 'text-gray-900 hover:bg-gray-50 hover:text-black'
           } ${collapsed ? 'justify-center px-2' : ''}`
         }
         style={active ? { color: brandColor, backgroundColor: `${brandColor}14` } : undefined}
