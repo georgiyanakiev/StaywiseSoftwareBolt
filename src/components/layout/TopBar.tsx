@@ -13,6 +13,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
 import { useChannels, type Channel } from '../../hooks/useChannels';
 import { getChannelIcon } from '../../utils/channelCatalog';
+import { supabase } from '../../lib/supabase';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface NavItem {
@@ -377,11 +378,12 @@ const DRAWER_SECTIONS = [
   { label: 'ACCOUNT', items: ROW3_GROUPS[3] },
 ];
 
-function MobileDrawer({ onClose, brandColor, hotelName, userRole }: {
+function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin }: {
   onClose: () => void;
   brandColor: string;
   hotelName: string;
   userRole: string | null;
+  isSuperAdmin: boolean;
 }) {
   const isActive = useIsActive();
   const { signOut, user, canAccess } = useAuth();
@@ -459,6 +461,31 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole }: {
               </div>
             );
           })}
+
+          {isSuperAdmin && (
+            <div>
+              <p className="px-4 pt-4 pb-1.5 text-[10px] font-semibold text-[#94a3b8] uppercase tracking-widest">Platform</p>
+              <NavLink
+                to="/superadmin"
+                onClick={onClose}
+                style={({ isActive: active }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 16px',
+                  fontSize: 14,
+                  fontWeight: active ? 500 : 400,
+                  color: active ? '#d97706' : '#f59e0b',
+                  background: active ? '#fef3c7' : 'transparent',
+                  textDecoration: 'none',
+                  transition: 'background 0.15s',
+                })}
+              >
+                <Shield style={{ width: 16, height: 16, flexShrink: 0, color: '#f59e0b' }} />
+                <span>Super Admin</span>
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         {/* Footer */}
@@ -498,9 +525,23 @@ interface TopBarProps {
 
 export default function TopBar({ variant = 'hotel' }: TopBarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const { session } = useActiveHotel();
-  const { staff, canAccess } = useAuth();
+  const { staff, canAccess, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('user_hotel_assignments')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'super_admin')
+      .limit(1)
+      .then(({ data }) => {
+        setIsSuperAdmin((data?.length ?? 0) > 0);
+      });
+  }, [user]);
 
   const brandColor = session?.primaryColor ?? '#3b82f6';
   const hotelName  = session?.hotelName ?? 'StayWise';
@@ -665,16 +706,43 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
                 </>
               )}
 
-              {/* Settings / User Guide pushed right */}
-              {row3Visible[3]?.length > 0 && (
-                <>
-                  <div className="ml-auto flex items-center flex-shrink-0">
-                    <R3Sep />
-                    {row3Visible[3].map(item => (
-                      <R3Link key={item.to} item={item} brandColor={brandColor} />
-                    ))}
-                  </div>
-                </>
+              {/* Settings / User Guide + Super Admin pushed right */}
+              {(row3Visible[3]?.length > 0 || isSuperAdmin) && (
+                <div className="ml-auto flex items-center flex-shrink-0">
+                  {row3Visible[3]?.length > 0 && (
+                    <>
+                      <R3Sep />
+                      {row3Visible[3].map(item => (
+                        <R3Link key={item.to} item={item} brandColor={brandColor} />
+                      ))}
+                    </>
+                  )}
+                  {isSuperAdmin && (
+                    <>
+                      <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 4px', flexShrink: 0 }} />
+                      <NavLink
+                        to="/superadmin"
+                        style={({ isActive }) => ({
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          padding: '4px 10px',
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: isActive ? 500 : 400,
+                          color: isActive ? '#d97706' : '#f59e0b',
+                          background: isActive ? '#fef3c7' : 'transparent',
+                          textDecoration: 'none',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        })}
+                      >
+                        <Shield style={{ width: 13, height: 13, flexShrink: 0 }} />
+                        Super Admin
+                      </NavLink>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -687,6 +755,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
           brandColor={brandColor}
           hotelName={hotelName}
           userRole={userRole}
+          isSuperAdmin={isSuperAdmin}
         />
       )}
     </>

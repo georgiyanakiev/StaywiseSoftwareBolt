@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Shield, Plus, RefreshCw, LogOut, AlertTriangle, Building2, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, Plus, RefreshCw, AlertTriangle, Building2, Users, ArrowLeft } from 'lucide-react';
 import { supabaseAdmin, supabase } from '../../lib/supabase';
 import StatsBar from './StatsBar';
 import TenantTable from './TenantTable';
@@ -7,77 +8,12 @@ import TenantFormModal from './TenantFormModal';
 import StaffAssignmentsTab from './StaffAssignmentsTab';
 import type { Tenant, TenantFormData } from './types';
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'changeme';
-const SESSION_KEY = 'sw_superadmin_auth';
-
-function isAdminSubdomain(): boolean {
-  const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('tenant') === 'admin';
-  }
-  const parts = hostname.split('.');
-  return parts[0] === 'admin';
-}
-
-function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
-  const [pwd, setPwd] = useState('');
-  const [error, setError] = useState(false);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pwd === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, '1');
-      onUnlock();
-    } else {
-      setError(true);
-      setPwd('');
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-600/30">
-            <Shield className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">Super Admin</h1>
-          <p className="text-gray-400 text-sm mt-1">StayWise Platform Management</p>
-        </div>
-
-        <form onSubmit={submit} className="bg-gray-900 rounded-2xl border border-gray-800 p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Admin Password</label>
-            <input
-              type="password"
-              value={pwd}
-              onChange={e => { setPwd(e.target.value); setError(false); }}
-              className={`w-full bg-gray-800 border rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${error ? 'border-red-500' : 'border-gray-700'}`}
-              placeholder="Enter admin password"
-              autoFocus
-            />
-            {error && (
-              <p className="mt-2 text-sm text-red-400 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                Incorrect password
-              </p>
-            )}
-          </div>
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">
-            Unlock Dashboard
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 type Tab = 'hotels' | 'staff';
 
 export default function SuperAdminPage() {
-  const autoUnlocked = isAdminSubdomain();
-  const [unlocked, setUnlocked] = useState(autoUnlocked || sessionStorage.getItem(SESSION_KEY) === '1');
+  const navigate = useNavigate();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +23,22 @@ export default function SuperAdminPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const db = supabaseAdmin ?? supabase;
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setAuthLoading(false); return; }
+      supabase
+        .from('user_hotel_assignments')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'super_admin')
+        .limit(1)
+        .then(({ data }) => {
+          setIsSuperAdmin((data?.length ?? 0) > 0);
+          setAuthLoading(false);
+        });
+    });
+  }, []);
 
   const fetchTenants = useCallback(async () => {
     setLoading(true);
@@ -119,8 +71,8 @@ export default function SuperAdminPage() {
   }, [db]);
 
   useEffect(() => {
-    if (unlocked) fetchTenants();
-  }, [unlocked, fetchTenants]);
+    if (!authLoading && isSuperAdmin) fetchTenants();
+  }, [authLoading, isSuperAdmin, fetchTenants]);
 
   const handleSave = async (formData: TenantFormData) => {
     if (modal?.mode === 'add') {
@@ -162,13 +114,38 @@ export default function SuperAdminPage() {
     setTogglingId(null);
   };
 
-  const lock = () => {
-    sessionStorage.removeItem(SESSION_KEY);
-    setUnlocked(false);
-  };
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-500">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          <span className="text-sm">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
-  if (!unlocked) {
-    return <PasswordGate onUnlock={() => setUnlocked(true)} />;
+  if (!isSuperAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto">
+            <Shield className="w-7 h-7 text-gray-400" />
+          </div>
+          <div>
+            <p className="text-gray-800 font-semibold text-base">Access Denied</p>
+            <p className="text-gray-500 text-sm mt-1">Super admin role required.</p>
+          </div>
+          <button
+            onClick={() => navigate('/lobby')}
+            className="flex items-center gap-2 mx-auto text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to lobby
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const filtered = tenants.filter(t =>
@@ -190,15 +167,10 @@ export default function SuperAdminPage() {
               <span className="text-gray-400 text-sm ml-2">Super Admin</span>
             </div>
           </div>
-          {!autoUnlocked && (
-            <button
-              onClick={lock}
-              className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Lock
-            </button>
-          )}
+          <div className="flex items-center gap-1.5 text-amber-400 text-xs font-medium">
+            <Shield className="w-3.5 h-3.5" />
+            <span>Restricted</span>
+          </div>
         </div>
       </header>
 
