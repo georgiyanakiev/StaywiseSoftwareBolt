@@ -343,34 +343,24 @@ function R3Sep() {
   return <div className="flex-shrink-0 w-px h-4 bg-[#e2e8f0] mx-1 self-center" />;
 }
 
-/* ─── Channel type icon ─────────────────────────────────────── */
-const CHANNEL_ICON_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  booking_com: { label: 'B', bg: '#003580', color: '#fff' },
-  airbnb:      { label: 'A', bg: '#FF5A5F', color: '#fff' },
-  expedia:     { label: 'E', bg: '#FFC72C', color: '#1a1a1a' },
-  cloudbeds:   { label: 'C', bg: '#FF6B2B', color: '#fff' },
-  siteminder:  { label: 'S', bg: '#0066CC', color: '#fff' },
-  lodgify:     { label: 'L', bg: '#7C3AED', color: '#fff' },
-  direct:      { label: 'D', bg: '#10B981', color: '#fff' },
-  other:       { label: '?', bg: '#6B7280', color: '#fff' },
-};
-
-function ChannelIcon({ type }: { type: string }) {
-  const icon = CHANNEL_ICON_MAP[type] ?? CHANNEL_ICON_MAP.other;
+/* ─── Channel avatar ────────────────────────────────────────── */
+function ChannelAvatar({ ch }: { ch: Channel }) {
+  const bg = ch.logo_color ?? '#6b7280';
+  const letter = ch.logo_letter ?? ch.name.charAt(0).toUpperCase();
   return (
     <span
-      className="flex items-center justify-center flex-shrink-0 text-[10px] font-bold rounded"
-      style={{ width: 20, height: 20, background: icon.bg, color: icon.color }}
+      className="flex items-center justify-center flex-shrink-0 text-[10px] font-bold rounded-md text-white"
+      style={{ width: 22, height: 22, background: bg }}
     >
-      {icon.label}
+      {letter}
     </span>
   );
 }
 
 function statusDot(status: Channel['status']) {
-  if (status === 'connected')    return '#22c55e';
-  if (status === 'error')        return '#ef4444';
-  if (status === 'paused')       return '#f59e0b';
+  if (status === 'connected') return '#22c55e';
+  if (status === 'error')     return '#ef4444';
+  if (status === 'paused')    return '#f59e0b';
   return '#d1d5db';
 }
 
@@ -384,6 +374,11 @@ function ChannelsDropdown({ brandColor }: { brandColor: string }) {
 
   void brandColor;
 
+  const count = channels.length;
+
+  const goToCatalog = () => { navigate('/channel-manager?tab=catalog'); setOpen(false); };
+  const goToManager = () => { navigate('/channel-manager'); setOpen(false); };
+
   return (
     <div ref={ref} className="relative flex-shrink-0">
       <button
@@ -392,41 +387,56 @@ function ChannelsDropdown({ brandColor }: { brandColor: string }) {
       >
         <Link2 className="w-3 h-3 flex-shrink-0 text-[#cbd5e1]" />
         <span>Channels</span>
+        {count > 0 && (
+          <span className="ml-0.5 px-1.5 py-px rounded-full text-[10px] font-semibold bg-[#e2e8f0] text-[#64748b] leading-none">
+            {count}
+          </span>
+        )}
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
+
       {open && (
         <div
-          className="absolute top-full mt-1.5 bg-white border border-[#e2e8f0] rounded-lg z-[200]"
-          style={{ left: 0, minWidth: 220, boxShadow: '0 4px 16px -2px rgba(0,0,0,0.12), 0 2px 6px -2px rgba(0,0,0,0.06)' }}
+          className="absolute top-full mt-1.5 bg-white border border-[#e2e8f0] rounded-xl z-[200] overflow-hidden"
+          style={{ left: 0, width: 244, boxShadow: '0 8px 24px -4px rgba(0,0,0,0.14), 0 2px 8px -2px rgba(0,0,0,0.08)' }}
         >
           {/* Header */}
-          <div className="px-3 py-2 border-b border-[#f1f5f9]">
-            <p className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-wider">Connected channels</p>
+          <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#f1f5f9]">
+            <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">My Channels</p>
+            <button
+              onClick={goToCatalog}
+              className="text-[11px] font-semibold text-[#3b82f6] hover:text-[#2563eb] transition-colors"
+            >
+              + Add
+            </button>
           </div>
 
-          <div className="py-1.5 px-1.5">
-            {/* Loading */}
+          {/* Body */}
+          <div className="py-1">
             {loading && (
-              <p className="text-[13px] text-[#94a3b8] px-2 py-2">Loading channels...</p>
+              <p className="text-[13px] text-[#94a3b8] px-3 py-3">Loading...</p>
             )}
 
-            {/* Empty */}
             {!loading && channels.length === 0 && (
-              <div className="px-2 py-2">
-                <p className="text-[13px] text-[#64748b]">No channels added yet</p>
-                <p className="text-[11px] text-[#94a3b8] mt-0.5">Add channels in Channel Manager</p>
+              <div className="px-3 py-3 flex items-center gap-1.5">
+                <span className="text-[13px] text-[#64748b]">No channels yet.</span>
+                <button
+                  onClick={goToCatalog}
+                  className="text-[13px] font-medium text-[#3b82f6] hover:underline whitespace-nowrap"
+                >
+                  Browse catalog →
+                </button>
               </div>
             )}
 
-            {/* Channel list */}
             {!loading && channels.map(ch => (
               <button
                 key={ch.id}
-                onClick={() => { navigate('/channel-manager'); setOpen(false); }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left hover:bg-[#f8fafc] transition-colors"
+                onClick={goToManager}
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-[#f8fafc] transition-colors"
               >
-                <ChannelIcon type={ch.type} />
-                <span className="flex-1 text-[13px] text-[#374151] truncate">{ch.name}</span>
+                <ChannelAvatar ch={ch} />
+                <span className="flex-1 text-[13px] text-[#374151] font-medium truncate">{ch.name}</span>
                 <span
                   className="flex-shrink-0 rounded-full"
                   style={{ width: 7, height: 7, background: statusDot(ch.status) }}
@@ -435,32 +445,13 @@ function ChannelsDropdown({ brandColor }: { brandColor: string }) {
             ))}
           </div>
 
-          {/* Status legend — only when channels exist */}
-          {!loading && channels.length > 0 && (
-            <div className="px-3 pt-0 pb-2 flex items-center gap-2.5 flex-wrap">
-              {[
-                { color: '#22c55e', label: 'Connected' },
-                { color: '#ef4444', label: 'Error' },
-                { color: '#f59e0b', label: 'Paused' },
-                { color: '#d1d5db', label: 'Off' },
-              ].map(s => (
-                <span key={s.label} className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-                  <span className="rounded-full flex-shrink-0" style={{ width: 6, height: 6, background: s.color }} />
-                  {s.label}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Divider + footer */}
-          <div className="border-t border-[#f1f5f9] mx-0" />
-          <div className="px-1.5 py-1.5">
+          {/* Footer */}
+          <div className="border-t border-[#f1f5f9]">
             <button
-              onClick={() => { navigate('/channel-manager'); setOpen(false); }}
-              className="flex items-center w-full px-2 py-1.5 rounded-md text-[12px] font-medium text-[#3b82f6] hover:bg-[#eff6ff] transition-colors gap-1.5"
+              onClick={goToCatalog}
+              className="flex items-center w-full px-3 py-2.5 text-[12px] font-medium text-[#3b82f6] hover:bg-[#eff6ff] transition-colors"
             >
-              Manage all channels
-              <span className="text-[11px]">→</span>
+              Browse channel catalog →
             </button>
           </div>
         </div>
@@ -549,7 +540,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole }: {
                         onClick={() => { navigate('/channel-manager'); onClose(); }}
                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#374151] hover:bg-[#f9fafb] transition-colors"
                       >
-                        <ChannelIcon type={ch.type} />
+                        <ChannelAvatar ch={ch} />
                         <span>{ch.name}</span>
                         <span
                           className="ml-auto rounded-full flex-shrink-0"
