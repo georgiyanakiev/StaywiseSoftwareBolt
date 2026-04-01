@@ -192,26 +192,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (staffData) {
-        try {
-          await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-approval-request`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                staffMemberId: staffData.id,
-                firstName,
-                lastName,
-                email,
-              }),
-            }
-          );
-        } catch {
-          // notification failure is non-blocking
-        }
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        };
+
+        fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-approval-request`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              staffMemberId: staffData.id,
+              firstName,
+              lastName,
+              email,
+            }),
+          }
+        ).catch(() => {});
+
+        fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/schedule-onboarding-emails`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              userId: data.user.id,
+              email,
+              firstName,
+            }),
+          }
+        ).catch(() => {});
       }
     }
 
