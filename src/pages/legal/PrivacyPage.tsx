@@ -51,7 +51,6 @@ function CompanyCard({ lang }: { lang: Lang }) {
           <p className="font-semibold text-gray-900">
             {lang === 'en' ? COMPANY.name_en : COMPANY.name_bg}
           </p>
-          <p>{lang === 'en' ? 'UIC' : 'ЕИК'}: {COMPANY.uic}</p>
           <p>{lang === 'en' ? COMPANY.address_en : COMPANY.address_bg}</p>
           <p>
             <a href={`mailto:${COMPANY.email}`} className="text-blue-600 hover:underline">

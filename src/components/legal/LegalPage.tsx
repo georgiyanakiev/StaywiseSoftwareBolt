@@ -200,7 +200,7 @@ export default function LegalPage({
         }
         @media print {
           body::before {
-            content: "${COMPANY.name_en} · ${COMPANY.uic}";
+            content: "${COMPANY.name_en}";
             display: block;
             font-size: 11px;
             color: #94a3b8;

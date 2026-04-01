@@ -37,7 +37,6 @@ function CompanyBlock() {
         </div>
         <div className="text-sm leading-relaxed text-gray-700 space-y-0.5">
           <p className="font-semibold text-gray-900">{COMPANY.name_en}</p>
-          <p>UIC: {COMPANY.uic}</p>
           <p>{COMPANY.address_en}</p>
           <p>
             <a href={`mailto:${COMPANY.email}`} className="text-blue-600 hover:underline">
