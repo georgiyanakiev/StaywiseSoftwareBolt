@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GitBranch, RefreshCw, Calendar, Activity, Plus, Lock } from 'lucide-react';
+import { GitBranch, RefreshCw, Calendar, Activity, Plus, Lock, Store } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
@@ -10,8 +10,9 @@ import RateCalendar from './RateCalendar';
 import SyncLogTable, { type SyncLog } from './SyncLogTable';
 import ChannelFormModal from './ChannelFormModal';
 import RestrictionsPanel from './RestrictionsPanel';
+import ChannelMarketplace from './ChannelMarketplace';
 
-type TabId = 'channels' | 'rates' | 'restrictions' | 'logs';
+type TabId = 'channels' | 'marketplace' | 'rates' | 'restrictions' | 'logs';
 
 export default function ChannelManagerPage() {
   const { currentHotel } = useHotel();
@@ -137,11 +138,12 @@ export default function ChannelManagerPage() {
   const errorCount = channels.filter(c => c.status === 'error').length;
   const todaySyncs = syncLogs.filter(l => new Date(l.created_at).toDateString() === new Date().toDateString()).length;
 
-  const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
-    { id: 'channels',     label: 'Channels',     icon: GitBranch },
-    { id: 'rates',        label: 'Rate Calendar', icon: Calendar },
-    { id: 'restrictions', label: 'Restrictions',  icon: Lock },
-    { id: 'logs',         label: 'Sync Log',      icon: Activity },
+  const tabs: { id: TabId; label: string; icon: React.ElementType; badge?: number }[] = [
+    { id: 'channels',     label: 'My Channels',     icon: GitBranch, badge: channels.length > 0 ? channels.length : undefined },
+    { id: 'marketplace',  label: 'Marketplace',     icon: Store },
+    { id: 'rates',        label: 'Rate Calendar',   icon: Calendar },
+    { id: 'restrictions', label: 'Restrictions',    icon: Lock },
+    { id: 'logs',         label: 'Sync Log',        icon: Activity },
   ];
 
   if (loading) {
@@ -166,11 +168,18 @@ export default function ChannelManagerPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setActiveTab('marketplace')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Store className="w-4 h-4" />
+            Browse Channels
+          </button>
+          <button
             onClick={() => setChannelModal({ open: true, channel: null })}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Add Channel
+            Add Custom
           </button>
           <button
             onClick={syncAllChannels}
@@ -210,6 +219,11 @@ export default function ChannelManagerPage() {
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
+            {tab.badge !== undefined && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
+                {tab.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -219,15 +233,26 @@ export default function ChannelManagerPage() {
           {channels.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 py-20 text-center">
               <GitBranch className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-              <p className="font-medium text-gray-500">No channels configured</p>
-              <p className="text-sm text-gray-400 mt-1 mb-4">Add your first OTA channel to start syncing</p>
-              <button
-                onClick={() => setChannelModal({ open: true, channel: null })}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Add Channel
-              </button>
+              <p className="font-medium text-gray-500">No channels configured yet</p>
+              <p className="text-sm text-gray-400 mt-1 mb-5">
+                Browse the marketplace to add OTA channels, or add a custom integration
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setActiveTab('marketplace')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Store className="w-4 h-4" />
+                  Browse Marketplace
+                </button>
+                <button
+                  onClick={() => setChannelModal({ open: true, channel: null })}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Custom
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -244,6 +269,15 @@ export default function ChannelManagerPage() {
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === 'marketplace' && currentHotel && (
+        <ChannelMarketplace
+          hotelChannels={channels}
+          hotelId={currentHotel.id}
+          tenantId={tenantId}
+          onChannelAdded={loadData}
+        />
       )}
 
       {activeTab === 'rates' && currentHotel && (
