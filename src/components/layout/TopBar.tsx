@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
+import { useChannels, type Channel } from '../../hooks/useChannels';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface NavItem {
@@ -342,16 +343,46 @@ function R3Sep() {
   return <div className="flex-shrink-0 w-px h-4 bg-[#e2e8f0] mx-1 self-center" />;
 }
 
+/* ─── Channel type icon ─────────────────────────────────────── */
+const CHANNEL_ICON_MAP: Record<string, { label: string; bg: string; color: string }> = {
+  booking_com: { label: 'B', bg: '#003580', color: '#fff' },
+  airbnb:      { label: 'A', bg: '#FF5A5F', color: '#fff' },
+  expedia:     { label: 'E', bg: '#FFC72C', color: '#1a1a1a' },
+  cloudbeds:   { label: 'C', bg: '#FF6B2B', color: '#fff' },
+  siteminder:  { label: 'S', bg: '#0066CC', color: '#fff' },
+  lodgify:     { label: 'L', bg: '#7C3AED', color: '#fff' },
+  direct:      { label: 'D', bg: '#10B981', color: '#fff' },
+  other:       { label: '?', bg: '#6B7280', color: '#fff' },
+};
+
+function ChannelIcon({ type }: { type: string }) {
+  const icon = CHANNEL_ICON_MAP[type] ?? CHANNEL_ICON_MAP.other;
+  return (
+    <span
+      className="flex items-center justify-center flex-shrink-0 text-[10px] font-bold rounded"
+      style={{ width: 20, height: 20, background: icon.bg, color: icon.color }}
+    >
+      {icon.label}
+    </span>
+  );
+}
+
+function statusDot(status: Channel['status']) {
+  if (status === 'connected')    return '#22c55e';
+  if (status === 'error')        return '#ef4444';
+  if (status === 'paused')       return '#f59e0b';
+  return '#d1d5db';
+}
+
 /* ─── Channels dropdown ─────────────────────────────────────── */
 function ChannelsDropdown({ brandColor }: { brandColor: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { canAccess } = useAuth();
+  const { channels, loading } = useChannels();
   useClickOutside(ref, () => setOpen(false));
 
-  const visible = CHANNELS.filter(c => canAccess(c.to));
-  if (visible.length === 0) return null;
+  void brandColor;
 
   return (
     <div ref={ref} className="relative flex-shrink-0">
@@ -364,22 +395,75 @@ function ChannelsDropdown({ brandColor }: { brandColor: string }) {
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <DropdownShell width={175} left>
-          <div className="px-3 py-1.5 border-b border-[#f1f5f9] mb-1">
-            <p className="text-[11px] font-semibold text-[#94a3b8] uppercase tracking-wider">Connected channels</p>
+        <div
+          className="absolute top-full mt-1.5 bg-white border border-[#e2e8f0] rounded-lg z-[200]"
+          style={{ left: 0, minWidth: 220, boxShadow: '0 4px 16px -2px rgba(0,0,0,0.12), 0 2px 6px -2px rgba(0,0,0,0.06)' }}
+        >
+          {/* Header */}
+          <div className="px-3 py-2 border-b border-[#f1f5f9]">
+            <p className="text-[10px] font-semibold text-[#94a3b8] uppercase tracking-wider">Connected channels</p>
           </div>
-          {visible.map(ch => (
+
+          <div className="py-1.5 px-1.5">
+            {/* Loading */}
+            {loading && (
+              <p className="text-[13px] text-[#94a3b8] px-2 py-2">Loading channels...</p>
+            )}
+
+            {/* Empty */}
+            {!loading && channels.length === 0 && (
+              <div className="px-2 py-2">
+                <p className="text-[13px] text-[#64748b]">No channels added yet</p>
+                <p className="text-[11px] text-[#94a3b8] mt-0.5">Add channels in Channel Manager</p>
+              </div>
+            )}
+
+            {/* Channel list */}
+            {!loading && channels.map(ch => (
+              <button
+                key={ch.id}
+                onClick={() => { navigate('/channel-manager'); setOpen(false); }}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left hover:bg-[#f8fafc] transition-colors"
+              >
+                <ChannelIcon type={ch.type} />
+                <span className="flex-1 text-[13px] text-[#374151] truncate">{ch.name}</span>
+                <span
+                  className="flex-shrink-0 rounded-full"
+                  style={{ width: 7, height: 7, background: statusDot(ch.status) }}
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* Status legend — only when channels exist */}
+          {!loading && channels.length > 0 && (
+            <div className="px-3 pt-0 pb-2 flex items-center gap-2.5 flex-wrap">
+              {[
+                { color: '#22c55e', label: 'Connected' },
+                { color: '#ef4444', label: 'Error' },
+                { color: '#f59e0b', label: 'Paused' },
+                { color: '#d1d5db', label: 'Off' },
+              ].map(s => (
+                <span key={s.label} className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
+                  <span className="rounded-full flex-shrink-0" style={{ width: 6, height: 6, background: s.color }} />
+                  {s.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Divider + footer */}
+          <div className="border-t border-[#f1f5f9] mx-0" />
+          <div className="px-1.5 py-1.5">
             <button
-              key={ch.to}
-              onClick={() => { navigate(ch.to); setOpen(false); }}
-              className="flex items-center gap-2 w-[calc(100%-8px)] mx-1 px-2.5 py-1.5 rounded-md text-[13px] text-[#374151] hover:bg-[#f9fafb] transition-colors"
+              onClick={() => { navigate('/channel-manager'); setOpen(false); }}
+              className="flex items-center w-full px-2 py-1.5 rounded-md text-[12px] font-medium text-[#3b82f6] hover:bg-[#eff6ff] transition-colors gap-1.5"
             >
-              <Link2 className="w-3.5 h-3.5 flex-shrink-0 text-[#9ca3af]" />
-              <span className="flex-1 text-left">{ch.label}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+              Manage all channels
+              <span className="text-[11px]">→</span>
             </button>
-          ))}
-        </DropdownShell>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -406,6 +490,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole }: {
   const { signOut, user, canAccess } = useAuth();
   const { clearActiveHotel } = useActiveHotel();
   const navigate = useNavigate();
+  const { channels: liveChannels } = useChannels();
 
   return (
     <div className="fixed inset-0 z-[300] flex">
@@ -431,9 +516,9 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole }: {
         <nav className="flex-1 bg-white overflow-y-auto">
           {DRAWER_SECTIONS.map(section => {
             const visible = section.items.filter(i => canAccess(i.to));
-            const channels = section.label === 'CHANNELS & REVENUE' ? CHANNELS.filter(c => canAccess(c.to)) : [];
+            const drawerChannels = section.label === 'CHANNELS & REVENUE' ? liveChannels : [];
 
-            if (visible.length === 0 && channels.length === 0) return null;
+            if (visible.length === 0 && drawerChannels.length === 0) return null;
             return (
               <div key={section.label}>
                 <p className="px-4 pt-4 pb-1.5 text-[10px] font-semibold text-[#94a3b8] uppercase tracking-widest">{section.label}</p>
@@ -455,18 +540,21 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole }: {
                     </NavLink>
                   );
                 })}
-                {channels.length > 0 && (
+                {drawerChannels.length > 0 && (
                   <>
                     <p className="px-4 pt-2 pb-1 text-[10px] font-semibold text-[#cbd5e1] uppercase tracking-widest">Channels</p>
-                    {channels.map(ch => (
+                    {drawerChannels.map(ch => (
                       <button
-                        key={ch.to}
-                        onClick={() => { navigate(ch.to); onClose(); }}
+                        key={ch.id}
+                        onClick={() => { navigate('/channel-manager'); onClose(); }}
                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#374151] hover:bg-[#f9fafb] transition-colors"
                       >
-                        <Link2 className="w-4 h-4 flex-shrink-0 text-[#94a3b8]" />
-                        <span>{ch.label}</span>
-                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                        <ChannelIcon type={ch.type} />
+                        <span>{ch.name}</span>
+                        <span
+                          className="ml-auto rounded-full flex-shrink-0"
+                          style={{ width: 6, height: 6, background: statusDot(ch.status) }}
+                        />
                       </button>
                     ))}
                   </>
