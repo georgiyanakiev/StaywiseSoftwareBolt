@@ -9,6 +9,17 @@ export interface DpaAcceptance {
   dpa_version: string;
 }
 
+async function fetchClientIp(): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.ip ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function useDpaAcceptance(userId: string | null | undefined, tenantId: string | null | undefined) {
   const [acceptance, setAcceptance] = useState<DpaAcceptance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,11 +37,12 @@ export function useDpaAcceptance(userId: string | null | undefined, tenantId: st
     let query = supabase
       .from('dpa_acceptances')
       .select('*')
-      .eq('user_id', userId)
       .order('accepted_at', { ascending: false });
 
     if (tenantId) {
       query = query.eq('tenant_id', tenantId);
+    } else {
+      query = query.eq('user_id', userId);
     }
 
     const { data, error: fetchError } = await query.maybeSingle();
@@ -52,11 +64,14 @@ export function useDpaAcceptance(userId: string | null | undefined, tenantId: st
     setAccepting(true);
     setError(null);
 
+    const ip = await fetchClientIp();
+
     const payload: Record<string, unknown> = {
       user_id: userId,
       dpa_version: '1.0',
       user_agent: navigator.userAgent,
     };
+    if (ip) payload.ip_address = ip;
     if (tenantId) payload.tenant_id = tenantId;
 
     const { data, error: insertError } = await supabase

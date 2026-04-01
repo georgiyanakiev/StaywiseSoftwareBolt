@@ -153,6 +153,7 @@ function AppWithAuth() {
         <DpaAcceptanceModal
           userId={user.id}
           tenantId={tenant?.id ?? null}
+          hotelName={tenant?.name ?? null}
           onAccepted={refetchDpa}
         />
       )}
