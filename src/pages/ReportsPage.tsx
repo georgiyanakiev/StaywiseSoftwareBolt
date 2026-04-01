@@ -265,7 +265,7 @@ export default function ReportsPage() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [housekeepingTasks, setHousekeepingTasks] = useState<any[]>([]);
 
-  const currency = currentHotel?.currency || 'USD';
+  const currency = currentHotel?.currency || 'EUR';
 
   const fetchData = useCallback(async () => {
     if (!currentHotel) {
@@ -767,7 +767,7 @@ export default function ReportsPage() {
                     tick={{ fontSize: 12, fill: '#6b7280' }}
                     axisLine={false}
                     tickLine={false}
-                    tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                    tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
                     contentStyle={TOOLTIP_STYLE}
@@ -1290,7 +1290,7 @@ export default function ReportsPage() {
                       tick={{ fontSize: 12, fill: '#6b7280' }}
                       axisLine={false}
                       tickLine={false}
-                      tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                      tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
                       contentStyle={TOOLTIP_STYLE}

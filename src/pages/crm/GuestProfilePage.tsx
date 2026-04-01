@@ -155,8 +155,8 @@ export default function GuestProfilePage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
           { icon: Calendar, label: 'Total Stays', value: guest.total_stays, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { icon: DollarSign, label: 'Total Spent', value: formatCurrency(guest.total_spent, currentHotel?.currency || 'USD'), color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { icon: TrendingUp, label: 'Avg per Stay', value: formatCurrency(avgSpend, currentHotel?.currency || 'USD'), color: 'text-amber-600', bg: 'bg-amber-50' },
+          { icon: DollarSign, label: 'Total Spent', value: formatCurrency(guest.total_spent, currentHotel?.currency || 'EUR'), color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { icon: TrendingUp, label: 'Avg per Stay', value: formatCurrency(avgSpend, currentHotel?.currency || 'EUR'), color: 'text-amber-600', bg: 'bg-amber-50' },
           { icon: Clock, label: 'Avg Nights', value: avgNights > 0 ? `${avgNights.toFixed(1)}n` : '-', color: 'text-teal-600', bg: 'bg-teal-50' },
           { icon: Calendar, label: 'First Visit', value: firstVisit ? formatDate(firstVisit) : '-', color: 'text-gray-600', bg: 'bg-gray-50' },
           { icon: Calendar, label: 'Last Visit', value: guest.last_stay_at ? formatDate(guest.last_stay_at) : '-', color: 'text-gray-600', bg: 'bg-gray-50' },
@@ -225,7 +225,7 @@ export default function GuestProfilePage() {
                             <div className="text-xs text-gray-400">{stay.room_type || ''}</div>
                           </td>
                           <td className="py-3 text-sm text-gray-600 text-right">{stay.nights || '-'}</td>
-                          <td className="py-3 text-sm font-semibold text-gray-900 text-right">{stay.total_amount ? formatCurrency(stay.total_amount, currentHotel?.currency || 'USD') : '-'}</td>
+                          <td className="py-3 text-sm font-semibold text-gray-900 text-right">{stay.total_amount ? formatCurrency(stay.total_amount, currentHotel?.currency || 'EUR') : '-'}</td>
                           <td className="py-3 text-sm text-gray-500">{stay.source || '-'}</td>
                           <td className="py-3">
                             {editingRating === stay.id ? (

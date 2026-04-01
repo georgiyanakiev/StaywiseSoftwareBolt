@@ -27,7 +27,7 @@ export default function GuestListPage() {
 
   const { guests, total, loading, page, setPage, filters, setFilters, fetchGuests, PAGE_SIZE } = useGuestProfiles(currentHotel?.id);
 
-  const currency = currentHotel?.currency || 'USD';
+  const currency = currentHotel?.currency || 'EUR';
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const activeFilterCount = [

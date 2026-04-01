@@ -62,7 +62,7 @@ function HotelSettingsTab() {
   const [form, setForm] = useState({
     name: '', address: '', city: '', country: '', phone: '', email: '',
     website: '', star_rating: 3, check_in_time: '14:00', check_out_time: '11:00',
-    tax_rate: 0, currency: 'USD', timezone: 'America/New_York',
+    tax_rate: 0, currency: 'EUR', timezone: 'America/New_York',
     cancellation_policy: '', payment_policy: '',
   });
 
@@ -80,7 +80,7 @@ function HotelSettingsTab() {
         check_in_time: currentHotel.check_in_time || '14:00',
         check_out_time: currentHotel.check_out_time || '11:00',
         tax_rate: currentHotel.tax_rate || 0,
-        currency: currentHotel.currency || 'USD',
+        currency: currentHotel.currency || 'EUR',
         timezone: currentHotel.timezone || 'America/New_York',
         cancellation_policy: currentHotel.cancellation_policy || '',
         payment_policy: currentHotel.payment_policy || '',
@@ -414,7 +414,7 @@ function RoomTypesTab() {
                 <tr key={type.id} className="hover:bg-gray-50">
                   <td className="table-cell font-medium">{type.name}</td>
                   <td className="table-cell text-gray-600 max-w-xs truncate">{type.description || '-'}</td>
-                  <td className="table-cell">${type.base_rate.toFixed(2)}</td>
+                  <td className="table-cell">€{type.base_rate.toFixed(2)}</td>
                   <td className="table-cell">{type.max_occupancy} guests</td>
                   <td className="table-cell">
                     <div className="flex items-center gap-2">

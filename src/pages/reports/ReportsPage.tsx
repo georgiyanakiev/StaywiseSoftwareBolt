@@ -57,7 +57,7 @@ export default function ReportsPage() {
   const [customMode, setCustomMode] = useState(false);
 
   const data = useReportsData(currentHotel?.id, dateRange);
-  const currency = currentHotel?.currency || 'USD';
+  const currency = currentHotel?.currency || 'EUR';
 
   function applyPreset(preset: typeof DATE_PRESETS[0]) {
     if (preset.label === 'Custom') {

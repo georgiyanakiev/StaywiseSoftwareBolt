@@ -504,7 +504,7 @@ export default function BookingComTab() {
                     return (
                       <tr key={rt.id} className="hover:bg-gray-50">
                         <td className="table-cell font-medium">{rt.name}</td>
-                        <td className="table-cell">${rt.base_rate.toFixed(2)}/night</td>
+                        <td className="table-cell">€{rt.base_rate.toFixed(2)}/night</td>
                         <td className="table-cell">
                           <select
                             value={mapping?.bdc_room_type_id || ''}

@@ -1,7 +1,7 @@
 import { format, parseISO, differenceInDays, isValid } from 'date-fns';
 
-export function formatCurrency(amount: number, currency = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, currency = 'EUR'): string {
+  return new Intl.NumberFormat('en-IE', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
