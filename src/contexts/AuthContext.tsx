@@ -237,6 +237,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextValue = {
     ...state,
+    signIn,
+    signUp,
+    signOut,
     canView:   (module) => hasPerm(permissions, module, 'can_view'),
     canCreate: (module) => hasPerm(permissions, module, 'can_create'),
     canEdit:   (module) => hasPerm(permissions, module, 'can_edit'),
