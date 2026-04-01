@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Wifi, WifiOff, AlertCircle, RefreshCw, Plug, PlugZap, Settings, Percent } from 'lucide-react';
 import { formatDateTime } from '../../lib/utils';
+import { getChannelIcon } from '../../utils/channelCatalog';
 
 export interface Channel {
   id: string;
@@ -24,28 +25,9 @@ interface Props {
   syncing: boolean;
 }
 
-const CHANNEL_META: Record<string, { abbr: string; bg: string }> = {
-  booking_com: { abbr: 'B.', bg: 'bg-blue-600' },
-  airbnb:      { abbr: 'Ab', bg: 'bg-rose-500' },
-  expedia:     { abbr: 'Ex', bg: 'bg-amber-500' },
-  direct:      { abbr: 'Di', bg: 'bg-emerald-600' },
-  other:       { abbr: '?',  bg: 'bg-gray-500'  },
-};
-
-function getChannelMeta(channel: Channel) {
-  const byType = CHANNEL_META[channel.type];
-  if (byType) return byType;
-  const name = channel.name.toLowerCase();
-  if (name.includes('booking')) return CHANNEL_META.booking_com;
-  if (name.includes('airbnb'))  return CHANNEL_META.airbnb;
-  if (name.includes('expedia')) return CHANNEL_META.expedia;
-  if (name.includes('direct'))  return CHANNEL_META.direct;
-  return CHANNEL_META.other;
-}
-
 export default function ChannelCard({ channel, onToggle, onSync, onSettings, syncing }: Props) {
   const [toggling, setToggling] = useState(false);
-  const meta = getChannelMeta(channel);
+  const icon = getChannelIcon(channel.type);
   const isConnected = channel.status === 'connected';
   const isError = channel.status === 'error';
 
@@ -59,8 +41,11 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
     <div className={`bg-white rounded-xl border p-5 transition-all hover:shadow-md flex flex-col gap-4 ${isError ? 'border-red-200' : 'border-gray-100'}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl ${meta.bg} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-            {meta.abbr}
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+            style={{ backgroundColor: icon.color }}
+          >
+            {icon.letter}
           </div>
           <div>
             <p className="font-semibold text-gray-900 leading-tight">{channel.name}</p>

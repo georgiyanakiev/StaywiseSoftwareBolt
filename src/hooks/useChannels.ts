@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useActiveHotel } from '../contexts/ActiveHotelContext';
+import { getChannelIcon } from '../utils/channelCatalog';
 
 export interface Channel {
   id: string;
@@ -54,10 +55,11 @@ export function useChannels() {
 
       const enriched: Channel[] = (data as { id: string; name: string; type: string; status: Channel['status']; last_sync: string | null }[]).map(ch => {
         const meta = catalogMap.get(ch.type);
+        const fallback = getChannelIcon(ch.type);
         return {
           ...ch,
-          logo_color: meta?.logo_color ?? null,
-          logo_letter: meta?.logo_letter ?? null,
+          logo_color: meta?.logo_color ?? fallback.color,
+          logo_letter: meta?.logo_letter ?? fallback.letter,
         };
       });
 

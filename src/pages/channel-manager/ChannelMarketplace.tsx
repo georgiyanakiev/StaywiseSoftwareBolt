@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Channel } from './ChannelCard';
+import { getChannelIcon } from '../../utils/channelCatalog';
 
 export interface CatalogItem {
   id: string;
@@ -252,7 +253,9 @@ export default function ChannelCatalog({
           const isConnected = hotelCh?.status === 'connected';
           const isAdding = adding === item.slug;
           const catMeta = CATEGORY_META[item.category];
-          const logoColor = item.logo_color ?? '#6b7280';
+          const fallback = getChannelIcon(item.slug ?? item.type);
+          const logoColor = item.logo_color ?? fallback.color;
+          const logoLetter = item.logo_letter ?? fallback.letter;
 
           return (
             <div
@@ -278,7 +281,7 @@ export default function ChannelCatalog({
                       className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0 shadow-sm"
                       style={{ backgroundColor: logoColor }}
                     >
-                      {item.logo_letter ?? '?'}
+                      {logoLetter}
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 text-[14px] leading-tight">{item.name}</p>

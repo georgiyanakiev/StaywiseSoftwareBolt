@@ -12,6 +12,7 @@ import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
 import { useChannels, type Channel } from '../../hooks/useChannels';
+import { getChannelIcon } from '../../utils/channelCatalog';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface NavItem {
@@ -345,8 +346,9 @@ function R3Sep() {
 
 /* ─── Channel avatar ────────────────────────────────────────── */
 function ChannelAvatar({ ch }: { ch: Channel }) {
-  const bg = ch.logo_color ?? '#6b7280';
-  const letter = ch.logo_letter ?? ch.name.charAt(0).toUpperCase();
+  const fallback = getChannelIcon(ch.type);
+  const bg = ch.logo_color ?? fallback.color;
+  const letter = ch.logo_letter ?? fallback.letter;
   return (
     <span
       className="flex items-center justify-center flex-shrink-0 text-[10px] font-bold rounded-md text-white"
