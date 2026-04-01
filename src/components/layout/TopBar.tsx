@@ -366,102 +366,6 @@ function statusDot(status: Channel['status']) {
   return '#d1d5db';
 }
 
-/* ─── Channels dropdown ─────────────────────────────────────── */
-function ChannelsDropdown({ brandColor }: { brandColor: string }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  const { channels, loading } = useChannels();
-  useClickOutside(ref, () => setOpen(false));
-
-  void brandColor;
-
-  const count = channels.length;
-
-  const goToCatalog = () => { navigate('/channel-manager?tab=catalog'); setOpen(false); };
-  const goToManager = () => { navigate('/channel-manager'); setOpen(false); };
-
-  return (
-    <div ref={ref} className="relative flex-shrink-0">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-[5px] text-[12px] text-[#94a3b8] hover:text-[#64748b] hover:bg-[#f1f5f9] transition-colors whitespace-nowrap"
-      >
-        <Link2 className="w-3 h-3 flex-shrink-0 text-[#cbd5e1]" />
-        <span>Channels</span>
-        {count > 0 && (
-          <span className="ml-0.5 px-1.5 py-px rounded-full text-[10px] font-semibold bg-[#e2e8f0] text-[#64748b] leading-none">
-            {count}
-          </span>
-        )}
-        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {open && (
-        <div
-          className="absolute top-full mt-1.5 bg-white border border-[#e2e8f0] rounded-xl z-[200] overflow-hidden"
-          style={{ left: 0, width: 244, boxShadow: '0 8px 24px -4px rgba(0,0,0,0.14), 0 2px 8px -2px rgba(0,0,0,0.08)' }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#f1f5f9]">
-            <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">My Channels</p>
-            <button
-              onClick={goToCatalog}
-              className="text-[11px] font-semibold text-[#3b82f6] hover:text-[#2563eb] transition-colors"
-            >
-              + Add
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="py-1">
-            {loading && (
-              <p className="text-[13px] text-[#94a3b8] px-3 py-3">Loading...</p>
-            )}
-
-            {!loading && channels.length === 0 && (
-              <div className="px-3 py-3 flex items-center gap-1.5">
-                <span className="text-[13px] text-[#64748b]">No channels yet.</span>
-                <button
-                  onClick={goToCatalog}
-                  className="text-[13px] font-medium text-[#3b82f6] hover:underline whitespace-nowrap"
-                >
-                  Browse catalog →
-                </button>
-              </div>
-            )}
-
-            {!loading && channels.map(ch => (
-              <button
-                key={ch.id}
-                onClick={goToManager}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-[#f8fafc] transition-colors"
-              >
-                <ChannelAvatar ch={ch} />
-                <span className="flex-1 text-[13px] text-[#374151] font-medium truncate">{ch.name}</span>
-                <span
-                  className="flex-shrink-0 rounded-full"
-                  style={{ width: 7, height: 7, background: statusDot(ch.status) }}
-                />
-              </button>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="border-t border-[#f1f5f9]">
-            <button
-              onClick={goToCatalog}
-              className="flex items-center w-full px-3 py-2.5 text-[12px] font-medium text-[#3b82f6] hover:bg-[#eff6ff] transition-colors"
-            >
-              Browse channel catalog →
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ─── Mobile drawer ─────────────────────────────────────────── */
 const DRAWER_SECTIONS = [
   { label: 'DAILY', items: ROW2_GROUPS[0] },
@@ -760,10 +664,6 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
                   ))}
                 </>
               )}
-
-              {/* Channels dropdown */}
-              <R3Sep />
-              <ChannelsDropdown brandColor={brandColor} />
 
               {/* Settings / User Guide pushed right */}
               {row3Visible[3]?.length > 0 && (
