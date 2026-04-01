@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Building2, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import LegalFooter from '../components/legal/LegalFooter';
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
@@ -48,7 +49,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex flex-1">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <img
           src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
@@ -224,7 +226,7 @@ export default function LoginPage() {
               </p>
 
               <p className="mt-8 text-center text-xs text-gray-400">
-                By using StayWise you agree to our{' '}
+                By signing in you agree to our{' '}
                 <Link to="/terms" className="text-gray-500 hover:text-gray-700 underline">
                   Terms of Service
                 </Link>{' '}
@@ -234,10 +236,19 @@ export default function LoginPage() {
                 </Link>
                 .
               </p>
+              <p className="mt-2 text-center text-xs text-gray-400">
+                Hotels are subject to our{' '}
+                <Link to="/dpa" className="text-gray-500 hover:text-gray-700 underline">
+                  Data Processing Agreement
+                </Link>
+                .
+              </p>
             </>
           )}
         </div>
       </div>
+      </div>
+      <LegalFooter />
     </div>
   );
 }

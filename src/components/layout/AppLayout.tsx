@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import TopBar from './TopBar';
+import { InternalLegalFooter } from '../legal/LegalFooter';
 
 export default function AppLayout() {
   return (
@@ -8,6 +9,7 @@ export default function AppLayout() {
       <main className="flex-1 px-4 py-4 lg:px-6 lg:py-6">
         <Outlet />
       </main>
+      <InternalLegalFooter />
     </div>
   );
 }

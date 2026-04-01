@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Building2, ChevronRight, Check, Users, Loader2, ArrowLeft, Tag, CalendarDays, MapPin, Phone, Mail, Star, Plus, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useTenant } from '../../contexts/TenantContext';
+import LegalFooter from '../../components/legal/LegalFooter';
 
 interface RoomType {
   id: string;
@@ -743,6 +744,7 @@ export default function BookingWidgetPage() {
           Powered by StayWise · Secure direct booking
         </p>
       </div>
+      <LegalFooter />
     </div>
   );
 }

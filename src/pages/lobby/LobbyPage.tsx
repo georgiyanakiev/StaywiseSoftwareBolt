@@ -5,6 +5,7 @@ import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLobbyData, type LobbyHotel } from './useLobbyData';
 import HotelCard from './HotelCard';
 import HotelCardSkeleton from './HotelCardSkeleton';
+import LegalFooter from '../../components/legal/LegalFooter';
 
 const SUPERADMIN_EMAILS = (import.meta.env.VITE_SUPERADMIN_EMAILS ?? '').split(',').map((e: string) => e.trim()).filter(Boolean);
 
@@ -46,7 +47,7 @@ export default function LobbyPage() {
   }
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundColor: '#f4f6f9' }}>
+    <div className="min-h-screen flex flex-col relative" style={{ backgroundColor: '#f4f6f9' }}>
       {entering && (
         <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -135,6 +136,7 @@ export default function LobbyPage() {
           </div>
         )}
       </main>
+      <LegalFooter />
     </div>
   );
 }

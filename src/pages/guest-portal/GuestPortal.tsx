@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
+import LegalFooter from '../../components/legal/LegalFooter';
 
 interface PortalSession {
   id: string;
@@ -361,6 +362,7 @@ export default function GuestPortal() {
           )}
         </div>
       </div>
+      <LegalFooter />
     </div>
   );
 }
