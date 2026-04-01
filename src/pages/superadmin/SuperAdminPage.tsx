@@ -167,9 +167,18 @@ export default function SuperAdminPage() {
               <span className="text-gray-400 text-sm ml-2">Super Admin</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-amber-400 text-xs font-medium">
-            <Shield className="w-3.5 h-3.5" />
-            <span>Restricted</span>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/lobby')}
+              className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </button>
+            <div className="flex items-center gap-1.5 text-amber-400 text-xs font-medium">
+              <Shield className="w-3.5 h-3.5" />
+              <span>Restricted</span>
+            </div>
           </div>
         </div>
       </header>
