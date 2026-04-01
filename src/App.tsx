@@ -43,6 +43,9 @@ import DynamicPricingPage from './pages/dynamic-pricing/DynamicPricingPage';
 import UpsellPage from './pages/upselling/UpsellPage';
 import TermsPage from './pages/legal/TermsPage';
 import PrivacyPage from './pages/legal/PrivacyPage';
+import DpaPage from './pages/legal/DpaPage';
+import DpaAcceptanceModal from './components/legal/DpaAcceptanceModal';
+import { useDpaAcceptance } from './pages/legal/useDpaAcceptance';
 
 function AuthenticatedApp() {
   return (
@@ -55,6 +58,8 @@ function AuthenticatedApp() {
         <Route path="/terms-of-service" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/privacy-policy" element={<PrivacyPage />} />
+        <Route path="/dpa" element={<DpaPage />} />
+        <Route path="/data-processing-agreement" element={<DpaPage />} />
         <Route element={<AppLayout />}>
           <Route element={<RequireHotel />}>
             <Route path="/" element={<DashboardPage />} />
@@ -95,7 +100,13 @@ function AuthenticatedApp() {
 
 function AppWithAuth() {
   const { user, loading, pendingApproval } = useAuth();
-  const { loading: tenantLoading, error: tenantError, subdomain } = useTenant();
+  const { loading: tenantLoading, error: tenantError, subdomain, tenant } = useTenant();
+  const { acceptance, loading: dpaLoading, refetch: refetchDpa } = useDpaAcceptance(
+    user?.id,
+    tenant?.id ?? null
+  );
+
+  const showDpaBanner = !loading && !tenantLoading && !dpaLoading && !!user && !pendingApproval && !acceptance;
 
   if (tenantLoading) {
     return (
@@ -135,7 +146,18 @@ function AppWithAuth() {
   if (!user) return <LoginPage />;
   if (pendingApproval) return <PendingApprovalPage />;
 
-  return <AuthenticatedApp />;
+  return (
+    <>
+      <AuthenticatedApp />
+      {showDpaBanner && (
+        <DpaAcceptanceModal
+          userId={user.id}
+          tenantId={tenant?.id ?? null}
+          onAccepted={refetchDpa}
+        />
+      )}
+    </>
+  );
 }
 
 export default function App() {
@@ -147,6 +169,8 @@ export default function App() {
         <Route path="/terms-of-service" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/privacy-policy" element={<PrivacyPage />} />
+        <Route path="/dpa" element={<DpaPage />} />
+        <Route path="/data-processing-agreement" element={<DpaPage />} />
         <Route
           path="*"
           element={
