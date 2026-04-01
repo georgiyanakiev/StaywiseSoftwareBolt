@@ -18,10 +18,7 @@ export default function LegalFooter({ onCookiePreferences }: LegalFooterProps) {
     >
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.6' }}>
-          <p>
-            © 2024–{year} {COMPANY.name_en} | EIK: {COMPANY.uic}
-          </p>
-          <p>{COMPANY.address_en}</p>
+          <p>© 2024–{year} {COMPANY.name_en}</p>
         </div>
 
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -61,9 +58,7 @@ export function InternalLegalFooter() {
         className="inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
         style={{ fontSize: '11px', color: '#cbd5e1' }}
       >
-        <span>
-          {COMPANY.name_en} | EIK: {COMPANY.uic}
-        </span>
+        <span>{COMPANY.name_en}</span>
         <span className="hidden sm:inline">·</span>
         <Link to="/terms" className="hover:text-gray-400 transition-colors">Terms</Link>
         <Link to="/privacy" className="hover:text-gray-400 transition-colors">Privacy</Link>
