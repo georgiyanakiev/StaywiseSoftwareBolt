@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, Tag, AlertTriangle, Star, CreditCard as Edit2, Plus, FileText, MessageSquare, PhoneCall, Send, Calendar, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Tag, AlertTriangle, Star, CreditCard as Edit2, Plus, FileText, MessageSquare, PhoneCall, Send, Calendar, Euro, TrendingUp, Clock } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
@@ -155,7 +155,7 @@ export default function GuestProfilePage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
           { icon: Calendar, label: 'Total Stays', value: guest.total_stays, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { icon: DollarSign, label: 'Total Spent', value: formatCurrency(guest.total_spent, currentHotel?.currency || 'EUR'), color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { icon: Euro, label: 'Total Spent', value: formatCurrency(guest.total_spent, currentHotel?.currency || 'EUR'), color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { icon: TrendingUp, label: 'Avg per Stay', value: formatCurrency(avgSpend, currentHotel?.currency || 'EUR'), color: 'text-amber-600', bg: 'bg-amber-50' },
           { icon: Clock, label: 'Avg Nights', value: avgNights > 0 ? `${avgNights.toFixed(1)}n` : '-', color: 'text-teal-600', bg: 'bg-teal-50' },
           { icon: Calendar, label: 'First Visit', value: firstVisit ? formatDate(firstVisit) : '-', color: 'text-gray-600', bg: 'bg-gray-50' },

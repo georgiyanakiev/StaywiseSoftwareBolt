@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, DollarSign, Eye, XCircle, RefreshCw, Info, Hash } from 'lucide-react';
+import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, Euro, Eye, XCircle, RefreshCw, Info, Hash } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
@@ -186,7 +186,7 @@ export default function BookingEngineAdminPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Bookings This Month', value: thisMonth.length,             icon: Calendar,  color: 'text-blue-600' },
-          { label: 'Revenue This Month',  value: formatCurrency(monthRevenue), icon: DollarSign, color: 'text-emerald-600' },
+          { label: 'Revenue This Month',  value: formatCurrency(monthRevenue), icon: Euro, color: 'text-emerald-600' },
           { label: 'Avg Stay Length',     value: `${avgStay.toFixed(1)} nights`, icon: TrendingUp, color: 'text-amber-600' },
           { label: 'Avg Booking Value',   value: formatCurrency(avgValue),     icon: Users,      color: 'text-gray-700' },
         ].map(stat => (

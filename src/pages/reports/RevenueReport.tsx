@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, Building2, BarChart3, Download } from 'lucide-react';
+import { Euro, TrendingUp, Building2, BarChart3, Download } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -20,7 +20,7 @@ interface Props {
 
 export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roomTypePerf, currency, onExport, daysCount }: Props) {
   const kpiCards = [
-    { label: 'Total Revenue', value: formatCurrency(kpis.totalRevenue, currency), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', sub: 'Selected period' },
+    { label: 'Total Revenue', value: formatCurrency(kpis.totalRevenue, currency), icon: Euro, color: 'text-emerald-600', bg: 'bg-emerald-50', sub: 'Selected period' },
     { label: 'RevPAR', value: formatCurrency(kpis.revpar, currency), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50', sub: 'Revenue per available room' },
     { label: 'ADR', value: formatCurrency(kpis.adr, currency), icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50', sub: 'Average daily rate' },
     { label: 'Occupancy', value: `${kpis.occupancyPct.toFixed(1)}%`, icon: Building2, color: 'text-cyan-600', bg: 'bg-cyan-50', sub: 'Room occupancy' },

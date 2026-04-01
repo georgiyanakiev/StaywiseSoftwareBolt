@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   CreditCard, Plus, CheckCircle2, XCircle, Clock, AlertTriangle,
-  RefreshCw, RotateCcw, Trash2, DollarSign, TrendingDown, Calendar,
+  RefreshCw, RotateCcw, Trash2, Euro, TrendingDown, Calendar,
   ShieldAlert, Filter, Loader2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -181,7 +181,7 @@ export default function PaymentAutomationPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Collected This Month', value: formatCurrency(collectedThisMonth), icon: DollarSign,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Collected This Month', value: formatCurrency(collectedThisMonth), icon: Euro,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Pending',              value: formatCurrency(pendingTotal),       icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50' },
           { label: 'Overdue',              value: formatCurrency(overdueTotal),       icon: ShieldAlert,  color: 'text-red-600',     bg: 'bg-red-50' },
           { label: 'Pre-auths Held',       value: formatCurrency(preAuthHeld),        icon: TrendingDown, color: 'text-gray-700',    bg: 'bg-gray-100' },

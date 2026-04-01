@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  CheckCircle, Truck, XCircle, TrendingUp, DollarSign, BarChart2,
+  CheckCircle, Truck, XCircle, TrendingUp, Euro, BarChart2,
   Filter, RefreshCw, Loader2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -92,7 +92,7 @@ export default function UpsellOrders() {
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-emerald-600" />
+              <Euro className="w-5 h-5 text-emerald-600" />
             </div>
             <p className="text-sm text-gray-500">Upsell Revenue (this month)</p>
           </div>

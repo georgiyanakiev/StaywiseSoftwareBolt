@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, DollarSign, Save, Plus, CreditCard as Edit, UserX, Trash2, Link2, Eye, EyeOff } from 'lucide-react';
+import { Settings, Building2, Users, Receipt, Mail, CreditCard, Bell, Globe, Euro, Save, Plus, CreditCard as Edit, UserX, Trash2, Link2, Eye, EyeOff } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,7 +38,7 @@ const ROLE_BADGE_MAP: Record<string, string> = {
 
 const TABS_STATIC: { key: TabKey; icon: typeof Building2; adminOnly?: boolean }[] = [
   { key: 'hotel', icon: Building2 },
-  { key: 'rooms', icon: DollarSign },
+  { key: 'rooms', icon: Euro },
   { key: 'tax', icon: Receipt },
   { key: 'users', icon: Users, adminOnly: true },
   { key: 'emails', icon: Mail },
@@ -398,7 +398,7 @@ function RoomTypesTab() {
       </div>
 
       {roomTypes.length === 0 ? (
-        <EmptyState icon={<DollarSign className="h-6 w-6" />} title="No room types" description="Add your first room type to get started." />
+        <EmptyState icon={<Euro className="h-6 w-6" />} title="No room types" description="Add your first room type to get started." />
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">

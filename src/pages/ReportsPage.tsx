@@ -3,7 +3,7 @@ import {
   BarChart3,
   TrendingUp,
   Users,
-  DollarSign,
+  Euro,
   Percent,
   Calendar,
   Building2,
@@ -72,7 +72,7 @@ const TOOLTIP_STYLE = {
 
 const TABS_KEYS: { key: TabKey; icon: typeof BarChart3 }[] = [
   { key: 'occupancy', icon: Building2 },
-  { key: 'revenue', icon: DollarSign },
+  { key: 'revenue', icon: Euro },
   { key: 'guests', icon: Users },
   { key: 'bookings', icon: Globe },
   { key: 'housekeeping', icon: SprayCan },
@@ -247,7 +247,7 @@ export default function ReportsPage() {
 
   const TABS = [
     { key: 'occupancy' as TabKey, label: t.reports.occupancy, icon: Building2 },
-    { key: 'revenue' as TabKey, label: t.reports.revenue, icon: DollarSign },
+    { key: 'revenue' as TabKey, label: t.reports.revenue, icon: Euro },
     { key: 'guests' as TabKey, label: t.reports.guests, icon: Users },
     { key: 'bookings' as TabKey, label: t.reports.bookingSources, icon: Globe },
     { key: 'housekeeping' as TabKey, label: t.reports.housekeeping, icon: SprayCan },
@@ -472,7 +472,7 @@ export default function ReportsPage() {
     {
       label: 'Total Revenue',
       value: formatCurrency(overviewMetrics.totalRevenue, currency),
-      icon: DollarSign,
+      icon: Euro,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
     },
@@ -617,7 +617,7 @@ export default function ReportsPage() {
             <div className="stat-card">
               <div className="flex items-center justify-between mb-3">
                 <div className="bg-amber-50 text-amber-600 p-2 rounded-lg">
-                  <DollarSign className="w-5 h-5" />
+                  <Euro className="w-5 h-5" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-gray-900">{formatCurrency(overviewMetrics.revpar, currency)}</div>
@@ -1014,7 +1014,7 @@ export default function ReportsPage() {
             <div className="stat-card">
               <div className="flex items-center justify-between mb-3">
                 <div className="bg-amber-50 text-amber-600 p-2 rounded-lg">
-                  <DollarSign className="w-5 h-5" />
+                  <Euro className="w-5 h-5" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-gray-900">{formatCurrency(overviewMetrics.totalRevenue * 0.15, currency)}</div>
@@ -1230,7 +1230,7 @@ export default function ReportsPage() {
             <div className="stat-card">
               <div className="flex items-center justify-between mb-3">
                 <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg">
-                  <DollarSign className="w-5 h-5" />
+                  <Euro className="w-5 h-5" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-gray-900">
@@ -1379,7 +1379,7 @@ export default function ReportsPage() {
             <div className="stat-card">
               <div className="flex items-center justify-between mb-3">
                 <div className="bg-rose-50 text-rose-600 p-2 rounded-lg">
-                  <DollarSign className="w-5 h-5" />
+                  <Euro className="w-5 h-5" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-gray-900">

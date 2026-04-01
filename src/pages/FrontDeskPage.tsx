@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LogIn, LogOut, Users, BedDouble, SprayCan, CheckCircle2,
-  Clock, AlertTriangle, DollarSign, TrendingUp, RefreshCw,
+  Clock, AlertTriangle, Euro, TrendingUp, RefreshCw,
   ArrowRight, ChevronDown, ChevronUp, UserCheck, Wrench,
   CalendarDays, Tag, Moon, Phone,
 } from 'lucide-react';
@@ -168,7 +168,7 @@ export default function FrontDeskPage() {
           label="Today's Revenue"
           value={formatCurrency(kpis.todayRevenue)}
           sub={`ADR ${formatCurrency(kpis.avgRoomRate)}`}
-          icon={<DollarSign className="w-4 h-4" />}
+          icon={<Euro className="w-4 h-4" />}
           colorClass="bg-teal-50 text-teal-700 border-teal-100"
           iconBg="bg-teal-100"
         />

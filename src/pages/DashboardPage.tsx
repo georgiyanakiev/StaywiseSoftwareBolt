@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   BedDouble, LogIn, LogOut, Users, SprayCan, RefreshCw,
-  CalendarDays, DollarSign, TrendingUp, BarChart3, Activity,
+  CalendarDays, Euro, TrendingUp, BarChart3, Activity,
   CheckCircle2, AlertTriangle, Wrench, Baby,
   ArrowRightCircle, UserCheck, ClipboardList,
 } from 'lucide-react';
@@ -55,7 +55,7 @@ export default function DashboardPage() {
   const visibleRevenue = revenueData.slice(-7);
 
   const revenueCards = [
-    { label: t.dashboard.today, value: stats.todayRevenue, icon: DollarSign, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: t.dashboard.today, value: stats.todayRevenue, icon: Euro, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
     { label: t.dashboard.thisWeek, value: stats.weekRevenue, icon: TrendingUp, color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     { label: t.dashboard.thisMonth, value: stats.monthRevenue, icon: BarChart3, color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-100' },
     { label: t.dashboard.yearToDate, value: stats.ytdRevenue, icon: Activity, color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },

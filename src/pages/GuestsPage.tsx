@@ -9,7 +9,7 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
-import { Users, Plus, Search, CreditCard as Edit, Eye, Mail, Phone, MapPin, Star, Crown, ChevronLeft, ChevronRight, Download, MessageSquare, Send, FileText, Upload, Trash2, Settings, Heart, Calendar, DollarSign, Briefcase } from 'lucide-react';
+import { Users, Plus, Search, CreditCard as Edit, Eye, Mail, Phone, MapPin, Star, Crown, ChevronLeft, ChevronRight, Download, MessageSquare, Send, FileText, Upload, Trash2, Settings, Heart, Calendar, Euro, Briefcase } from 'lucide-react';
 
 const VIP_OPTIONS: Guest['vip_status'][] = ['regular', 'silver', 'gold', 'platinum'];
 
@@ -1074,7 +1074,7 @@ export default function GuestsPage() {
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className="w-4 h-4 text-gray-400" />
+                          <Euro className="w-4 h-4 text-gray-400" />
                           <p className="text-xs text-gray-500">Total Spent</p>
                         </div>
                         <p className="text-xl font-semibold text-gray-900">

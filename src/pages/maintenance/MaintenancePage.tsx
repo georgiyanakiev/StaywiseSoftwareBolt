@@ -8,7 +8,7 @@ import {
   Search,
   Filter,
   TrendingUp,
-  DollarSign,
+  Euro,
   Zap,
   Droplets,
   Wind,
@@ -337,7 +337,7 @@ export default function MaintenancePage() {
         </div>
         <div className="stat-card">
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-gray-500" />
+            <Euro className="w-4 h-4 text-gray-500" />
             <span className="text-xs font-medium text-gray-500">Total Repair Cost</span>
           </div>
           <span className="text-2xl font-bold text-gray-900">{currentHotel.currency} {stats.totalCost.toFixed(0)}</span>

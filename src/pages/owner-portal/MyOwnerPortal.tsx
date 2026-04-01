@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  TrendingUp, BedDouble, CalendarCheck, DollarSign, BarChart2, FileText, Printer, Building2,
+  TrendingUp, BedDouble, CalendarCheck, Euro, BarChart2, FileText, Printer, Building2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -172,7 +172,7 @@ export default function MyOwnerPortal() {
     { key: 'calendar', label: 'Availability', icon: CalendarCheck },
     { key: 'bookings', label: 'Bookings', icon: BedDouble },
     { key: 'statements', label: 'Statements', icon: FileText },
-    { key: 'expenses', label: 'Expenses', icon: DollarSign },
+    { key: 'expenses', label: 'Expenses', icon: Euro },
   ];
 
   return (
@@ -197,7 +197,7 @@ export default function MyOwnerPortal() {
             { label: 'Revenue (This Month)', value: formatCurrency(thisMonthRevenue), icon: TrendingUp, color: 'text-teal-600' },
             { label: 'Occupancy Rate', value: `${occupancyRate.toFixed(1)}%`, icon: BarChart2, color: 'text-blue-600' },
             { label: 'Bookings', value: thisMonthResvs.length, icon: CalendarCheck, color: 'text-emerald-600' },
-            { label: 'Avg Daily Rate', value: formatCurrency(avgDailyRate), icon: DollarSign, color: 'text-amber-600' },
+            { label: 'Avg Daily Rate', value: formatCurrency(avgDailyRate), icon: Euro, color: 'text-amber-600' },
             { label: 'Pending Payout', value: formatCurrency(pendingPayout), icon: FileText, color: 'text-orange-600' },
           ].map(card => (
             <div key={card.label} className="stat-card">

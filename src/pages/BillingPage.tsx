@@ -20,7 +20,7 @@ import {
   Plus,
   Search,
   Eye,
-  DollarSign,
+  Euro,
   Send,
   FileText,
   Trash2,
@@ -790,7 +790,7 @@ export default function BillingPage() {
         <div className="stat-card">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-emerald-600" />
+              <Euro className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500">Total Revenue</p>
@@ -979,7 +979,7 @@ export default function BillingPage() {
                               className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
                               title="Record Payment"
                             >
-                              <DollarSign className="w-4 h-4" />
+                              <Euro className="w-4 h-4" />
                             </button>
                           )}
                           {invoice.amount_paid > 0 && (
@@ -1448,7 +1448,7 @@ export default function BillingPage() {
                     }}
                     className="btn-primary"
                   >
-                    <DollarSign className="w-4 h-4" />
+                    <Euro className="w-4 h-4" />
                     Record Payment
                   </button>
                 )}
@@ -1653,7 +1653,7 @@ export default function BillingPage() {
                     }}
                     className="btn-primary"
                   >
-                    <DollarSign className="w-4 h-4" />
+                    <Euro className="w-4 h-4" />
                     Record Another Payment
                   </button>
                 )}
