@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Users, UserPlus, Loader2, RefreshCw, LayoutList, Building2, CheckCircle } from 'lucide-react';
-import { supabaseAdmin, supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import type { AdminUser, Tenant } from './types';
 import UserAssignmentPanel from './UserAssignmentPanel';
 import HotelStaffView from './HotelStaffView';
 
 interface Props {
   tenants: Tenant[];
-  db: ReturnType<typeof import('../../lib/supabase').supabaseAdmin extends null ? typeof import('../../lib/supabase').supabase : NonNullable<typeof import('../../lib/supabase').supabaseAdmin>>;
 }
 
 type ViewMode = 'by-user' | 'by-hotel';
@@ -38,10 +37,9 @@ interface InviteModalProps {
   tenants: Tenant[];
   onClose: () => void;
   onInvited: () => void;
-  dbClient: ReturnType<typeof supabaseAdmin> | typeof supabase;
 }
 
-function InviteModal({ tenants, onClose, onInvited, dbClient }: InviteModalProps) {
+function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
   const [email, setEmail] = useState('');
   const [tenantId, setTenantId] = useState(tenants[0]?.id ?? '');
   const [inviting, setInviting] = useState(false);
@@ -53,15 +51,22 @@ function InviteModal({ tenants, onClose, onInvited, dbClient }: InviteModalProps
     setInviting(true);
     setError(null);
 
-    const { error: inviteErr } = await (dbClient as ReturnType<typeof import('../../lib/supabase').supabaseAdmin>)!
-      .auth
-      .admin
-      .inviteUserByEmail(email, {
-        data: { invited_to_tenant: tenantId },
-      });
+    const { data: { session } } = await supabase.auth.getSession();
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 
-    if (inviteErr) {
-      setError(inviteErr.message);
+    const res = await fetch(`${supabaseUrl}/functions/v1/invite-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+        'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+      },
+      body: JSON.stringify({ email, tenant_id: tenantId }),
+    });
+
+    const result = await res.json();
+    if (!res.ok || result.error) {
+      setError(result.error || 'Failed to send invite');
       setInviting(false);
       return;
     }
@@ -94,7 +99,7 @@ function InviteModal({ tenants, onClose, onInvited, dbClient }: InviteModalProps
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Hotel</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Tenant</label>
             <select
               value={tenantId}
               onChange={e => setTenantId(e.target.value)}
@@ -105,18 +110,13 @@ function InviteModal({ tenants, onClose, onInvited, dbClient }: InviteModalProps
               ))}
             </select>
           </div>
-          {!supabaseAdmin && (
-            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              Service role key required to invite users.
-            </p>
-          )}
           <div className="flex justify-end gap-3 pt-1">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
               Cancel
             </button>
             <button
               type="submit"
-              disabled={inviting || !supabaseAdmin}
+              disabled={inviting}
               className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
             >
               {inviting ? 'Sending...' : 'Send Invite'}
@@ -128,8 +128,8 @@ function InviteModal({ tenants, onClose, onInvited, dbClient }: InviteModalProps
   );
 }
 
-export default function StaffAssignmentsTab({ tenants }: Omit<Props, 'db'>) {
-  const dbClient = supabaseAdmin ?? supabase;
+export default function StaffAssignmentsTab({ tenants }: Props) {
+  const dbClient = supabase;
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -298,7 +298,6 @@ export default function StaffAssignmentsTab({ tenants }: Omit<Props, 'db'>) {
           tenants={tenants}
           onClose={() => setShowInvite(false)}
           onInvited={fetchUsers}
-          dbClient={dbClient}
         />
       )}
     </div>
