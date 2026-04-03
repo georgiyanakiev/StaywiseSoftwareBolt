@@ -79,7 +79,14 @@ function toSession(h: ActiveHotel): ActiveHotelSession {
 function loadSession(): ActiveHotelSession | null {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as ActiveHotelSession) : null;
+    if (!raw) return null;
+    const session = JSON.parse(raw) as ActiveHotelSession;
+    const tenantParam = new URLSearchParams(window.location.search).get('tenant');
+    if (tenantParam && session.subdomain !== tenantParam) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return session;
   } catch {
     return null;
   }
