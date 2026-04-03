@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Plus, RefreshCw, AlertTriangle, Building2, Users, ArrowLeft } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 import StatsBar from './StatsBar';
 import TenantTable from './TenantTable';
 import TenantFormModal from './TenantFormModal';
@@ -76,7 +76,7 @@ export default function SuperAdminPage() {
 
   const handleSave = async (formData: TenantFormData) => {
     if (modal?.mode === 'add') {
-      const { error: err } = await db.from('tenants').insert({
+      const { data: newTenant, error: err } = await db.from('tenants').insert({
         name: formData.name,
         subdomain: formData.subdomain,
         owner_email: formData.owner_email || null,
@@ -85,8 +85,39 @@ export default function SuperAdminPage() {
         secondary_color: formData.secondary_color,
         logo_url: formData.logo_url || null,
         active: true,
-      });
+      }).select().single();
       if (err) throw new Error(err.message);
+
+      const { data: newHotel, error: hotelErr } = await db.from('hotels').insert({
+        name: formData.name,
+        tenant_id: newTenant.id,
+        email: formData.owner_email || '',
+      }).select().single();
+      if (hotelErr) throw new Error(hotelErr.message);
+
+      if (formData.owner_email && newHotel) {
+        let ownerId: string | null = null;
+
+        if (supabaseAdmin) {
+          const { data: usersPage } = await supabaseAdmin.auth.admin.listUsers();
+          const match = (usersPage?.users ?? []).find(u => u.email === formData.owner_email);
+          if (match) ownerId = match.id;
+        }
+
+        if (ownerId) {
+          await db.from('staff_members').insert({
+            hotel_id: newHotel.id,
+            user_id: ownerId,
+            first_name: formData.owner_email.split('@')[0],
+            last_name: '',
+            email: formData.owner_email,
+            role: 'admin',
+            is_active: true,
+            approval_status: 'approved',
+            tenant_id: newTenant.id,
+          }).select();
+        }
+      }
     } else if (modal?.mode === 'edit' && modal.tenant) {
       const { error: err } = await db.from('tenants').update({
         name: formData.name,
