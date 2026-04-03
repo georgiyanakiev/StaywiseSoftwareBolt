@@ -1,4 +1,5 @@
 export type StaffRole =
+  | 'admin'
   | 'owner'
   | 'manager'
   | 'front_desk'
@@ -66,6 +67,7 @@ export const ROUTE_TO_MODULE: Record<string, ModuleKey> = {
 };
 
 export const ROLE_LABELS: Record<StaffRole, string> = {
+  admin:        'Admin',
   owner:        'Owner',
   manager:      'Manager',
   front_desk:   'Front Desk',
@@ -76,6 +78,7 @@ export const ROLE_LABELS: Record<StaffRole, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<StaffRole, string> = {
+  admin:        'Full access to all features, settings, and staff management.',
   owner:        'Full access to all features, settings, and staff management.',
   manager:      'Full operational access. Can manage staff but cannot delete critical settings.',
   front_desk:   'Manages reservations, check-ins, guests, and billing. View-only for reports.',
@@ -86,6 +89,7 @@ export const ROLE_DESCRIPTIONS: Record<StaffRole, string> = {
 };
 
 export const ROLE_BADGE_COLORS: Record<StaffRole, string> = {
+  admin:        'bg-red-100 text-red-700',
   owner:        'bg-red-100 text-red-700',
   manager:      'bg-amber-100 text-amber-700',
   front_desk:   'bg-blue-100 text-blue-700',
@@ -136,6 +140,11 @@ function makePerms(full: ModuleKey[], view: ModuleKey[]): Record<ModuleKey, Modu
 }
 
 export const DEFAULT_PERMISSIONS: Record<StaffRole, Record<ModuleKey, ModulePermission>> = {
+  admin: ALL_MODULES.reduce((acc, m) => {
+    acc[m] = { can_view: true, can_create: true, can_edit: true, can_delete: true };
+    return acc;
+  }, {} as Record<ModuleKey, ModulePermission>),
+
   owner: ALL_MODULES.reduce((acc, m) => {
     acc[m] = { can_view: true, can_create: true, can_edit: true, can_delete: true };
     return acc;
