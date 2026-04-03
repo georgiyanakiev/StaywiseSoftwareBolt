@@ -37,7 +37,8 @@ export function useDpaAcceptance(userId: string | null | undefined, tenantId: st
     let query = supabase
       .from('dpa_acceptances')
       .select('*')
-      .order('accepted_at', { ascending: false });
+      .order('accepted_at', { ascending: false })
+      .limit(1);
 
     if (tenantId) {
       query = query.eq('tenant_id', tenantId);
