@@ -41,23 +41,15 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data: callerStaff } = await supabaseAdmin
-      .from("staff_members")
-      .select("role, tenant_id")
+    const { data: superAdminRow } = await supabaseAdmin
+      .from("user_hotel_assignments")
+      .select("role")
       .eq("user_id", caller.id)
+      .eq("role", "super_admin")
+      .limit(1)
       .maybeSingle();
 
-    const isSuperAdmin = callerStaff?.role === "superadmin";
-    const isTenantOwner = await (async () => {
-      const { data } = await supabaseAdmin
-        .from("tenants")
-        .select("id")
-        .eq("owner_email", caller.email)
-        .maybeSingle();
-      return !!data;
-    })();
-
-    if (!isSuperAdmin && !isTenantOwner) {
+    if (!superAdminRow) {
       return new Response(JSON.stringify({ error: "Only super admins can invite users." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
