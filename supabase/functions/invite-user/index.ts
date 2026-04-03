@@ -64,18 +64,43 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (!listError && existingUsers) {
+      const alreadyExists = existingUsers.users.some(
+        (u) => u.email?.toLowerCase() === email.toLowerCase()
+      );
+      if (alreadyExists) {
+        return new Response(
+          JSON.stringify({ success: true, already_exists: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: { invited_to_tenant: tenant_id ?? null },
     });
 
     if (inviteError) {
+      const alreadyRegistered =
+        inviteError.message.toLowerCase().includes("already registered") ||
+        inviteError.message.toLowerCase().includes("already been invited") ||
+        inviteError.message.toLowerCase().includes("user already exists");
+
+      if (alreadyRegistered) {
+        return new Response(
+          JSON.stringify({ success: true, already_exists: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(JSON.stringify({ error: inviteError.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, already_exists: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

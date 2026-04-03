@@ -71,6 +71,12 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
       return;
     }
 
+    if (result.already_exists) {
+      setError('This user already has an account. You can find and assign them in the user list.');
+      setInviting(false);
+      return;
+    }
+
     onInvited();
     onClose();
   };
