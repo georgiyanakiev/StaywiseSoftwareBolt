@@ -44,6 +44,8 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
   const [tenantId, setTenantId] = useState(tenants[0]?.id ?? '');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +68,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
 
     const result = await res.json();
     if (!res.ok || result.error) {
-      setError(result.error || 'Failed to send invite');
+      setError(result.error || 'Failed to create user');
       setInviting(false);
       return;
     }
@@ -78,8 +80,57 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
     }
 
     onInvited();
-    onClose();
+    setTempPassword(result.temp_password);
+    setInviting(false);
   };
+
+  const handleCopy = () => {
+    if (tempPassword) {
+      navigator.clipboard.writeText(tempPassword);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (tempPassword) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-900">User Created</h3>
+          </div>
+          <div className="px-6 py-5 space-y-4">
+            <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-green-800">Account created for {email}</p>
+                <p className="text-xs text-green-700 mt-0.5">Share the temporary password below with the user. They can change it after logging in.</p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-900 select-all">
+                  {tempPassword}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="flex-shrink-0 px-3 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end pt-1">
+              <button onClick={onClose} className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -125,7 +176,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
               disabled={inviting}
               className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
             >
-              {inviting ? 'Sending...' : 'Send Invite'}
+              {inviting ? 'Creating...' : 'Create User'}
             </button>
           </div>
         </form>

@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let pass = "";
+  for (let i = 0; i < 10; i++) {
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pass + "!1";
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -77,32 +86,38 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: { invited_to_tenant: tenant_id ?? null },
+    const tempPassword = generateTempPassword();
+
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { invited_to_tenant: tenant_id ?? null },
     });
 
-    if (inviteError) {
-      const alreadyRegistered =
-        inviteError.message.toLowerCase().includes("already registered") ||
-        inviteError.message.toLowerCase().includes("already been invited") ||
-        inviteError.message.toLowerCase().includes("user already exists");
+    if (createError) {
+      const alreadyExists =
+        createError.message.toLowerCase().includes("already registered") ||
+        createError.message.toLowerCase().includes("already been invited") ||
+        createError.message.toLowerCase().includes("user already exists");
 
-      if (alreadyRegistered) {
+      if (alreadyExists) {
         return new Response(
           JSON.stringify({ success: true, already_exists: true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      return new Response(JSON.stringify({ error: inviteError.message }), {
+      return new Response(JSON.stringify({ error: createError.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ success: true, already_exists: false }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ success: true, already_exists: false, temp_password: tempPassword, user_id: newUser.user?.id }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
