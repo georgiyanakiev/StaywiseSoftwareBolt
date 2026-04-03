@@ -41,24 +41,57 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data: callerStaff, error: callerStaffError } = await supabaseAdmin
-      .from("staff_members")
-      .select("role, hotel_id")
-      .eq("user_id", caller.id)
-      .maybeSingle();
-
-    if (callerStaffError || !callerStaff || callerStaff.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Only admins can add staff members." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { first_name, last_name, email, phone, role, is_active, password } = await req.json();
+    const { first_name, last_name, email, phone, role, is_active, password, hotel_id: bodyHotelId } = await req.json();
 
     if (!first_name || !last_name || !email || !password || password.length < 6) {
       return new Response(JSON.stringify({ error: "Missing required fields. Password must be at least 6 characters." }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check if caller has permission: must be a staff member with admin/owner/manager role,
+    // OR be the owner of the tenant that owns the hotel.
+    const { data: callerStaff } = await supabaseAdmin
+      .from("staff_members")
+      .select("role, hotel_id, tenant_id")
+      .eq("user_id", caller.id)
+      .maybeSingle();
+
+    const allowedRoles = ["admin", "owner", "manager"];
+    let resolvedHotelId: string | null = null;
+    let resolvedTenantId: string | null = null;
+
+    if (callerStaff && allowedRoles.includes(callerStaff.role)) {
+      resolvedHotelId = callerStaff.hotel_id;
+      resolvedTenantId = callerStaff.tenant_id;
+    } else {
+      // Check if caller is a tenant owner via the tenants table
+      const { data: ownedTenant } = await supabaseAdmin
+        .from("tenants")
+        .select("id")
+        .eq("owner_email", caller.email)
+        .maybeSingle();
+
+      if (ownedTenant) {
+        resolvedTenantId = ownedTenant.id;
+        // Use hotel_id from request body, or look up hotel for this tenant
+        if (bodyHotelId) {
+          resolvedHotelId = bodyHotelId;
+        } else {
+          const { data: tenantHotel } = await supabaseAdmin
+            .from("hotels")
+            .select("id")
+            .eq("tenant_id", ownedTenant.id)
+            .maybeSingle();
+          resolvedHotelId = tenantHotel?.id ?? null;
+        }
+      }
+    }
+
+    if (!resolvedHotelId) {
+      return new Response(JSON.stringify({ error: "You do not have permission to add staff members." }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -76,8 +109,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { error: insertError } = await supabaseAdmin.from("staff_members").insert({
-      hotel_id: callerStaff.hotel_id,
+    const insertPayload: Record<string, unknown> = {
+      hotel_id: resolvedHotelId,
       user_id: newUser.user.id,
       first_name,
       last_name,
@@ -85,7 +118,11 @@ Deno.serve(async (req: Request) => {
       phone: phone || "",
       role,
       is_active: is_active !== undefined ? is_active : true,
-    });
+      approval_status: "approved",
+    };
+    if (resolvedTenantId) insertPayload.tenant_id = resolvedTenantId;
+
+    const { error: insertError } = await supabaseAdmin.from("staff_members").insert(insertPayload);
 
     if (insertError) {
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);

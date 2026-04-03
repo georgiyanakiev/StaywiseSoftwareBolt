@@ -635,7 +635,7 @@ function UsersPermissionsTab() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ ...formData, password: addPassword }),
+        body: JSON.stringify({ ...formData, password: addPassword, hotel_id: currentHotel.id }),
       }
     );
     const result = await res.json();
