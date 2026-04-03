@@ -14,7 +14,7 @@ interface HotelContextValue {
 const HotelContext = createContext<HotelContextValue | null>(null);
 
 export function HotelProvider({ children }: { children: ReactNode }) {
-  const { user, staff } = useAuth();
+  const { user } = useAuth();
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [currentHotel, setCurrentHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,21 @@ export function HotelProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+
+    const sessionRaw = sessionStorage.getItem('sw_active_hotel');
+    const activeHotelId = sessionRaw ? JSON.parse(sessionRaw).hotelId : null;
+
+    if (activeHotelId) {
+      const { data } = await supabase.from('hotels').select('*').eq('id', activeHotelId).maybeSingle();
+      if (data) {
+        const hotel = data as Hotel;
+        setHotels([hotel]);
+        setCurrentHotel(hotel);
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data } = await supabase.from('hotels').select('*').order('name');
     const hotelList = (data || []) as Hotel[];
     setHotels(hotelList);
@@ -45,6 +60,14 @@ export function HotelProvider({ children }: { children: ReactNode }) {
       setCurrentHotel(null);
       setLoading(false);
     }
+  }, [user]);
+
+  useEffect(() => {
+    const handleHotelEntered = () => {
+      if (user) refreshHotels();
+    };
+    window.addEventListener('sw:hotel:entered', handleHotelEntered);
+    return () => window.removeEventListener('sw:hotel:entered', handleHotelEntered);
   }, [user]);
 
   const handleSetHotel = (hotel: Hotel) => {

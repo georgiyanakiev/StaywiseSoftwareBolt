@@ -141,6 +141,7 @@ export function ActiveHotelProvider({ children }: { children: ReactNode }) {
       applyBrandColor(payload.primaryColor);
       saveSession(payload);
       setSession(payload);
+      window.dispatchEvent(new Event('sw:hotel:entered'));
     } finally {
       setEntering(false);
     }
@@ -150,6 +151,7 @@ export function ActiveHotelProvider({ children }: { children: ReactNode }) {
     clearStoredSession();
     setSession(null);
     setActiveTenant(null);
+    window.dispatchEvent(new Event('sw:hotel:left'));
   }, []);
 
   const setActiveHotel = useCallback(async (hotel: ActiveHotel | null) => {

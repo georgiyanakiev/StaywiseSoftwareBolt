@@ -71,10 +71,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchStaff = useCallback(async (userId: string) => {
     try {
+      const sessionRaw = sessionStorage.getItem('sw_active_hotel');
+      const activeHotelId = sessionRaw ? JSON.parse(sessionRaw).hotelId : null;
+
+      if (activeHotelId) {
+        const { data } = await supabase
+          .from('staff_members')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('hotel_id', activeHotelId)
+          .maybeSingle();
+        if (data) return data as StaffMember;
+      }
+
       const { data } = await supabase
         .from('staff_members')
         .select('*')
         .eq('user_id', userId)
+        .eq('is_active', true)
+        .limit(1)
         .maybeSingle();
       return data as StaffMember | null;
     } catch {
@@ -124,6 +139,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
+  }, [initSession]);
+
+  useEffect(() => {
+    const handleHotelEntered = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) initSession(session);
+      });
+    };
+    window.addEventListener('sw:hotel:entered', handleHotelEntered);
+    return () => window.removeEventListener('sw:hotel:entered', handleHotelEntered);
   }, [initSession]);
 
   const signIn = async (email: string, password: string) => {
