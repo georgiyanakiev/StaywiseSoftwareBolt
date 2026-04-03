@@ -27,8 +27,15 @@ function getInitials(name: string) {
 
 function viewAsHotel(tenant: Tenant) {
   const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    window.open(`http://localhost:${window.location.port}/?tenant=${tenant.subdomain}`, '_blank');
+  const isLocalOrContainer =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.endsWith('.webcontainer-api.io') ||
+    hostname.endsWith('.bolt.new');
+
+  if (isLocalOrContainer) {
+    const origin = window.location.origin;
+    window.open(`${origin}/?tenant=${tenant.subdomain}`, '_blank');
   } else {
     const parts = hostname.split('.');
     const base = parts.slice(-2).join('.');
