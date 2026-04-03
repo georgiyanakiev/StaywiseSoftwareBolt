@@ -50,8 +50,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Check if caller has permission: must be a staff member with admin/owner/manager role,
-    // OR be the owner of the tenant that owns the hotel.
     const { data: callerStaff } = await supabaseAdmin
       .from("staff_members")
       .select("role, hotel_id, tenant_id")
@@ -66,7 +64,6 @@ Deno.serve(async (req: Request) => {
       resolvedHotelId = callerStaff.hotel_id;
       resolvedTenantId = callerStaff.tenant_id;
     } else {
-      // Check if caller is a tenant owner via the tenants table
       const { data: ownedTenant } = await supabaseAdmin
         .from("tenants")
         .select("id")
@@ -75,7 +72,6 @@ Deno.serve(async (req: Request) => {
 
       if (ownedTenant) {
         resolvedTenantId = ownedTenant.id;
-        // Use hotel_id from request body, or look up hotel for this tenant
         if (bodyHotelId) {
           resolvedHotelId = bodyHotelId;
         } else {
@@ -96,22 +92,49 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
+    // Try to find an existing auth user with this email first
+    let targetUserId: string | null = null;
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find((u) => u.email === email);
 
-    if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400,
+    if (existingUser) {
+      // User already exists in auth — use their ID and optionally update password
+      targetUserId = existingUser.id;
+      await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
+    } else {
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+      if (createError) {
+        return new Response(JSON.stringify({ error: createError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      targetUserId = newUser.user.id;
+    }
+
+    // Check if a staff_member record already exists for this user+hotel combination
+    const { data: existingStaff } = await supabaseAdmin
+      .from("staff_members")
+      .select("id")
+      .eq("user_id", targetUserId)
+      .eq("hotel_id", resolvedHotelId)
+      .maybeSingle();
+
+    if (existingStaff) {
+      return new Response(JSON.stringify({ error: "This user is already a staff member at this hotel." }), {
+        status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const insertPayload: Record<string, unknown> = {
       hotel_id: resolvedHotelId,
-      user_id: newUser.user.id,
+      user_id: targetUserId,
       first_name,
       last_name,
       email,
@@ -125,7 +148,6 @@ Deno.serve(async (req: Request) => {
     const { error: insertError } = await supabaseAdmin.from("staff_members").insert(insertPayload);
 
     if (insertError) {
-      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
       return new Response(JSON.stringify({ error: insertError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
