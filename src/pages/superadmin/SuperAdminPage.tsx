@@ -56,14 +56,14 @@ export default function SuperAdminPage() {
 
     const tenantsData = (data as Tenant[]) ?? [];
 
-    const { data: assignmentCounts } = await db
-      .from('user_hotel_assignments')
+    const { data: staffCounts } = await db
+      .from('staff_members')
       .select('tenant_id')
-      .eq('active', true);
+      .eq('is_active', true);
 
     const countMap: Record<string, number> = {};
-    (assignmentCounts ?? []).forEach((a: { tenant_id: string }) => {
-      countMap[a.tenant_id] = (countMap[a.tenant_id] ?? 0) + 1;
+    (staffCounts ?? []).forEach((s: { tenant_id: string }) => {
+      if (s.tenant_id) countMap[s.tenant_id] = (countMap[s.tenant_id] ?? 0) + 1;
     });
 
     setTenants(tenantsData.map(t => ({ ...t, staff_count: countMap[t.id] ?? 0 })));
