@@ -190,14 +190,14 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {!import.meta.env.VITE_SUPABASE_SERVICE_KEY && (
+        {supabaseAdmin === null && (
           <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <p className="text-red-700 text-sm font-semibold">Setup required: service key missing</p>
+            <p className="text-red-700 text-sm font-semibold">Setup required: service key missing or invalid</p>
             <p className="text-red-600 text-sm mt-0.5">
-              Add <code className="font-mono bg-red-100 px-1 rounded">VITE_SUPABASE_SERVICE_KEY</code> to your environment variables to enable hotel management and user invites.
+              Set <code className="font-mono bg-red-100 px-1 rounded">VITE_SUPABASE_SERVICE_KEY</code> to your Supabase <strong>service_role</strong> key value (not the anon key) to enable hotel management and user invites.
             </p>
             <p className="text-gray-500 text-xs mt-1">
-              Supabase → Settings → API → service_role key → Bolt → Settings → Environment Variables
+              Supabase → Settings → API → service_role key → paste the full key value into Bolt → Settings → Environment Variables → VITE_SUPABASE_SERVICE_KEY
             </p>
           </div>
         )}
