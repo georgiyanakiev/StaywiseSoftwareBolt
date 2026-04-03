@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Plus, RefreshCw, AlertTriangle, Building2, Users, ArrowLeft } from 'lucide-react';
-import { supabaseAdmin, supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import StatsBar from './StatsBar';
 import TenantTable from './TenantTable';
 import TenantFormModal from './TenantFormModal';
@@ -22,7 +22,7 @@ export default function SuperAdminPage() {
   const [tab, setTab] = useState<Tab>('hotels');
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const db = supabaseAdmin ?? supabase;
+  const db = supabase;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -73,12 +73,6 @@ export default function SuperAdminPage() {
   useEffect(() => {
     if (!authLoading && isSuperAdmin) fetchTenants();
   }, [authLoading, isSuperAdmin, fetchTenants]);
-
-  useEffect(() => {
-    if (!authLoading && isSuperAdmin && supabaseAdmin) {
-      supabaseAdmin.rpc('disable_tenants_rls').catch(() => {});
-    }
-  }, [authLoading, isSuperAdmin]);
 
   const handleSave = async (formData: TenantFormData) => {
     if (modal?.mode === 'add') {
@@ -190,18 +184,6 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {supabaseAdmin === null && (
-          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <p className="text-red-700 text-sm font-semibold">Setup required: service key missing or invalid</p>
-            <p className="text-red-600 text-sm mt-0.5">
-              Set <code className="font-mono bg-red-100 px-1 rounded">VITE_SUPABASE_SERVICE_KEY</code> to your Supabase <strong>service_role</strong> key value (not the anon key) to enable hotel management and user invites.
-            </p>
-            <p className="text-gray-500 text-xs mt-1">
-              Supabase → Settings → API → service_role key → paste the full key value into Bolt → Settings → Environment Variables → VITE_SUPABASE_SERVICE_KEY
-            </p>
-          </div>
-        )}
-
         <StatsBar tenants={tenants} />
 
         <div className="flex items-center justify-between">
@@ -260,9 +242,6 @@ export default function SuperAdminPage() {
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                 {error}
-                {!supabaseAdmin && (
-                  <span className="ml-1 text-red-500">(VITE_SUPABASE_SERVICE_KEY not set — RLS may block results)</span>
-                )}
               </div>
             )}
 
