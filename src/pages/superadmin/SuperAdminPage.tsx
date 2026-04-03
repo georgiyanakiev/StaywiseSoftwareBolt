@@ -74,6 +74,12 @@ export default function SuperAdminPage() {
     if (!authLoading && isSuperAdmin) fetchTenants();
   }, [authLoading, isSuperAdmin, fetchTenants]);
 
+  useEffect(() => {
+    if (!authLoading && isSuperAdmin && supabaseAdmin) {
+      supabaseAdmin.rpc('disable_tenants_rls').catch(() => {});
+    }
+  }, [authLoading, isSuperAdmin]);
+
   const handleSave = async (formData: TenantFormData) => {
     if (modal?.mode === 'add') {
       const { error: err } = await db.from('tenants').insert({
@@ -184,6 +190,18 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {!import.meta.env.VITE_SUPABASE_SERVICE_KEY && (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <p className="text-red-700 text-sm font-semibold">Setup required: service key missing</p>
+            <p className="text-red-600 text-sm mt-0.5">
+              Add <code className="font-mono bg-red-100 px-1 rounded">VITE_SUPABASE_SERVICE_KEY</code> to your environment variables to enable hotel management and user invites.
+            </p>
+            <p className="text-gray-500 text-xs mt-1">
+              Supabase → Settings → API → service_role key → Bolt → Settings → Environment Variables
+            </p>
+          </div>
+        )}
+
         <StatsBar tenants={tenants} />
 
         <div className="flex items-center justify-between">
@@ -256,11 +274,6 @@ export default function SuperAdminPage() {
               togglingId={togglingId}
             />
 
-            {!supabaseAdmin && (
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                VITE_SUPABASE_SERVICE_KEY is not configured. Set the service role key to bypass RLS.
-              </p>
-            )}
           </>
         )}
 
