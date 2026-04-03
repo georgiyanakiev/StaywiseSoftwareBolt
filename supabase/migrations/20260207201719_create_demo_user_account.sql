@@ -66,6 +66,33 @@ BEGIN
   )
   RETURNING id INTO v_user_id;
 
+  -- Create auth identity (required by GoTrue for password sign-in)
+  INSERT INTO auth.identities (
+    id,
+    provider_id,
+    user_id,
+    identity_data,
+    provider,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  )
+  VALUES (
+    gen_random_uuid(),
+    v_user_id::text,
+    v_user_id,
+    jsonb_build_object(
+      'sub', v_user_id::text,
+      'email', 'admin@demo.com',
+      'email_verified', true,
+      'phone_verified', false
+    ),
+    'email',
+    now(),
+    now(),
+    now()
+  );
+
   -- Create staff member record
   INSERT INTO staff_members (
     hotel_id,
