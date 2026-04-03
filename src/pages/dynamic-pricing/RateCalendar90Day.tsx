@@ -240,7 +240,7 @@ export default function RateCalendar90Day() {
                           >
                             <div className="flex flex-col items-center">
                               <span className={`text-xs font-semibold ${sugg ? 'text-teal-700' : 'text-gray-700'}`}>
-                                ${Math.round(displayRate)}
+                                €{Math.round(displayRate)}
                               </span>
                               {sugg && Math.abs(diff) >= 1 && (
                                 <span className={`text-[9px] flex items-center gap-0.5 ${diff > 0 ? 'text-teal-600' : 'text-rose-500'}`}>
