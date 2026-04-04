@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Plus, RefreshCw, AlertTriangle, Building2, Users, ArrowLeft } from 'lucide-react';
+import { Shield, Plus, RefreshCw, AlertTriangle, Building2, Users, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { supabase, supabaseAdmin } from '../../lib/supabase';
 import StatsBar from './StatsBar';
 import TenantTable from './TenantTable';
 import TenantFormModal from './TenantFormModal';
 import StaffAssignmentsTab from './StaffAssignmentsTab';
+import RolesTab from './RolesTab';
 import type { Tenant, TenantFormData } from './types';
 
-type Tab = 'hotels' | 'staff';
+type Tab = 'hotels' | 'staff' | 'roles';
 
 export default function SuperAdminPage() {
   const navigate = useNavigate();
@@ -236,6 +237,13 @@ export default function SuperAdminPage() {
               <Users className="w-4 h-4" />
               Staff & Assignments
             </button>
+            <button
+              onClick={() => setTab('roles')}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${tab === 'roles' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Roles & Permissions
+            </button>
           </div>
 
           {tab === 'hotels' && (
@@ -289,6 +297,10 @@ export default function SuperAdminPage() {
 
         {tab === 'staff' && (
           <StaffAssignmentsTab tenants={tenants} />
+        )}
+
+        {tab === 'roles' && (
+          <RolesTab />
         )}
       </main>
 

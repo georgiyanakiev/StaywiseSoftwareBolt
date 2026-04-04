@@ -1,8 +1,88 @@
-import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Loader2, Building2, AlertCircle, X } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { CheckCircle2, Loader2, Building2, AlertCircle, X, Info } from 'lucide-react';
 import { supabaseAdmin, supabase } from '../../lib/supabase';
 import type { AdminUser, Tenant, HotelAssignment, AssignmentRole } from './types';
 import { ASSIGNMENT_ROLES } from './types';
+import {
+  DEFAULT_PERMISSIONS,
+  ROLE_DESCRIPTIONS,
+  ROLE_BADGE_COLORS,
+  ALL_MODULES,
+  MODULE_LABELS,
+  type StaffRole,
+} from '../../lib/permissions';
+
+const ROLE_ACCESS_SUMMARY: Record<AssignmentRole, { full: string[]; view: string[] }> = (() => {
+  const result = {} as Record<AssignmentRole, { full: string[]; view: string[] }>;
+  const roles: AssignmentRole[] = ['owner', 'manager', 'front_desk', 'housekeeping', 'accountant', 'readonly'];
+  for (const role of roles) {
+    const perms = DEFAULT_PERMISSIONS[role as StaffRole];
+    if (!perms) { result[role] = { full: [], view: [] }; continue; }
+    result[role] = {
+      full: ALL_MODULES.filter(m => perms[m]?.can_create && perms[m]?.can_edit).map(m => MODULE_LABELS[m]),
+      view: ALL_MODULES.filter(m => perms[m]?.can_view && !(perms[m]?.can_create)).map(m => MODULE_LABELS[m]),
+    };
+  }
+  return result;
+})();
+
+function RoleTooltip({ role, onClose }: { role: AssignmentRole; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const summary = ROLE_ACCESS_SUMMARY[role];
+  const desc = ROLE_DESCRIPTIONS[role as StaffRole];
+  const badge = ROLE_BADGE_COLORS[role as StaffRole];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-7 z-50 w-64 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-xs"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${badge}`}>
+          {ASSIGNMENT_ROLES.find(r => r.value === role)?.label}
+        </span>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <p className="text-gray-500 leading-snug mb-2">{desc}</p>
+
+      {summary.full.length > 0 && (
+        <div className="mb-2">
+          <p className="font-semibold text-gray-700 mb-1">Full access ({summary.full.length})</p>
+          <div className="flex flex-wrap gap-1">
+            {summary.full.map(m => (
+              <span key={m} className="px-1.5 py-0.5 rounded-md bg-green-100 text-green-700 font-medium">{m}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {summary.view.length > 0 && (
+        <div>
+          <p className="font-semibold text-gray-700 mb-1">View only ({summary.view.length})</p>
+          <div className="flex flex-wrap gap-1">
+            {summary.view.map(m => (
+              <span key={m} className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">{m}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {summary.full.length === 0 && summary.view.length === 0 && (
+        <p className="text-gray-400 italic">No module access</p>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   user: AdminUser;
@@ -28,6 +108,7 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
   const [saving, setSaving] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<Tenant | null>(null);
+  const [openTooltip, setOpenTooltip] = useState<string | null>(null);
   const db = supabaseAdmin ?? supabase;
 
   const displayName = getUserDisplayName(user);
@@ -209,16 +290,32 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
 
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {isAssigned && (
-                        <select
-                          value={assignment?.role ?? 'front_desk'}
-                          onChange={e => handleRoleChange(tenant, e.target.value as AssignmentRole)}
-                          disabled={isRoleSaving}
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white disabled:opacity-50"
-                        >
-                          {ASSIGNMENT_ROLES.map(r => (
-                            <option key={r.value} value={r.value}>{r.label}</option>
-                          ))}
-                        </select>
+                        <div className="relative flex items-center gap-1">
+                          <select
+                            value={assignment?.role ?? 'front_desk'}
+                            onChange={e => handleRoleChange(tenant, e.target.value as AssignmentRole)}
+                            disabled={isRoleSaving}
+                            className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white disabled:opacity-50"
+                          >
+                            {ASSIGNMENT_ROLES.map(r => (
+                              <option key={r.value} value={r.value}>{r.label}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => setOpenTooltip(prev => prev === tenant.id ? null : tenant.id)}
+                            className="text-gray-400 hover:text-blue-500 transition-colors flex-shrink-0"
+                            title="View role permissions"
+                          >
+                            <Info className="w-3.5 h-3.5" />
+                          </button>
+                          {openTooltip === tenant.id && (
+                            <RoleTooltip
+                              role={(assignment?.role ?? 'front_desk') as AssignmentRole}
+                              onClose={() => setOpenTooltip(null)}
+                            />
+                          )}
+                        </div>
                       )}
 
                       <button
