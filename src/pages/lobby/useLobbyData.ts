@@ -82,10 +82,13 @@ export function useLobbyData() {
       const directHotelIds = Object.keys(directRoleMap);
 
       const tenantRoleMap: Record<string, string> = {};
-      (assignmentResult.data ?? []).forEach(a => { tenantRoleMap[a.tenant_id] = a.role; });
+      const isSuperAdminRole = (assignmentResult.data ?? []).some(a => a.role === 'super_admin');
+      (assignmentResult.data ?? []).forEach(a => {
+        if (a.tenant_id) tenantRoleMap[a.tenant_id] = a.role;
+      });
       const assignedTenantIds = Object.keys(tenantRoleMap);
 
-      if (directHotelIds.length === 0 && assignedTenantIds.length === 0) {
+      if (!isSuperAdminRole && directHotelIds.length === 0 && assignedTenantIds.length === 0) {
         setHotels([]);
         setLoading(false);
         return;
@@ -96,14 +99,16 @@ export function useLobbyData() {
         .select('id, name, address, city, country, logo_url, star_rating, currency, tenant_id')
         .order('name');
 
-      if (directHotelIds.length > 0 && assignedTenantIds.length > 0) {
-        query = query.or(
-          `id.in.(${directHotelIds.join(',')}),tenant_id.in.(${assignedTenantIds.join(',')})`
-        );
-      } else if (directHotelIds.length > 0) {
-        query = query.in('id', directHotelIds);
-      } else {
-        query = query.in('tenant_id', assignedTenantIds);
+      if (!isSuperAdminRole) {
+        if (directHotelIds.length > 0 && assignedTenantIds.length > 0) {
+          query = query.or(
+            `id.in.(${directHotelIds.join(',')}),tenant_id.in.(${assignedTenantIds.join(',')})`
+          );
+        } else if (directHotelIds.length > 0) {
+          query = query.in('id', directHotelIds);
+        } else {
+          query = query.in('tenant_id', assignedTenantIds);
+        }
       }
 
       const { data: hotelRows, error: hotelErr } = await query;
@@ -132,6 +137,7 @@ export function useLobbyData() {
         hotelRows.map(async hotel => {
           let rawRole = directRoleMap[hotel.id];
           if (!rawRole && hotel.tenant_id) rawRole = tenantRoleMap[hotel.tenant_id];
+          if (!rawRole && isSuperAdminRole) rawRole = 'super_admin';
 
           const [roomsRes, arrivalsRes, occupiedRes] = await Promise.all([
             supabase.from('rooms').select('id', { count: 'exact', head: true }).eq('hotel_id', hotel.id),
