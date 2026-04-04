@@ -32,8 +32,6 @@ import ChannelManagerPage from './pages/channel-manager/ChannelManagerPage';
 import BookingEngineAdminPage from './pages/booking-engine/BookingEngineAdminPage';
 import BookingWidgetPage from './pages/booking-engine/BookingWidgetPage';
 import PaymentAutomationPage from './pages/payments/PaymentAutomationPage';
-import InvoicingPage from './pages/invoicing/InvoicingPage';
-import InvoiceSettingsPage from './pages/invoicing/InvoiceSettingsPage';
 import StaffSettingsPage from './pages/settings/staff/StaffSettingsPage';
 import GuestPortalPage from './pages/guest-portal/GuestPortalPage';
 import GuestPortal from './pages/guest-portal/GuestPortal';
@@ -78,8 +76,8 @@ function AuthenticatedApp() {
             <Route path="/channel-manager" element={<ChannelManagerPage />} />
             <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
             <Route path="/payment-automation" element={<PaymentAutomationPage />} />
-            <Route path="/invoicing" element={<InvoicingPage />} />
-            <Route path="/invoicing/settings" element={<InvoiceSettingsPage />} />
+            <Route path="/invoicing" element={<Navigate to="/billing" replace />} />
+            <Route path="/invoicing/settings" element={<Navigate to="/billing" replace />} />
             <Route path="/guest-portal" element={<GuestPortalPage />} />
             <Route path="/owner-portal" element={<OwnerPortalPage />} />
             <Route path="/owner-portal/my-portal" element={<MyOwnerPortal />} />

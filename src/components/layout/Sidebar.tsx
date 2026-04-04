@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, SprayCan, QrCode,
   GitBranch, Globe, TrendingUp, ShoppingBag,
-  CreditCard, FileText, BarChart3, Receipt,
+  CreditCard, FileText, BarChart3,
   Users, Settings, Building2, ChevronLeft, ChevronRight, LogOut, X, BookOpen,
   Link2, UserCog, KeyRound, ClipboardList, Wrench, BedDouble,
 } from 'lucide-react';
@@ -56,8 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Finance',
     items: [
       { to: '/payment-automation', icon: CreditCard, label: 'Payments' },
-      { to: '/invoicing', icon: FileText, label: 'Invoicing' },
-      { to: '/billing', icon: Receipt, label: 'Billing' },
+      { to: '/billing', icon: FileText, label: 'Invoicing & Billing' },
       { to: '/reports', icon: BarChart3, label: 'Reports' },
     ],
   },
