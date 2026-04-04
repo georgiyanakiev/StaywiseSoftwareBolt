@@ -64,12 +64,17 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
 
     setSubdomainStatus('checking');
     checkTimer.current = setTimeout(async () => {
-      const { data } = await db
-        .from('tenants')
-        .select('id')
-        .eq('subdomain', val)
-        .maybeSingle();
-      setSubdomainStatus(data ? 'taken' : 'available');
+      const { data, error } = await db.rpc('check_subdomain_available', { p_subdomain: val });
+      if (error) {
+        const { data: fallback } = await db
+          .from('tenants')
+          .select('id')
+          .eq('subdomain', val)
+          .maybeSingle();
+        setSubdomainStatus(fallback ? 'taken' : 'available');
+      } else {
+        setSubdomainStatus(data === true ? 'available' : 'taken');
+      }
     }, 400);
   };
 
@@ -89,7 +94,13 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
       await onSave(form);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to save tenant.');
+      const msg = err instanceof Error ? err.message : 'Failed to save tenant.';
+      if (msg.includes('tenants_subdomain_key') || msg.includes('subdomain')) {
+        setError('That subdomain is already taken. Please choose a different one.');
+        setSubdomainStatus('taken');
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -268,7 +279,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
             </button>
             <button
               type="submit"
-              disabled={saving || (mode === 'add' && subdomainStatus === 'taken')}
+              disabled={saving || (mode === 'add' && (subdomainStatus === 'taken' || subdomainStatus === 'checking' || subdomainStatus === 'invalid'))}
               className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
             >
               {saving ? 'Saving...' : mode === 'add' ? 'Create Hotel' : 'Save Changes'}
