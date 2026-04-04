@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Loader2, Building2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Building2, AlertCircle, X } from 'lucide-react';
 import { supabaseAdmin, supabase } from '../../lib/supabase';
 import type { AdminUser, Tenant, HotelAssignment, AssignmentRole } from './types';
 import { ASSIGNMENT_ROLES } from './types';
@@ -26,6 +26,8 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
   const [assignments, setAssignments] = useState<HotelAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<Tenant | null>(null);
   const db = supabaseAdmin ?? supabase;
 
   const displayName = getUserDisplayName(user);
@@ -50,9 +52,10 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
   const getAssignment = (tenantId: string) =>
     assignments.find(a => a.tenant_id === tenantId);
 
-  const handleToggle = async (tenant: Tenant) => {
+  const doToggle = async (tenant: Tenant) => {
     const existing = getAssignment(tenant.id);
     setSaving(tenant.id);
+    setSaveError(null);
 
     if (existing) {
       const newActive = !existing.active;
@@ -60,7 +63,9 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
         .from('user_hotel_assignments')
         .update({ active: newActive })
         .eq('id', existing.id);
-      if (!error) {
+      if (error) {
+        setSaveError(`Failed to update assignment for ${tenant.name}: ${error.message}`);
+      } else {
         setAssignments(prev => prev.map(a => a.id === existing.id ? { ...a, active: newActive } : a));
         onToast(newActive ? `Assigned to ${tenant.name}` : `Removed from ${tenant.name}`);
       }
@@ -70,7 +75,9 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
         .insert({ user_id: user.id, tenant_id: tenant.id, role: 'front_desk', active: true })
         .select()
         .single();
-      if (!error && data) {
+      if (error) {
+        setSaveError(`Failed to assign to ${tenant.name}: ${error.message}`);
+      } else if (data) {
         setAssignments(prev => [...prev, data as HotelAssignment]);
         onToast(`Assigned to ${tenant.name}`);
       }
@@ -79,17 +86,29 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
     setSaving(null);
   };
 
+  const handleToggle = (tenant: Tenant) => {
+    const existing = getAssignment(tenant.id);
+    if (existing?.active) {
+      setConfirmRemove(tenant);
+    } else {
+      doToggle(tenant);
+    }
+  };
+
   const handleRoleChange = async (tenant: Tenant, role: AssignmentRole) => {
     const existing = getAssignment(tenant.id);
     if (!existing) return;
     setSaving(`role-${tenant.id}`);
+    setSaveError(null);
 
     const { error } = await db
       .from('user_hotel_assignments')
       .update({ role })
       .eq('id', existing.id);
 
-    if (!error) {
+    if (error) {
+      setSaveError(`Failed to update role: ${error.message}`);
+    } else {
       setAssignments(prev => prev.map(a => a.id === existing.id ? { ...a, role } : a));
       onToast('Role updated');
     }
@@ -98,6 +117,39 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
 
   return (
     <div className="flex flex-col h-full">
+      {confirmRemove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-900 text-sm">Remove Assignment</h3>
+              <button onClick={() => setConfirmRemove(null)} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-700">
+                Remove <span className="font-semibold">{displayName || user.email}</span> from{' '}
+                <span className="font-semibold">{confirmRemove.name}</span>? They will lose access immediately.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3 px-5 pb-4">
+              <button
+                onClick={() => setConfirmRemove(null)}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { doToggle(confirmRemove); setConfirmRemove(null); }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
@@ -112,6 +164,16 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
           Toggle to assign or remove this user from a hotel. Changes save immediately.
         </p>
       </div>
+
+      {saveError && (
+        <div className="mx-4 mt-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2.5 text-xs flex items-start gap-2">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+          <span className="flex-1">{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="flex-shrink-0 text-red-400 hover:text-red-600">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react';
 import { supabaseAdmin, supabase } from '../../lib/supabase';
 import type { Tenant, TenantFormData } from './types';
 
@@ -23,10 +23,80 @@ const DEFAULT_FORM: TenantFormData = {
 
 type SubdomainStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
+interface FieldErrors {
+  name?: string;
+  subdomain?: string;
+  owner_email?: string;
+  logo_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+function validate(form: TenantFormData, mode: 'add' | 'edit', subdomainStatus: SubdomainStatus): FieldErrors {
+  const errors: FieldErrors = {};
+
+  if (!form.name.trim()) {
+    errors.name = 'Hotel name is required.';
+  } else if (form.name.trim().length < 2) {
+    errors.name = 'Hotel name must be at least 2 characters.';
+  } else if (form.name.trim().length > 100) {
+    errors.name = 'Hotel name must be 100 characters or fewer.';
+  }
+
+  if (mode === 'add') {
+    if (!form.subdomain.trim()) {
+      errors.subdomain = 'Subdomain is required.';
+    } else if (subdomainStatus === 'taken') {
+      errors.subdomain = 'This subdomain is already taken.';
+    } else if (subdomainStatus === 'invalid') {
+      errors.subdomain = 'Use lowercase letters, numbers, and hyphens only (must start and end with a letter or number).';
+    } else if (subdomainStatus === 'idle' || subdomainStatus === 'checking') {
+      errors.subdomain = 'Please wait for the availability check to complete.';
+    }
+  }
+
+  if (form.owner_email.trim() && !EMAIL_RE.test(form.owner_email.trim())) {
+    errors.owner_email = 'Please enter a valid email address.';
+  }
+
+  if (form.logo_url.trim()) {
+    try {
+      new URL(form.logo_url.trim());
+    } catch {
+      errors.logo_url = 'Please enter a valid URL (e.g. https://example.com/logo.png).';
+    }
+  }
+
+  if (!HEX_RE.test(form.primary_color)) {
+    errors.primary_color = 'Must be a valid hex colour (e.g. #2563eb).';
+  }
+
+  if (!HEX_RE.test(form.secondary_color)) {
+    errors.secondary_color = 'Must be a valid hex colour (e.g. #1e40af).';
+  }
+
+  return errors;
+}
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return (
+    <span className="flex items-center gap-1 text-red-500 text-xs mt-1">
+      <AlertCircle className="w-3 h-3 flex-shrink-0" />
+      {msg}
+    </span>
+  );
+}
+
 export default function TenantFormModal({ mode, tenant, onClose, onSave }: TenantFormModalProps) {
   const [form, setForm] = useState<TenantFormData>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<Set<string>>(new Set());
   const [subdomainStatus, setSubdomainStatus] = useState<SubdomainStatus>('idle');
   const checkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const db = supabaseAdmin ?? supabase;
@@ -46,23 +116,39 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
     }
   }, [mode, tenant]);
 
-  const set = (key: keyof TenantFormData, value: string | boolean) =>
-    setForm(prev => ({ ...prev, [key]: value }));
+  const touch = (field: string) => setTouched(prev => new Set(prev).add(field));
+
+  const set = (key: keyof TenantFormData, value: string | boolean) => {
+    setForm(prev => {
+      const next = { ...prev, [key]: value };
+      if (touched.has(key as string)) {
+        setFieldErrors(validate(next, mode, subdomainStatus));
+      }
+      return next;
+    });
+  };
 
   const handleSubdomainChange = (raw: string) => {
     const val = raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    set('subdomain', val);
+    setForm(prev => ({ ...prev, subdomain: val }));
     setSubdomainStatus('idle');
+    touch('subdomain');
 
     if (checkTimer.current) clearTimeout(checkTimer.current);
-    if (!val || val.length < 2) return;
+    if (!val || val.length < 2) {
+      setFieldErrors(prev => ({ ...prev, subdomain: val ? 'Subdomain must be at least 2 characters.' : 'Subdomain is required.' }));
+      return;
+    }
 
-    if (val.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(val)) {
+    if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(val)) {
       setSubdomainStatus('invalid');
+      setFieldErrors(prev => ({ ...prev, subdomain: 'Use lowercase letters, numbers, and hyphens only (must start and end with a letter or number).' }));
       return;
     }
 
     setSubdomainStatus('checking');
+    setFieldErrors(prev => ({ ...prev, subdomain: undefined }));
+
     checkTimer.current = setTimeout(async () => {
       const { data, error } = await db.rpc('check_subdomain_available', { p_subdomain: val });
       if (error) {
@@ -71,35 +157,40 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
           .select('id')
           .eq('subdomain', val)
           .maybeSingle();
-        setSubdomainStatus(fallback ? 'taken' : 'available');
+        const status = fallback ? 'taken' : 'available';
+        setSubdomainStatus(status);
+        if (status === 'taken') {
+          setFieldErrors(prev => ({ ...prev, subdomain: 'This subdomain is already taken.' }));
+        }
       } else {
-        setSubdomainStatus(data === true ? 'available' : 'taken');
+        const status = data === true ? 'available' : 'taken';
+        setSubdomainStatus(status);
+        if (status === 'taken') {
+          setFieldErrors(prev => ({ ...prev, subdomain: 'This subdomain is already taken.' }));
+        }
       }
     }, 400);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.subdomain.trim()) {
-      setError('Name and subdomain are required.');
-      return;
-    }
-    if (mode === 'add' && subdomainStatus === 'taken') {
-      setError('That subdomain is already in use.');
-      return;
-    }
+    setTouched(new Set(['name', 'subdomain', 'owner_email', 'logo_url', 'primary_color', 'secondary_color']));
+    const errors = validate(form, mode, subdomainStatus);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSaving(true);
-    setError(null);
+    setSubmitError(null);
     try {
       await onSave(form);
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to save tenant.';
+      const msg = err instanceof Error ? err.message : 'Failed to save hotel.';
       if (msg.includes('tenants_subdomain_key') || msg.includes('subdomain')) {
-        setError('That subdomain is already taken. Please choose a different one.');
+        setFieldErrors(prev => ({ ...prev, subdomain: 'This subdomain is already taken.' }));
         setSubdomainStatus('taken');
       } else {
-        setError(msg);
+        setSubmitError(msg);
       }
     } finally {
       setSaving(false);
@@ -108,6 +199,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
 
   const subdomainHint = () => {
     if (mode === 'edit') return null;
+    if (fieldErrors.subdomain) return null;
     switch (subdomainStatus) {
       case 'checking':
         return (
@@ -121,22 +213,21 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
             <CheckCircle className="w-3 h-3" /> Available
           </span>
         );
-      case 'taken':
-        return (
-          <span className="flex items-center gap-1 text-red-500 text-xs mt-1">
-            <AlertCircle className="w-3 h-3" /> Already taken
-          </span>
-        );
-      case 'invalid':
-        return (
-          <span className="flex items-center gap-1 text-amber-600 text-xs mt-1">
-            <AlertCircle className="w-3 h-3" /> Use lowercase letters, numbers, and hyphens only
-          </span>
-        );
       default:
         return null;
     }
   };
+
+  const inputClass = (field: keyof FieldErrors) =>
+    `w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
+      touched.has(field) && fieldErrors[field]
+        ? 'border-red-300 focus:ring-red-400'
+        : 'border-gray-200 focus:ring-blue-500'
+    }`;
+
+  const isSubmitDisabled =
+    saving ||
+    (mode === 'add' && (subdomainStatus === 'taken' || subdomainStatus === 'checking' || subdomainStatus === 'invalid'));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -150,33 +241,42 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              {error}
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4" noValidate>
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              {submitError}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Hotel Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={e => set('name', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onBlur={() => { touch('name'); setFieldErrors(validate(form, mode, subdomainStatus)); }}
+                className={inputClass('name')}
                 placeholder="Grand Metropolitan Hotel"
+                maxLength={100}
               />
+              <FieldError msg={touched.has('name') ? fieldErrors.name : undefined} />
+              <span className="text-xs text-gray-400 mt-0.5 block">{form.name.length}/100 characters</span>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subdomain *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Subdomain {mode === 'add' && <span className="text-red-500">*</span>}
+              </label>
               <input
                 type="text"
                 value={form.subdomain}
                 onChange={e => handleSubdomainChange(e.target.value)}
                 className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
-                  subdomainStatus === 'taken' || subdomainStatus === 'invalid'
+                  subdomainStatus === 'taken' || subdomainStatus === 'invalid' || (touched.has('subdomain') && fieldErrors.subdomain)
                     ? 'border-red-300 focus:ring-red-400'
                     : subdomainStatus === 'available'
                     ? 'border-green-300 focus:ring-green-400'
@@ -186,6 +286,12 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
                 disabled={mode === 'edit'}
               />
               {subdomainHint()}
+              <FieldError msg={touched.has('subdomain') ? fieldErrors.subdomain : undefined} />
+              {mode === 'add' && !fieldErrors.subdomain && subdomainStatus === 'idle' && form.subdomain.length > 0 && (
+                <span className="flex items-center gap-1 text-gray-400 text-xs mt-1">
+                  <Info className="w-3 h-3" /> Type at least 2 characters to check availability
+                </span>
+              )}
             </div>
 
             <div>
@@ -207,20 +313,24 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
                 type="email"
                 value={form.owner_email}
                 onChange={e => set('owner_email', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onBlur={() => { touch('owner_email'); setFieldErrors(validate(form, mode, subdomainStatus)); }}
+                className={inputClass('owner_email')}
                 placeholder="owner@hotel.com"
               />
+              <FieldError msg={touched.has('owner_email') ? fieldErrors.owner_email : undefined} />
             </div>
 
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
               <input
-                type="url"
+                type="text"
                 value={form.logo_url}
                 onChange={e => set('logo_url', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://..."
+                onBlur={() => { touch('logo_url'); setFieldErrors(validate(form, mode, subdomainStatus)); }}
+                className={inputClass('logo_url')}
+                placeholder="https://example.com/logo.png"
               />
+              <FieldError msg={touched.has('logo_url') ? fieldErrors.logo_url : undefined} />
             </div>
 
             <div>
@@ -228,17 +338,23 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={form.primary_color}
+                  value={HEX_RE.test(form.primary_color) ? form.primary_color : '#2563eb'}
                   onChange={e => set('primary_color', e.target.value)}
-                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer p-0.5"
+                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer p-0.5 flex-shrink-0"
                 />
                 <input
                   type="text"
                   value={form.primary_color}
                   onChange={e => set('primary_color', e.target.value)}
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onBlur={() => { touch('primary_color'); setFieldErrors(validate(form, mode, subdomainStatus)); }}
+                  className={`flex-1 border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 transition-colors ${
+                    touched.has('primary_color') && fieldErrors.primary_color
+                      ? 'border-red-300 focus:ring-red-400'
+                      : 'border-gray-200 focus:ring-blue-500'
+                  }`}
                 />
               </div>
+              <FieldError msg={touched.has('primary_color') ? fieldErrors.primary_color : undefined} />
             </div>
 
             <div>
@@ -246,17 +362,23 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={form.secondary_color}
+                  value={HEX_RE.test(form.secondary_color) ? form.secondary_color : '#1e40af'}
                   onChange={e => set('secondary_color', e.target.value)}
-                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer p-0.5"
+                  className="w-10 h-9 border border-gray-200 rounded-lg cursor-pointer p-0.5 flex-shrink-0"
                 />
                 <input
                   type="text"
                   value={form.secondary_color}
                   onChange={e => set('secondary_color', e.target.value)}
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onBlur={() => { touch('secondary_color'); setFieldErrors(validate(form, mode, subdomainStatus)); }}
+                  className={`flex-1 border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 transition-colors ${
+                    touched.has('secondary_color') && fieldErrors.secondary_color
+                      ? 'border-red-300 focus:ring-red-400'
+                      : 'border-gray-200 focus:ring-blue-500'
+                  }`}
                 />
               </div>
+              <FieldError msg={touched.has('secondary_color') ? fieldErrors.secondary_color : undefined} />
             </div>
 
             {mode === 'edit' && (
@@ -279,7 +401,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
             </button>
             <button
               type="submit"
-              disabled={saving || (mode === 'add' && (subdomainStatus === 'taken' || subdomainStatus === 'checking' || subdomainStatus === 'invalid'))}
+              disabled={isSubmitDisabled}
               className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
             >
               {saving ? 'Saving...' : mode === 'add' ? 'Create Hotel' : 'Save Changes'}

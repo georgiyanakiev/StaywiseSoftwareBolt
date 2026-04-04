@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Users, UserPlus, Loader2, RefreshCw, LayoutList, Building2, CheckCircle } from 'lucide-react';
+import { Search, Users, UserPlus, Loader2, RefreshCw, LayoutList, Building2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { AdminUser, Tenant } from './types';
 import UserAssignmentPanel from './UserAssignmentPanel';
@@ -39,17 +39,32 @@ interface InviteModalProps {
   onInvited: () => void;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
   const [email, setEmail] = useState('');
   const [tenantId, setTenantId] = useState(tenants[0]?.id ?? '');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [tenantTouched, setTenantTouched] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const emailError = emailTouched && !email.trim()
+    ? 'Email address is required.'
+    : emailTouched && !EMAIL_RE.test(email.trim())
+    ? 'Please enter a valid email address.'
+    : null;
+
+  const tenantError = tenantTouched && !tenantId ? 'Please select a hotel to assign the user to.' : null;
+
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    setEmailTouched(true);
+    setTenantTouched(true);
+    if (!email.trim() || !EMAIL_RE.test(email.trim())) return;
+    if (!tenantId) return;
     setInviting(true);
     setError(null);
 
@@ -138,34 +153,58 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
         <div className="px-6 py-4 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900">Invite New User</h3>
         </div>
-        <form onSubmit={handleInvite} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleInvite} className="px-6 py-5 space-y-4" noValidate>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               {error}
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={e => { setEmail(e.target.value); if (emailTouched) setEmailTouched(true); }}
+              onBlur={() => setEmailTouched(true)}
+              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
+                emailError ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-500'
+              }`}
               placeholder="user@example.com"
               autoFocus
             />
+            {emailError && (
+              <span className="flex items-center gap-1 text-red-500 text-xs mt-1">
+                <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                {emailError}
+              </span>
+            )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Tenant</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Assign to Hotel <span className="text-red-500">*</span>
+            </label>
             <select
               value={tenantId}
-              onChange={e => setTenantId(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={e => { setTenantId(e.target.value); setTenantTouched(true); }}
+              onBlur={() => setTenantTouched(true)}
+              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
+                tenantError ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-500'
+              }`}
             >
+              <option value="">— Select a hotel —</option>
               {tenants.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
+            {tenantError && (
+              <span className="flex items-center gap-1 text-red-500 text-xs mt-1">
+                <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                {tenantError}
+              </span>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-1">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
@@ -173,7 +212,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
             </button>
             <button
               type="submit"
-              disabled={inviting}
+              disabled={inviting || !!emailError || !!tenantError}
               className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
             >
               {inviting ? 'Creating...' : 'Create User'}
