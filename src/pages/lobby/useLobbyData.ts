@@ -82,7 +82,7 @@ export function useLobbyData() {
       const directHotelIds = Object.keys(directRoleMap);
 
       const tenantRoleMap: Record<string, string> = {};
-      const isSuperAdminRole = (assignmentResult.data ?? []).some(a => a.role === 'super_admin');
+      const isSuperAdminRole = (assignmentResult.data ?? []).some(a => a.role === 'super_admin' && !a.tenant_id);
       (assignmentResult.data ?? []).forEach(a => {
         if (a.tenant_id) tenantRoleMap[a.tenant_id] = a.role;
       });
