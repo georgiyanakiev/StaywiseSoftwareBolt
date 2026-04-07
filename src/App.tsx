@@ -52,7 +52,6 @@ function AuthenticatedApp() {
     <HotelProvider>
       <Routes>
         <Route path="/lobby" element={<LobbyPage />} />
-        <Route path="/booking-engine/widget" element={<BookingWidgetPage />} />
         <Route path="/portal" element={<GuestPortal />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/terms-of-service" element={<TermsPage />} />
@@ -168,6 +167,10 @@ export default function App() {
       <Routes>
         <Route path="/superadmin" element={<SuperAdminPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route
+          path="/booking-engine/widget"
+          element={<TenantProvider><BookingWidgetPage /></TenantProvider>}
+        />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/terms-of-service" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

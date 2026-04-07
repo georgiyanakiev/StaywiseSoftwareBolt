@@ -123,11 +123,14 @@ export default function BookingWidgetPage() {
   const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
   const [savingUpsell, setSavingUpsell] = useState(false);
   const [hotelTaxRate, setHotelTaxRate] = useState(0);
+  const [bookingError, setBookingError] = useState('');
+  const [hotelMissing, setHotelMissing] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hid = params.get('hotel') ?? '';
     const tid = params.get('tenant') ?? '';
+    if (!hid) { setHotelMissing(true); return; }
     setHotelId(hid);
     setTenantId(tid);
 
@@ -230,6 +233,7 @@ export default function BookingWidgetPage() {
   const submitBooking = async () => {
     if (!selectedRoom) return;
     setLoading(true);
+    setBookingError('');
     const confNum = `SW-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const payload: Record<string, unknown> = {
@@ -256,8 +260,23 @@ export default function BookingWidgetPage() {
     if (hotelId) payload.hotel_id = hotelId;
     if (tenantId) payload.tenant_id = tenantId;
 
-    const { data: inserted } = await supabase.from('direct_bookings').insert(payload).select('id').maybeSingle();
-    if (inserted?.id) setBookingId(inserted.id);
+    const { data: inserted, error } = await supabase
+      .from('direct_bookings')
+      .insert(payload)
+      .select('id')
+      .maybeSingle();
+
+    if (error || !inserted?.id) {
+      setBookingError(
+        error?.message?.includes('duplicate')
+          ? 'A booking with this reference already exists. Please try again.'
+          : 'Unable to complete your booking. Please try again or contact the hotel directly.'
+      );
+      setLoading(false);
+      return;
+    }
+
+    setBookingId(inserted.id);
     setConfirmationNumber(confNum);
     setLoading(false);
     setStep(4);
@@ -318,7 +337,22 @@ export default function BookingWidgetPage() {
     setConfirmationNumber('');
     setBookingId('');
     setSelectedUpsells(new Set());
+    setBookingError('');
   };
+
+  if (hotelMissing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full text-center">
+          <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-7 h-7 text-red-400" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Invalid Booking Link</h2>
+          <p className="text-sm text-gray-500">This booking link is missing required hotel information. Please contact the hotel for a valid booking link.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (config !== null && config.active === false) {
     return (
@@ -710,6 +744,12 @@ export default function BookingWidgetPage() {
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   Confirm Booking · {formatAmount(total)}
                 </button>
+                {bookingError && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-sm text-red-700">
+                    <span className="mt-0.5 flex-shrink-0">&#x26A0;</span>
+                    <span>{bookingError}</span>
+                  </div>
+                )}
               </div>
             )}
 
