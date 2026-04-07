@@ -121,16 +121,16 @@ export default function FrontDeskPage() {
           value={String(kpis.arrivalsExpected + kpis.arrivalsCheckedIn)}
           sub={`${kpis.arrivalsCheckedIn} checked in`}
           icon={<LogIn className="w-4 h-4" />}
-          colorClass="bg-[#1e3a5f] text-white border-[#1e3a5f]"
-          iconBg="bg-white/20"
+          colorClass="bg-emerald-50 text-emerald-700 border-emerald-100"
+          iconBg="bg-emerald-100"
         />
         <KpiCard
           label="Departures Today"
           value={String(kpis.departuresExpected + kpis.departuresCheckedOut)}
           sub={`${kpis.departuresCheckedOut} checked out`}
           icon={<LogOut className="w-4 h-4" />}
-          colorClass="bg-[#1e3a5f] text-white border-[#1e3a5f]"
-          iconBg="bg-white/20"
+          colorClass="bg-amber-50 text-amber-700 border-amber-100"
+          iconBg="bg-amber-100"
         />
         <KpiCard
           label="Stayovers"

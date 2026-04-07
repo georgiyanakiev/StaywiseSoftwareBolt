@@ -116,7 +116,7 @@ export default function DashboardPage() {
 
         <OperaTile
           title={t.dashboard.departures}
-          accentColor="bg-amber-600"
+          accentColor="bg-[#1e3a5f]"
           icon={<LogOut className="w-5 h-5 text-white" />}
           link="/reservations"
           linkLabel={t.dashboard.viewDetails}
@@ -170,7 +170,7 @@ export default function DashboardPage() {
 
         <OperaTile
           title={t.dashboard.arrivals}
-          accentColor="bg-emerald-600"
+          accentColor="bg-[#1e3a5f]"
           icon={<LogIn className="w-5 h-5 text-white" />}
           link="/reservations"
           linkLabel={t.dashboard.viewDetails}
