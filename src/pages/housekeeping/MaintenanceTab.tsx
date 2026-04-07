@@ -4,14 +4,19 @@ import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/ui/Toast';
 import { formatDate } from '../../lib/utils';
 import Modal from '../../components/ui/Modal';
-import {
-  MaintenanceIssue, CATEGORY_COLORS, ISSUE_STATUS_COLORS, PRIORITY_COLORS,
-} from './types';
+import type { MaintenanceRequest } from '../../types';
+import { CATEGORY_COLORS, PRIORITY_COLORS } from './types';
+
+const STATUS_COLORS: Record<string, string> = {
+  reported:    'bg-amber-50 text-amber-700',
+  in_progress: 'bg-blue-50 text-blue-700',
+  completed:   'bg-emerald-50 text-emerald-700',
+};
 
 interface Room { id: string; number: string }
 
 interface Props {
-  issues: MaintenanceIssue[];
+  issues: MaintenanceRequest[];
   rooms: Room[];
   hotelId: string;
   tenantId: string | null;
@@ -24,18 +29,18 @@ export default function MaintenanceTab({ issues, rooms, hotelId, tenantId, onCha
   const [showModal, setShowModal] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
-  const open     = issues.filter(i => i.status !== 'resolved' && i.status !== 'closed');
-  const resolved = issues.filter(i => i.status === 'resolved' || i.status === 'closed');
+  const open     = issues.filter(i => i.status !== 'completed');
+  const resolved = issues.filter(i => i.status === 'completed');
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('maintenance_issues').update({ status }).eq('id', id);
+    await supabase.from('maintenance_requests').update({ status }).eq('id', id);
     onChanged();
   };
 
   const resolveIssue = async (id: string) => {
     setResolvingId(id);
-    await supabase.from('maintenance_issues').update({
-      status: 'resolved',
+    await supabase.from('maintenance_requests').update({
+      status: 'completed',
       resolved_at: new Date().toISOString(),
     }).eq('id', id);
     setResolvingId(null);
@@ -111,7 +116,7 @@ export default function MaintenanceTab({ issues, rooms, hotelId, tenantId, onCha
 }
 
 function IssueCard({ issue, onStatusChange, onResolve, resolvingId, readOnly }: {
-  issue: MaintenanceIssue;
+  issue: MaintenanceRequest;
   onStatusChange: (id: string, status: string) => void;
   onResolve: (id: string) => void;
   resolvingId: string | null;
@@ -126,11 +131,11 @@ function IssueCard({ issue, onStatusChange, onResolve, resolvingId, readOnly }: 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="font-semibold text-gray-900">{issue.title}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Room {issue.room_number || '—'} · {formatDate(issue.created_at)}</p>
+              <p className="font-semibold text-gray-900 line-clamp-2">{issue.description}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Room {issue.room?.number || '—'} · {formatDate(issue.created_at)}</p>
             </div>
             <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ISSUE_STATUS_COLORS[issue.status] ?? 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[issue.status] ?? 'bg-gray-100 text-gray-600'}`}>
                 {issue.status.replace('_', ' ')}
               </span>
               <span className={`text-xs px-1.5 py-0.5 rounded ${PRIORITY_COLORS[issue.priority] ?? ''}`}>
@@ -138,10 +143,6 @@ function IssueCard({ issue, onStatusChange, onResolve, resolvingId, readOnly }: 
               </span>
             </div>
           </div>
-
-          {issue.description && (
-            <p className="text-sm text-gray-600 mt-1.5">{issue.description}</p>
-          )}
 
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             {issue.category && (
@@ -155,22 +156,21 @@ function IssueCard({ issue, onStatusChange, onResolve, resolvingId, readOnly }: 
             {issue.reported_by && (
               <span className="text-xs text-gray-400">by {issue.reported_by}</span>
             )}
-            {issue.estimated_cost && (
+            {issue.estimated_cost > 0 && (
               <span className="text-xs text-gray-400">est. €{issue.estimated_cost}</span>
             )}
           </div>
 
-          {!readOnly && issue.status !== 'resolved' && issue.status !== 'closed' && (
+          {!readOnly && issue.status !== 'completed' && (
             <div className="flex items-center gap-2 mt-3">
               <select
                 value={issue.status}
                 onChange={e => onStatusChange(issue.id, e.target.value)}
                 className="input-field py-1 text-xs flex-1"
               >
-                <option value="open">Open</option>
+                <option value="reported">Reported</option>
                 <option value="in_progress">In Progress</option>
-                <option value="waiting_parts">Waiting Parts</option>
-                <option value="resolved">Resolved</option>
+                <option value="completed">Completed</option>
               </select>
               <button
                 onClick={() => onResolve(issue.id)}
@@ -200,10 +200,9 @@ function ReportIssueModal({ rooms, hotelId, tenantId, onClose, onSaved }: {
 }) {
   const [form, setForm] = useState({
     room_id: '',
-    title: '',
     description: '',
     category: 'other',
-    priority: 'normal',
+    priority: 'medium',
     reported_by: '',
     assigned_to: '',
     estimated_cost: '',
@@ -214,20 +213,21 @@ function ReportIssueModal({ rooms, hotelId, tenantId, onClose, onSaved }: {
 
   const handleSave = async () => {
     setSaving(true);
-    const room = rooms.find(r => r.id === form.room_id);
-    await supabase.from('maintenance_issues').insert({
+    await supabase.from('maintenance_requests').insert({
       hotel_id: hotelId,
       ...(tenantId ? { tenant_id: tenantId } : {}),
       room_id: form.room_id || null,
-      room_number: room?.number ?? '',
-      title: form.title,
       description: form.description,
       category: form.category,
       priority: form.priority,
       reported_by: form.reported_by,
       assigned_to: form.assigned_to,
-      estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : null,
-      status: 'open',
+      estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : 0,
+      actual_cost: 0,
+      cost: 0,
+      vendor: '',
+      resolution_notes: '',
+      status: 'reported',
     });
     setSaving(false);
     onSaved();
@@ -237,8 +237,8 @@ function ReportIssueModal({ rooms, hotelId, tenantId, onClose, onSaved }: {
     <Modal open onClose={onClose} title="Report Maintenance Issue" size="md">
       <div className="space-y-4 p-1">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
-          <input value={form.title} onChange={e => set('title', e.target.value)} className="input-field" placeholder="Brief description of the issue" />
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+          <textarea value={form.description} onChange={e => set('description', e.target.value)} className="input-field resize-none" rows={3} placeholder="Describe the issue in detail..." />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -255,22 +255,19 @@ function ReportIssueModal({ rooms, hotelId, tenantId, onClose, onSaved }: {
               <option value="electrical">Electrical</option>
               <option value="hvac">HVAC</option>
               <option value="furniture">Furniture</option>
-              <option value="cleaning">Cleaning</option>
+              <option value="appliance">Appliance</option>
+              <option value="structural">Structural</option>
               <option value="it">IT</option>
               <option value="other">Other</option>
             </select>
           </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
-          <textarea value={form.description} onChange={e => set('description', e.target.value)} className="input-field resize-none" rows={3} placeholder="Detailed description..." />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
             <select value={form.priority} onChange={e => set('priority', e.target.value)} className="input-field">
               <option value="low">Low</option>
-              <option value="normal">Normal</option>
+              <option value="medium">Normal</option>
               <option value="high">High</option>
               <option value="urgent">Urgent</option>
             </select>
@@ -292,7 +289,7 @@ function ReportIssueModal({ rooms, hotelId, tenantId, onClose, onSaved }: {
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
           <button onClick={onClose} className="btn-secondary">Cancel</button>
-          <button onClick={handleSave} disabled={saving || !form.title} className="btn-primary flex items-center gap-2">
+          <button onClick={handleSave} disabled={saving || !form.description} className="btn-primary flex items-center gap-2">
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Report Issue
           </button>

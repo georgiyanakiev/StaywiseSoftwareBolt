@@ -11,7 +11,8 @@ import KanbanBoard from './housekeeping/KanbanBoard';
 import RoomGrid from './housekeeping/RoomGrid';
 import MaintenanceTab from './housekeeping/MaintenanceTab';
 import StaffTab from './housekeeping/StaffTab';
-import { HKTask, MaintenanceIssue, HKStaff } from './housekeeping/types';
+import { HKTask, HKStaff } from './housekeeping/types';
+import type { MaintenanceRequest } from '../types';
 
 type Tab = 'kanban' | 'rooms' | 'maintenance' | 'staff';
 
@@ -28,7 +29,7 @@ export default function HousekeepingPage() {
   const tenantId = useTenantId();
   const [tab, setTab] = useState<Tab>('kanban');
   const [tasks, setTasks] = useState<HKTask[]>([]);
-  const [issues, setIssues] = useState<MaintenanceIssue[]>([]);
+  const [issues, setIssues] = useState<MaintenanceRequest[]>([]);
   const [staff, setStaff] = useState<HKStaff[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ export default function HousekeepingPage() {
         .eq('hotel_id', currentHotel.id)
         .eq('scheduled_date', today)
         .order('room_number'),
-      supabase.from('maintenance_issues').select('*')
+      supabase.from('maintenance_requests').select('*, room:rooms(id, number)')
         .eq('hotel_id', currentHotel.id)
         .order('created_at', { ascending: false }),
       supabase.from('housekeeping_staff').select('*')
@@ -59,7 +60,7 @@ export default function HousekeepingPage() {
         .order('floor').order('number'),
     ]);
     setTasks((t ?? []) as HKTask[]);
-    setIssues((i ?? []) as MaintenanceIssue[]);
+    setIssues((i ?? []) as MaintenanceRequest[]);
     setStaff((s ?? []) as HKStaff[]);
     setRooms((r ?? []) as Room[]);
 
@@ -102,7 +103,7 @@ export default function HousekeepingPage() {
     pending:    todayTasks.filter(t => t.status === 'pending').length,
     inProgress: todayTasks.filter(t => t.status === 'in_progress').length,
     inspected:  todayTasks.filter(t => t.status === 'inspected').length,
-    maintOpen:  issues.filter(i => i.status !== 'resolved' && i.status !== 'closed').length,
+    maintOpen:  issues.filter(i => i.status !== 'completed').length,
   };
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; badge?: number }[] = [
