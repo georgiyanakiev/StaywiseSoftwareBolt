@@ -79,6 +79,35 @@ export async function fetchGuestComms(guestProfileId: string): Promise<GuestComm
   return (data || []) as GuestCommunication[];
 }
 
+const EXPORT_BATCH_SIZE = 1000;
+const EXPORT_MAX_ROWS = 50_000;
+
+export async function exportGuestProfiles(hotelId: string, filters: GuestFilters): Promise<GuestProfile[]> {
+  const all: GuestProfile[] = [];
+  let from = 0;
+  while (all.length < EXPORT_MAX_ROWS) {
+    let q = supabase.from('guest_profiles').select('*').eq('hotel_id', hotelId);
+    if (filters.search) {
+      q = q.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,phone.ilike.%${filters.search}%`);
+    }
+    if (filters.loyaltyTier) q = q.eq('loyalty_tier', filters.loyaltyTier);
+    if (filters.nationality) q = q.ilike('nationality', `%${filters.nationality}%`);
+    if (filters.lastStayFrom) q = q.gte('last_stay_at', filters.lastStayFrom);
+    if (filters.lastStayTo) q = q.lte('last_stay_at', filters.lastStayTo);
+    if (filters.minStays) q = q.gte('total_stays', parseInt(filters.minStays));
+    if (filters.maxStays) q = q.lte('total_stays', parseInt(filters.maxStays));
+    if (filters.tag) q = q.contains('tags', [filters.tag]);
+    if (filters.blacklisted !== null) q = q.eq('blacklisted', filters.blacklisted);
+    q = q.order('total_spent', { ascending: false }).range(from, from + EXPORT_BATCH_SIZE - 1);
+    const { data, error } = await q;
+    if (error || !data || data.length === 0) break;
+    all.push(...(data as GuestProfile[]));
+    if (data.length < EXPORT_BATCH_SIZE) break;
+    from += EXPORT_BATCH_SIZE;
+  }
+  return all;
+}
+
 export function applyAutoTags(guests: GuestProfile[]): GuestProfile[] {
   return guests.map(g => {
     const newTags = [...(g.tags || [])];

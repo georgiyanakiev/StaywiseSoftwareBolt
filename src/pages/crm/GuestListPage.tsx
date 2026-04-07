@@ -6,11 +6,10 @@ import { useHotel } from '../../contexts/HotelContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import EmptyState from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';
-import { useGuestProfiles, applyAutoTags, DEFAULT_FILTERS } from './useGuestProfiles';
+import { useGuestProfiles, applyAutoTags, exportGuestProfiles, DEFAULT_FILTERS } from './useGuestProfiles';
 import GuestFormModal from './GuestFormModal';
 import { LOYALTY_COLORS, LOYALTY_LABELS } from './types';
 import type { GuestProfile, LoyaltyTier } from './types';
-import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const TIER_OPTIONS: LoyaltyTier[] = ['standard', 'silver', 'gold', 'platinum'];
@@ -56,9 +55,8 @@ export default function GuestListPage() {
 
   const exportCSV = async () => {
     if (!currentHotel) return;
-    const { data } = await supabase.from('guest_profiles').select('*').eq('hotel_id', currentHotel.id);
-    if (!data) return;
-    const rows = data as GuestProfile[];
+    const rows = await exportGuestProfiles(currentHotel.id, filters);
+    if (!rows.length) { toast('error', 'No records to export'); return; }
     const headers = ['Name', 'Email', 'Phone', 'Country', 'Loyalty Tier', 'Total Stays', 'Total Spent', 'Last Stay', 'Tags', 'Marketing Opt-in', 'Blacklisted'];
     const csv = [headers.join(','), ...rows.map(g => [
       `"${g.full_name}"`, `"${g.email || ''}"`, `"${g.phone || ''}"`, `"${g.country || ''}"`,
@@ -70,7 +68,7 @@ export default function GuestListPage() {
     a.href = URL.createObjectURL(blob);
     a.download = `guest-profiles-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
-    toast('success', 'Exported guest profiles');
+    toast('success', `Exported ${rows.length} guest profile${rows.length !== 1 ? 's' : ''}`);
   };
 
   return (
