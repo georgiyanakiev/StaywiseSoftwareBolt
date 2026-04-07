@@ -86,6 +86,7 @@ export default function BillingPage() {
   const [totalCount, setTotalCount] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus>('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -156,10 +157,21 @@ export default function BillingPage() {
         query = query.lte('issue_date', dateTo);
       }
 
-      if (searchQuery.trim()) {
-        query = query.or(
-          `invoice_number.ilike.%${searchQuery.trim()}%,guest.first_name.ilike.%${searchQuery.trim()}%,guest.last_name.ilike.%${searchQuery.trim()}%`
-        );
+      if (debouncedSearch.trim()) {
+        const q = debouncedSearch.trim();
+        const { data: matchingGuests } = await supabase
+          .from('guests')
+          .select('id')
+          .eq('hotel_id', currentHotel.id)
+          .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`);
+        const guestIds = (matchingGuests || []).map(g => g.id);
+        if (guestIds.length > 0) {
+          query = query.or(
+            `invoice_number.ilike.%${q}%,guest_id.in.(${guestIds.join(',')})`
+          );
+        } else {
+          query = query.ilike('invoice_number', `%${q}%`);
+        }
       }
 
       query = query
@@ -181,7 +193,7 @@ export default function BillingPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentHotel, statusFilter, dateFrom, dateTo, searchQuery, page, toast]);
+  }, [currentHotel, statusFilter, dateFrom, dateTo, debouncedSearch, page, toast]);
 
   const fetchGuests = useCallback(async () => {
     if (!currentHotel) return;
@@ -192,6 +204,14 @@ export default function BillingPage() {
       .order('last_name');
     setGuests((data || []) as Guest[]);
   }, [currentHotel]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchInvoices();
@@ -207,7 +227,7 @@ export default function BillingPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [searchQuery, statusFilter, dateFrom, dateTo]);
+  }, [statusFilter, dateFrom, dateTo]);
 
   const fetchGuestReservations = async (guestId: string) => {
     if (!currentHotel || !guestId) {
@@ -1470,7 +1490,7 @@ export default function BillingPage() {
                     className="btn-primary"
                   >
                     <Euro className="w-4 h-4" />
-                    Record Payment
+                    Record Manual Payment
                   </button>
                 )}
               <button
@@ -1488,11 +1508,18 @@ export default function BillingPage() {
       <Modal
         open={showPaymentModal}
         onClose={closePaymentModal}
-        title="Record Payment"
+        title="Record Manual Payment"
         size="md"
       >
         {paymentInvoice && (
           <form onSubmit={handleRecordPayment} className="space-y-6">
+            <div className="flex items-start gap-2.5 px-3.5 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+              <CreditCard className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-amber-800">
+                <span className="font-semibold">Manual entry only.</span>
+                <span className="ml-1">This records a payment in the ledger — no card or payment gateway is charged.</span>
+              </p>
+            </div>
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Invoice Number</span>
@@ -1572,7 +1599,7 @@ export default function BillingPage() {
                 Cancel
               </button>
               <button type="submit" disabled={processingPayment} className="btn-primary">
-                {processingPayment ? 'Processing...' : 'Record Payment'}
+                {processingPayment ? 'Saving...' : 'Record Manual Payment'}
               </button>
             </div>
           </form>
