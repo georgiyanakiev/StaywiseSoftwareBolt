@@ -5,7 +5,7 @@ import {
   FileText, Globe, Users, Settings, LogOut, Menu, X, ChevronDown,
   ArrowLeftRight, Building2, Shield, ArrowLeft, Receipt, BedDouble,
   ClipboardList, Wrench, BookOpen, Link2, Bell, BarChart3, Zap,
-  Gift, MonitorSmartphone,
+  Gift, MonitorSmartphone, Home,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
@@ -206,10 +206,10 @@ function HotelSwitcherBtn({ brandColor, hotelName, hotelLogo }: {
           <img src={hotelLogo} alt={hotelName} className="w-[18px] h-[18px] rounded flex-shrink-0 object-contain" />
         ) : (
           <div
-            className="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 text-[8px] font-bold text-white"
+            className="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 text-white"
             style={{ backgroundColor: brandColor }}
           >
-            {getInitials(hotelName)}
+            <Home className="w-2.5 h-2.5" />
           </div>
         )}
         <span className="truncate max-w-[110px] font-medium">{hotelName}</span>
@@ -399,10 +399,10 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin }
         <div className="flex items-center justify-between px-4 h-14 flex-shrink-0 bg-[#1e3a5f]">
           <div className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white flex-shrink-0"
               style={{ backgroundColor: brandColor }}
             >
-              {getInitials(hotelName)}
+              <Home className="w-4 h-4" />
             </div>
             <span className="text-sm font-bold text-white truncate max-w-[160px]">{hotelName}</span>
           </div>
@@ -613,10 +613,10 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
               <img src={hotelLogo} alt={hotelName} className="w-9 h-9 rounded-lg object-contain flex-shrink-0 group-hover:opacity-80 transition-opacity" />
             ) : (
               <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 group-hover:opacity-80 transition-opacity"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0 group-hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: brandColor }}
               >
-                {getInitials(hotelName)}
+                <Home className="w-5 h-5" />
               </div>
             )}
             <div className="min-w-0 hidden sm:block">
