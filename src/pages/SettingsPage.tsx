@@ -62,7 +62,7 @@ function HotelSettingsTab() {
   const [form, setForm] = useState({
     name: '', address: '', city: '', country: '', phone: '', email: '',
     website: '', star_rating: 3, check_in_time: '14:00', check_out_time: '11:00',
-    tax_rate: 0, currency: 'EUR', timezone: 'America/New_York',
+    tax_rate: 0, currency: 'EUR', timezone: 'Europe/London',
     cancellation_policy: '', payment_policy: '',
   });
 
@@ -81,7 +81,7 @@ function HotelSettingsTab() {
         check_out_time: currentHotel.check_out_time || '11:00',
         tax_rate: currentHotel.tax_rate || 0,
         currency: currentHotel.currency || 'EUR',
-        timezone: currentHotel.timezone || 'America/New_York',
+        timezone: currentHotel.timezone || 'Europe/London',
         cancellation_policy: currentHotel.cancellation_policy || '',
         payment_policy: currentHotel.payment_policy || '',
       });
