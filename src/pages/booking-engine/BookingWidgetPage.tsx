@@ -33,6 +33,10 @@ interface Config {
   require_deposit: boolean;
   deposit_percentage: number;
   welcome_message: string;
+  active: boolean;
+  min_advance_days: number;
+  max_advance_days: number;
+  show_room_photos: boolean;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -118,6 +122,7 @@ export default function BookingWidgetPage() {
   const [upsellItems, setUpsellItems] = useState<UpsellItem[]>([]);
   const [selectedUpsells, setSelectedUpsells] = useState<Set<string>>(new Set());
   const [savingUpsell, setSavingUpsell] = useState(false);
+  const [hotelTaxRate, setHotelTaxRate] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -130,8 +135,10 @@ export default function BookingWidgetPage() {
       supabase.from('booking_engine_config').select('*').eq('hotel_id', hid).maybeSingle()
         .then(({ data }) => { if (data) setConfig(data as Config); });
       supabase.from('upsell_items').select('id, name, description, price, price_type, image_url, category')
-        .eq('hotel_id', hid).eq('active', true).order('sort_order').limit(3)
+        .eq('hotel_id', hid).eq('active', true).order('sort_order').limit(6)
         .then(({ data }) => { if (data) setUpsellItems(data as UpsellItem[]); });
+      supabase.from('hotels').select('tax_rate').eq('id', hid).maybeSingle()
+        .then(({ data }) => { if (data?.tax_rate) setHotelTaxRate(Number(data.tax_rate)); });
     }
   }, []);
 
@@ -140,11 +147,21 @@ export default function BookingWidgetPage() {
     : 0;
 
   const today = new Date().toISOString().split('T')[0];
+  const addDays = (days: number) => {
+    const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().split('T')[0];
+  };
+  const minAdvance = config?.min_advance_days ?? 0;
+  const maxAdvance = config?.max_advance_days ?? 365;
+  const minCheckInDate = minAdvance > 0 ? addDays(minAdvance) : today;
+  const maxCheckInDate = maxAdvance > 0 ? addDays(maxAdvance) : undefined;
+
   const currency = config?.currency ?? 'EUR';
   const depositPct = config?.deposit_percentage ?? 30;
   const requireDeposit = config?.require_deposit ?? true;
-  const total = selectedRoom ? selectedRoom.base_rate * nights : 0;
-  const depositAmount = requireDeposit ? (total * depositPct) / 100 : 0;
+  const subtotal = selectedRoom ? selectedRoom.base_rate * nights : 0;
+  const taxAmount = Math.round(subtotal * (hotelTaxRate / 100) * 100) / 100;
+  const total = subtotal + taxAmount;
+  const depositAmount = requireDeposit ? Math.round((total * depositPct) / 100 * 100) / 100 : 0;
 
   const formatAmount = (amt: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amt);
@@ -154,6 +171,14 @@ export default function BookingWidgetPage() {
     if (!checkIn || !checkOut) { setDateError('Please select both check-in and check-out dates.'); return false; }
     if (checkIn < today) { setDateError('Check-in date cannot be in the past.'); return false; }
     if (checkOut <= checkIn) { setDateError('Check-out must be after check-in.'); return false; }
+    if (checkIn < minCheckInDate) {
+      setDateError(`Bookings must be made at least ${minAdvance} day${minAdvance !== 1 ? 's' : ''} in advance.`);
+      return false;
+    }
+    if (maxCheckInDate && checkIn > maxCheckInDate) {
+      setDateError(`Bookings cannot be made more than ${maxAdvance} days in advance.`);
+      return false;
+    }
     setDateError('');
     return true;
   };
@@ -161,12 +186,43 @@ export default function BookingWidgetPage() {
   const searchRooms = async () => {
     if (!validateDates()) return;
     setLoading(true);
-    const query = hotelId
+
+    const rtQuery = hotelId
       ? supabase.from('room_types').select('*').eq('hotel_id', hotelId)
       : supabase.from('room_types').select('*').limit(10);
-    const { data } = await query;
-    const filtered = (data ?? []).filter(rt => rt.max_occupancy >= adults);
-    setRoomTypes(filtered);
+    const { data: allRoomTypes } = await rtQuery;
+    const capacityFiltered = (allRoomTypes ?? []).filter(rt => rt.max_occupancy >= adults);
+
+    if (hotelId && capacityFiltered.length > 0) {
+      const [physRes, directRes, reservRes] = await Promise.all([
+        supabase.from('rooms').select('room_type_id').eq('hotel_id', hotelId).neq('status', 'out_of_service'),
+        supabase.from('direct_bookings').select('room_type_id').eq('hotel_id', hotelId)
+          .lt('check_in', checkOut).gt('check_out', checkIn).neq('status', 'cancelled'),
+        supabase.from('reservations').select('room_type_id').eq('hotel_id', hotelId)
+          .lt('check_in', checkOut).gt('check_out', checkIn).neq('status', 'cancelled'),
+      ]);
+
+      const physicalCount: Record<string, number> = {};
+      for (const r of physRes.data ?? []) {
+        physicalCount[r.room_type_id] = (physicalCount[r.room_type_id] || 0) + 1;
+      }
+
+      const bookedCount: Record<string, number> = {};
+      for (const b of [...(directRes.data ?? []), ...(reservRes.data ?? [])]) {
+        bookedCount[b.room_type_id] = (bookedCount[b.room_type_id] || 0) + 1;
+      }
+
+      const available = capacityFiltered.filter(rt => {
+        const physical = physicalCount[rt.id] ?? 0;
+        const booked = bookedCount[rt.id] ?? 0;
+        return physical > booked;
+      });
+
+      setRoomTypes(available);
+    } else {
+      setRoomTypes(capacityFiltered);
+    }
+
     setLoading(false);
     setStep(2);
   };
@@ -188,8 +244,8 @@ export default function BookingWidgetPage() {
       adults,
       children,
       rate_per_night: selectedRoom.base_rate,
-      subtotal: total,
-      tax_amount: 0,
+      subtotal,
+      tax_amount: taxAmount,
       total_amount: total,
       deposit_amount: depositAmount,
       special_requests: specialRequests,
@@ -264,6 +320,20 @@ export default function BookingWidgetPage() {
     setSelectedUpsells(new Set());
   };
 
+  if (config !== null && config.active === false) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full text-center">
+          <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-7 h-7 text-gray-400" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Online Booking Unavailable</h2>
+          <p className="text-sm text-gray-500">Direct online booking is temporarily unavailable. Please contact the hotel directly to make a reservation.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-start justify-center p-4 py-8">
       <div className="w-full max-w-3xl">
@@ -315,7 +385,8 @@ export default function BookingWidgetPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Check-in Date</label>
                     <input
                       type="date"
-                      min={today}
+                      min={minCheckInDate}
+                      max={maxCheckInDate}
                       value={checkIn}
                       onChange={e => { setCheckIn(e.target.value); setDateError(''); }}
                       className="input-field"
@@ -435,16 +506,18 @@ export default function BookingWidgetPage() {
                         onClick={() => { setSelectedRoom(rt); setStep(3); }}
                       >
                         <div className="flex gap-0 sm:gap-4">
-                          <div className="relative w-28 sm:w-36 flex-shrink-0">
-                            <img
-                              src={rt.image_url || ROOM_IMAGES[i % ROOM_IMAGES.length]}
-                              alt={rt.name}
-                              className="w-full h-full object-cover"
-                              style={{ minHeight: '120px' }}
-                              onError={e => { (e.target as HTMLImageElement).src = ROOM_IMAGES[i % ROOM_IMAGES.length]; }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/10" />
-                          </div>
+                          {config?.show_room_photos !== false && (
+                            <div className="relative w-28 sm:w-36 flex-shrink-0">
+                              <img
+                                src={rt.image_url || ROOM_IMAGES[i % ROOM_IMAGES.length]}
+                                alt={rt.name}
+                                className="w-full h-full object-cover"
+                                style={{ minHeight: '120px' }}
+                                onError={e => { (e.target as HTMLImageElement).src = ROOM_IMAGES[i % ROOM_IMAGES.length]; }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/10" />
+                            </div>
+                          )}
                           <div className="flex-1 p-4">
                             <div className="flex items-start justify-between gap-2">
                               <div>
@@ -454,8 +527,8 @@ export default function BookingWidgetPage() {
                                 </p>
                               </div>
                               <div className="text-right flex-shrink-0">
-                                <p className="text-lg font-bold" style={{ color: primaryColor }}>{formatAmount(rt.base_rate * nights)}</p>
-                                <p className="text-xs text-gray-400">{formatAmount(rt.base_rate)}/night</p>
+                                <p className="text-lg font-bold" style={{ color: primaryColor }}>{formatAmount(rt.base_rate * nights * (1 + hotelTaxRate / 100))}</p>
+                                <p className="text-xs text-gray-400">{formatAmount(rt.base_rate)}/night{hotelTaxRate > 0 ? ` + ${hotelTaxRate}% tax` : ''}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -469,7 +542,7 @@ export default function BookingWidgetPage() {
                             </div>
                             {requireDeposit && (
                               <p className="text-xs text-gray-400 mt-2">
-                                Deposit: {formatAmount((rt.base_rate * nights * depositPct) / 100)} ({depositPct}%)
+                                Deposit: {formatAmount((rt.base_rate * nights * (1 + hotelTaxRate / 100) * depositPct) / 100)} ({depositPct}%)
                               </p>
                             )}
                           </div>
@@ -605,8 +678,14 @@ export default function BookingWidgetPage() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">{nights} night{nights !== 1 ? 's' : ''} × {formatAmount(selectedRoom.base_rate)}</span>
-                          <span className="font-medium text-gray-900">{formatAmount(total)}</span>
+                          <span className="font-medium text-gray-900">{formatAmount(subtotal)}</span>
                         </div>
+                        {hotelTaxRate > 0 && (
+                          <div className="flex justify-between text-gray-500">
+                            <span>Tax ({hotelTaxRate}%)</span>
+                            <span>{formatAmount(taxAmount)}</span>
+                          </div>
+                        )}
                         {requireDeposit && (
                           <div className="flex justify-between text-amber-600">
                             <span>Deposit due now ({depositPct}%)</span>
