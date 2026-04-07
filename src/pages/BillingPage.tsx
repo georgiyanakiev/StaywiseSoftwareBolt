@@ -397,24 +397,38 @@ export default function BillingPage() {
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!paymentInvoice || !currentHotel) return;
+    if (!paymentInvoice || !currentHotel || processingPayment) return;
 
     if (paymentAmount <= 0) {
       toast('error', 'Payment amount must be greater than 0');
       return;
     }
 
-    const balance = paymentInvoice.total_amount - paymentInvoice.amount_paid;
-    if (paymentAmount > balance) {
-      toast('error', 'Payment amount cannot exceed balance due');
-      return;
-    }
-
     setProcessingPayment(true);
 
     try {
-      const newAmountPaid = paymentInvoice.amount_paid + paymentAmount;
-      const newStatus = newAmountPaid >= paymentInvoice.total_amount ? 'paid' : paymentInvoice.status;
+      const { data: liveInvoice, error: liveError } = await supabase
+        .from('invoices')
+        .select('amount_paid, total_amount, status')
+        .eq('id', paymentInvoice.id)
+        .single();
+
+      if (liveError || !liveInvoice) throw liveError ?? new Error('Invoice not found');
+
+      if (liveInvoice.status === 'paid') {
+        toast('error', 'This invoice is already fully paid');
+        closePaymentModal();
+        return;
+      }
+
+      const liveBalance = Number(liveInvoice.total_amount) - Number(liveInvoice.amount_paid);
+      if (paymentAmount > liveBalance) {
+        toast('error', `Payment cannot exceed the current balance of ${formatCurrency(liveBalance, currentHotel.currency)}`);
+        return;
+      }
+
+      const newAmountPaid = Number(liveInvoice.amount_paid) + paymentAmount;
+      const newStatus = newAmountPaid >= Number(liveInvoice.total_amount) ? 'paid' : liveInvoice.status;
 
       const { error: invoiceError } = await supabase
         .from('invoices')
