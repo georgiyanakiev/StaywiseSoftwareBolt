@@ -1,51 +1,60 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import CookieConsent from './components/legal/CookieConsent';
 import { HotelProvider } from './contexts/HotelContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { ActiveHotelProvider } from './contexts/ActiveHotelContext';
-import SuperAdminPage from './pages/superadmin/SuperAdminPage';
 import AppLayout from './components/layout/AppLayout';
 import RequireHotel from './components/guards/RequireHotel';
-import LoginPage from './pages/LoginPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import PendingApprovalPage from './pages/PendingApprovalPage';
-import DashboardPage from './pages/DashboardPage';
-import ReservationsPage from './pages/ReservationsPage';
-import RoomsPage from './pages/RoomsPage';
-import GuestListPage from './pages/crm/GuestListPage';
-import GuestProfilePage from './pages/crm/GuestProfilePage';
-import BillingPage from './pages/BillingPage';
-import HousekeepingPage from './pages/HousekeepingPage';
-import MaintenancePage from './pages/maintenance/MaintenancePage';
-import ReportsPage from './pages/reports/ReportsPage';
-import SettingsPage from './pages/SettingsPage';
-import GuidePage from './pages/GuidePage';
-import BookingComPage from './pages/BookingComPage';
-import ExpediaPage from './pages/ExpediaPage';
-import CloudbedsPage from './pages/CloudbedsPage';
-import SiteMinderPage from './pages/SiteMinderPage';
-import LodgifyPage from './pages/LodgifyPage';
-import FrontDeskPage from './pages/FrontDeskPage';
 import LoadingSpinner from './components/ui/LoadingSpinner';
-import LobbyPage from './pages/lobby/LobbyPage';
-import ChannelManagerPage from './pages/channel-manager/ChannelManagerPage';
-import BookingEngineAdminPage from './pages/booking-engine/BookingEngineAdminPage';
-import BookingWidgetPage from './pages/booking-engine/BookingWidgetPage';
-import PaymentAutomationPage from './pages/payments/PaymentAutomationPage';
-import StaffSettingsPage from './pages/settings/staff/StaffSettingsPage';
-import GuestPortalPage from './pages/guest-portal/GuestPortalPage';
-import GuestPortal from './pages/guest-portal/GuestPortal';
-import OwnerPortalPage from './pages/owner-portal/OwnerPortalPage';
-import MyOwnerPortal from './pages/owner-portal/MyOwnerPortal';
-import DynamicPricingPage from './pages/dynamic-pricing/DynamicPricingPage';
-import UpsellPage from './pages/upselling/UpsellPage';
-import TermsPage from './pages/legal/TermsPage';
-import PrivacyPage from './pages/legal/PrivacyPage';
-import DpaPage from './pages/legal/DpaPage';
-import DpaAcceptanceModal from './components/legal/DpaAcceptanceModal';
+import CookieConsent from './components/legal/CookieConsent';
 import { useDpaAcceptance } from './pages/legal/useDpaAcceptance';
-import InactivityGuard from './components/layout/InactivityGuard';
+
+const SuperAdminPage = lazy(() => import('./pages/superadmin/SuperAdminPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const PendingApprovalPage = lazy(() => import('./pages/PendingApprovalPage'));
+const LobbyPage = lazy(() => import('./pages/lobby/LobbyPage'));
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const FrontDeskPage = lazy(() => import('./pages/FrontDeskPage'));
+const ReservationsPage = lazy(() => import('./pages/ReservationsPage'));
+const RoomsPage = lazy(() => import('./pages/RoomsPage'));
+const GuestListPage = lazy(() => import('./pages/crm/GuestListPage'));
+const GuestProfilePage = lazy(() => import('./pages/crm/GuestProfilePage'));
+const BillingPage = lazy(() => import('./pages/BillingPage'));
+const HousekeepingPage = lazy(() => import('./pages/HousekeepingPage'));
+const MaintenancePage = lazy(() => import('./pages/maintenance/MaintenancePage'));
+const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const StaffSettingsPage = lazy(() => import('./pages/settings/staff/StaffSettingsPage'));
+const GuidePage = lazy(() => import('./pages/GuidePage'));
+const ChannelManagerPage = lazy(() => import('./pages/channel-manager/ChannelManagerPage'));
+const BookingEngineAdminPage = lazy(() => import('./pages/booking-engine/BookingEngineAdminPage'));
+const BookingWidgetPage = lazy(() => import('./pages/booking-engine/BookingWidgetPage'));
+const PaymentAutomationPage = lazy(() => import('./pages/payments/PaymentAutomationPage'));
+const GuestPortalPage = lazy(() => import('./pages/guest-portal/GuestPortalPage'));
+const GuestPortal = lazy(() => import('./pages/guest-portal/GuestPortal'));
+const OwnerPortalPage = lazy(() => import('./pages/owner-portal/OwnerPortalPage'));
+const MyOwnerPortal = lazy(() => import('./pages/owner-portal/MyOwnerPortal'));
+const DynamicPricingPage = lazy(() => import('./pages/dynamic-pricing/DynamicPricingPage'));
+const UpsellPage = lazy(() => import('./pages/upselling/UpsellPage'));
+const BookingComPage = lazy(() => import('./pages/BookingComPage'));
+const ExpediaPage = lazy(() => import('./pages/ExpediaPage'));
+const CloudbedsPage = lazy(() => import('./pages/CloudbedsPage'));
+const SiteMinderPage = lazy(() => import('./pages/SiteMinderPage'));
+const LodgifyPage = lazy(() => import('./pages/LodgifyPage'));
+const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
+const DpaPage = lazy(() => import('./pages/legal/DpaPage'));
+const DpaAcceptanceModal = lazy(() => import('./components/legal/DpaAcceptanceModal'));
+const InactivityGuard = lazy(() => import('./components/layout/InactivityGuard'));
+
+const PageFallback = (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <LoadingSpinner size="lg" />
+  </div>
+);
 
 function AuthenticatedApp() {
   return (
@@ -148,15 +157,17 @@ function AppWithAuth() {
   return (
     <>
       <AuthenticatedApp />
-      <InactivityGuard />
-      {showDpaBanner && (
-        <DpaAcceptanceModal
-          userId={user.id}
-          tenantId={tenant?.id ?? null}
-          hotelName={tenant?.name ?? null}
-          onAccepted={refetchDpa}
-        />
-      )}
+      <Suspense fallback={null}>
+        <InactivityGuard />
+        {showDpaBanner && (
+          <DpaAcceptanceModal
+            userId={user.id}
+            tenantId={tenant?.id ?? null}
+            hotelName={tenant?.name ?? null}
+            onAccepted={refetchDpa}
+          />
+        )}
+      </Suspense>
     </>
   );
 }
@@ -164,28 +175,30 @@ function AppWithAuth() {
 export default function App() {
   return (
     <ActiveHotelProvider>
-      <Routes>
-        <Route path="/superadmin" element={<SuperAdminPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route
-          path="/booking-engine/widget"
-          element={<TenantProvider><BookingWidgetPage /></TenantProvider>}
-        />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/terms-of-service" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPage />} />
-        <Route path="/dpa" element={<DpaPage />} />
-        <Route path="/data-processing-agreement" element={<DpaPage />} />
-        <Route
-          path="*"
-          element={
-            <TenantProvider>
-              <AppWithAuth />
-            </TenantProvider>
-          }
-        />
-      </Routes>
+      <Suspense fallback={PageFallback}>
+        <Routes>
+          <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route
+            path="/booking-engine/widget"
+            element={<TenantProvider><BookingWidgetPage /></TenantProvider>}
+          />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/terms-of-service" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPage />} />
+          <Route path="/dpa" element={<DpaPage />} />
+          <Route path="/data-processing-agreement" element={<DpaPage />} />
+          <Route
+            path="*"
+            element={
+              <TenantProvider>
+                <AppWithAuth />
+              </TenantProvider>
+            }
+          />
+        </Routes>
+      </Suspense>
       <CookieConsent />
     </ActiveHotelProvider>
   );

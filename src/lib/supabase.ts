@@ -9,7 +9,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const QUERY_TIMEOUT_MS = 10_000;
+
+function fetchWithTimeout(url: RequestInfo | URL, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS);
+  const signal = options.signal
+    ? (typeof AbortSignal.any === 'function'
+        ? AbortSignal.any([options.signal as AbortSignal, controller.signal])
+        : controller.signal)
+    : controller.signal;
+  return fetch(url, { ...options, signal }).finally(() => clearTimeout(timer));
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: fetchWithTimeout },
+});
 
 let _activeTenantId: string | null = null;
 
