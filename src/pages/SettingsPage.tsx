@@ -52,6 +52,8 @@ const TABS_STATIC: { key: TabKey; icon: typeof Building2; adminOnly?: boolean }[
   { key: 'lodgify', icon: Link2, adminOnly: true },
 ];
 
+const TAX_RATE_FIELDS = new Set(['tax_rate', 'vat_rate', 'city_tax', 'service_charge']);
+
 function HotelSettingsTab() {
   const { currentHotel, refreshHotels, setCurrentHotel } = useHotel();
   const { user } = useAuth();
@@ -90,9 +92,14 @@ function HotelSettingsTab() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    if (TAX_RATE_FIELDS.has(name)) {
+      const clamped = Math.min(100, Math.max(0, Number(value)));
+      setForm(prev => ({ ...prev, [name]: clamped }));
+      return;
+    }
     setForm(prev => ({
       ...prev,
-      [name]: name === 'star_rating' || name === 'tax_rate' ? Number(value) : value,
+      [name]: name === 'star_rating' ? Number(value) : value,
     }));
   };
 
@@ -488,10 +495,12 @@ function TaxConfigurationTab() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : Number(value),
-    }));
+    if (type === 'checkbox') {
+      setForm(prev => ({ ...prev, [name]: checked }));
+      return;
+    }
+    const num = Math.min(100, Math.max(0, Number(value)));
+    setForm(prev => ({ ...prev, [name]: num }));
   };
 
   const handleSave = async () => {
