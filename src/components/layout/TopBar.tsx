@@ -608,19 +608,19 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
         <div className="bg-[#1e293b] h-[48px] flex items-center px-6 gap-3">
 
           {/* Left: hotel identity */}
-          <div className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
+          <NavLink to="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0 group">
             {hotelLogo ? (
-              <img src={hotelLogo} alt={hotelName} className="w-9 h-9 rounded-lg object-contain flex-shrink-0" />
+              <img src={hotelLogo} alt={hotelName} className="w-9 h-9 rounded-lg object-contain flex-shrink-0 group-hover:opacity-80 transition-opacity" />
             ) : (
               <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 group-hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: brandColor }}
               >
                 {getInitials(hotelName)}
               </div>
             )}
             <div className="min-w-0 hidden sm:block">
-              <p className="text-[15px] font-semibold text-white leading-tight truncate max-w-[160px]">{hotelName}</p>
+              <p className="text-[15px] font-semibold text-white leading-tight truncate max-w-[160px] group-hover:opacity-80 transition-opacity">{hotelName}</p>
               <div className="flex items-center gap-1.5 mt-px">
                 {plan && (
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none bg-[#3b82f6] text-white">
@@ -634,7 +634,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
                 )}
               </div>
             </div>
-          </div>
+          </NavLink>
 
           {/* Right: account actions */}
           <div className="ml-auto flex items-center gap-3 flex-shrink-0">
