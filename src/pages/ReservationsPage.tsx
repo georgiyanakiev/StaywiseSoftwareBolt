@@ -815,11 +815,11 @@ export default function ReservationsPage() {
                           </button>
                           {actionMenuId === reservation.id && (
                             <div
-                              className="absolute right-0 top-8 z-20 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                              className="absolute right-0 top-8 z-[200] w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
                               onClick={e => e.stopPropagation()}
                             >
                               <button
-                                onClick={() => openViewModal(reservation)}
+                                onClick={e => { e.stopPropagation(); openViewModal(reservation); }}
                                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                               >
                                 <Eye className="w-4 h-4" />
@@ -828,7 +828,7 @@ export default function ReservationsPage() {
                               {reservation.status !== 'cancelled' &&
                                 reservation.status !== 'checked_out' && (
                                   <button
-                                    onClick={() => openEditModal(reservation)}
+                                    onClick={e => { e.stopPropagation(); openEditModal(reservation); }}
                                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                   >
                                     <Edit className="w-4 h-4" />
@@ -837,9 +837,7 @@ export default function ReservationsPage() {
                                 )}
                               {reservation.status === 'pending' && (
                                 <button
-                                  onClick={() =>
-                                    updateStatus(reservation, 'confirmed')
-                                  }
+                                  onClick={e => { e.stopPropagation(); updateStatus(reservation, 'confirmed'); }}
                                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50"
                                 >
                                   <CalendarCheck className="w-4 h-4" />
@@ -848,9 +846,7 @@ export default function ReservationsPage() {
                               )}
                               {reservation.status === 'confirmed' && (
                                 <button
-                                  onClick={() =>
-                                    updateStatus(reservation, 'checked_in')
-                                  }
+                                  onClick={e => { e.stopPropagation(); updateStatus(reservation, 'checked_in'); }}
                                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50"
                                 >
                                   <LogIn className="w-4 h-4" />
@@ -859,9 +855,7 @@ export default function ReservationsPage() {
                               )}
                               {reservation.status === 'checked_in' && (
                                 <button
-                                  onClick={() =>
-                                    updateStatus(reservation, 'checked_out')
-                                  }
+                                  onClick={e => { e.stopPropagation(); updateStatus(reservation, 'checked_out'); }}
                                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
                                 >
                                   <LogOut className="w-4 h-4" />
@@ -871,7 +865,8 @@ export default function ReservationsPage() {
                               {reservation.status !== 'cancelled' &&
                                 reservation.status !== 'checked_out' && (
                                   <button
-                                    onClick={() => {
+                                    onClick={e => {
+                                      e.stopPropagation();
                                       setCancelTarget(reservation);
                                       setCancelDialogOpen(true);
                                       setActionMenuId(null);
