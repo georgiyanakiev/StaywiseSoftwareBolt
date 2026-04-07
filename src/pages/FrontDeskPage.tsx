@@ -417,6 +417,7 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights</th>
             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Checked In</th>
             <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Balance Due</th>
             <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
             <th className="px-4 py-3"></th>
           </tr>
@@ -445,6 +446,13 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
               </td>
               <td className="px-4 py-3 text-right font-semibold text-gray-800">
                 {formatCurrency(item.totalAmount)}
+              </td>
+              <td className="px-4 py-3 text-right">
+                {item.balance > 0 ? (
+                  <span className="font-semibold text-red-600">{formatCurrency(item.balance)}</span>
+                ) : (
+                  <span className="text-emerald-600 font-medium text-xs">Paid</span>
+                )}
               </td>
               <td className="px-4 py-3 text-center">
                 <StatusBadge status={item.status} />

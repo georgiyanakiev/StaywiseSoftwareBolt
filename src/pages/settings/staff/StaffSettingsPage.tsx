@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, UserPlus, Pencil, UserX, UserCheck, Search, Shield, BookOpen,
+  Clock, CheckCircle2, XCircle, AlertTriangle,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useHotel } from '../../../contexts/HotelContext';
@@ -82,7 +83,37 @@ export default function StaffSettingsPage() {
     setDeactivateTarget(null);
   };
 
-  const filtered = staffList.filter(s => {
+  const approveStaff = async (member: StaffMember) => {
+    const { error } = await supabase
+      .from('staff_members')
+      .update({ approval_status: 'approved', is_active: true })
+      .eq('id', member.id);
+
+    if (error) {
+      toast('error', 'Failed to approve staff member');
+    } else {
+      toast('success', `${member.first_name} ${member.last_name} approved and activated`);
+      loadStaff();
+    }
+  };
+
+  const rejectStaff = async (member: StaffMember) => {
+    const { error } = await supabase
+      .from('staff_members')
+      .update({ approval_status: 'rejected', is_active: false })
+      .eq('id', member.id);
+
+    if (error) {
+      toast('error', 'Failed to reject staff member');
+    } else {
+      toast('success', `${member.first_name} ${member.last_name} access rejected`);
+      loadStaff();
+    }
+  };
+
+  const pendingApprovals = staffList.filter(s => s.approval_status === 'pending');
+
+  const filtered = staffList.filter(s => s.approval_status !== 'pending').filter(s => {
     const q = search.toLowerCase();
     return (
       s.first_name.toLowerCase().includes(q) ||
@@ -145,6 +176,60 @@ export default function StaffSettingsPage() {
 
       {tab === 'staff' && (
         <div className="space-y-4">
+          {isOwnerOrManager && pendingApprovals.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-200 bg-amber-100/60">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <p className="text-sm font-semibold text-amber-800">
+                  {pendingApprovals.length} staff member{pendingApprovals.length > 1 ? 's' : ''} awaiting approval
+                </p>
+              </div>
+              <div className="divide-y divide-amber-100">
+                {pendingApprovals.map(member => {
+                  const roleColor = ROLE_BADGE_COLORS[member.role as StaffRole] ?? 'bg-gray-100 text-gray-600';
+                  return (
+                    <div key={member.id} className="flex items-center justify-between px-4 py-3 gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold text-amber-800 flex-shrink-0">
+                          {member.first_name[0]}{member.last_name[0]}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm truncate">
+                            {member.first_name} {member.last_name}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                        </div>
+                        <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${roleColor}`}>
+                          {ROLE_LABELS[member.role as StaffRole] ?? member.role}
+                        </span>
+                        <span className="hidden md:flex items-center gap-1 text-xs text-amber-700">
+                          <Clock className="w-3 h-3" />
+                          {formatDistanceToNow(new Date(member.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => approveStaff(member)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => rejectStaff(member)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -213,14 +298,21 @@ export default function StaffSettingsPage() {
                           {formatLastLogin(member.last_login)}
                         </td>
                         <td className="table-cell">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            member.is_active
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-gray-100 text-gray-500'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                            {member.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          {member.approval_status === 'rejected' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                              <XCircle className="w-3 h-3" />
+                              Rejected
+                            </span>
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              member.is_active
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                              {member.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          )}
                         </td>
                         {isOwnerOrManager && (
                           <td className="table-cell text-right">

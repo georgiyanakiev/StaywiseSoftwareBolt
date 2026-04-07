@@ -140,7 +140,7 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
         .order('check_in', { ascending: true }),
       supabase
         .from('reservations')
-        .select('id, confirmation_code, check_in, check_out, status, total_amount, adults, children, notes, guest:guests(first_name, last_name), room:rooms(number, room_type:room_types(name))')
+        .select('id, confirmation_code, check_in, check_out, status, total_amount, amount_paid, adults, children, notes, guest:guests(first_name, last_name), room:rooms(number, room_type:room_types(name))')
         .eq('hotel_id', currentHotel.id)
         .eq('check_out', today)
         .in('status', ['checked_in', 'checked_out'])
@@ -233,7 +233,7 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
       status: r.status,
       totalAmount: r.total_amount || 0,
       notes: r.notes,
-      balance: 0,
+      balance: Math.max(0, (r.total_amount || 0) - (r.amount_paid || 0)),
     })));
 
     setStayovers(stayoverList.map((r: any) => ({
