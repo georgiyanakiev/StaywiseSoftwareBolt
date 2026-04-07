@@ -81,13 +81,13 @@ export default function FrontDeskPage() {
         <div className="flex items-center gap-2">
           <Link
             to="/reservations"
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
           >
             <LogIn className="w-3.5 h-3.5" /> Check In
           </Link>
           <Link
             to="/reservations"
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
           >
             <LogOut className="w-3.5 h-3.5" /> Check Out
           </Link>
