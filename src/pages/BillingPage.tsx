@@ -109,6 +109,28 @@ export default function BillingPage() {
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
 
+  const [aggregateStats, setAggregateStats] = useState({
+    totalRevenue: 0,
+    outstandingBalance: 0,
+    paidCount: 0,
+    overdueCount: 0,
+  });
+
+  const fetchAggregateStats = useCallback(async () => {
+    if (!currentHotel) return;
+    const { data } = await supabase
+      .from('invoices')
+      .select('total_amount, amount_paid, status')
+      .eq('hotel_id', currentHotel.id);
+    if (!data) return;
+    setAggregateStats({
+      totalRevenue: data.reduce((s, i) => s + (i.amount_paid || 0), 0),
+      outstandingBalance: data.reduce((s, i) => s + Math.max(0, (i.total_amount || 0) - (i.amount_paid || 0)), 0),
+      paidCount: data.filter(i => i.status === 'paid').length,
+      overdueCount: data.filter(i => i.status === 'overdue').length,
+    });
+  }, [currentHotel]);
+
   const fetchInvoices = useCallback(async () => {
     if (!currentHotel) {
       setLoading(false);
@@ -180,6 +202,10 @@ export default function BillingPage() {
   }, [fetchGuests]);
 
   useEffect(() => {
+    fetchAggregateStats();
+  }, [fetchAggregateStats]);
+
+  useEffect(() => {
     setPage(0);
   }, [searchQuery, statusFilter, dateFrom, dateTo]);
 
@@ -197,17 +223,7 @@ export default function BillingPage() {
     setGuestReservations((data || []) as Reservation[]);
   };
 
-  const stats = useMemo(() => {
-    const allInvoices = invoices;
-    const totalRevenue = allInvoices.reduce((sum, inv) => sum + inv.amount_paid, 0);
-    const outstandingBalance = allInvoices.reduce(
-      (sum, inv) => sum + (inv.total_amount - inv.amount_paid),
-      0
-    );
-    const paidCount = allInvoices.filter(inv => inv.status === 'paid').length;
-    const overdueCount = allInvoices.filter(inv => inv.status === 'overdue').length;
-    return { totalRevenue, outstandingBalance, paidCount, overdueCount };
-  }, [invoices]);
+  const stats = aggregateStats;
 
   const lineItemsSubtotal = useMemo(() => {
     return form.line_items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
@@ -384,6 +400,7 @@ export default function BillingPage() {
         .from('invoices')
         .update({
           amount_paid: newAmountPaid,
+          paid_amount: newAmountPaid,
           status: newStatus,
         })
         .eq('id', paymentInvoice.id);
@@ -410,11 +427,13 @@ export default function BillingPage() {
 
       if (paymentError) {
         console.error('Failed to record payment history:', paymentError);
+        toast('error', 'Payment recorded on invoice but failed to save to ledger');
       }
 
       toast('success', `Payment of ${formatCurrency(paymentAmount, currentHotel.currency)} recorded`);
       closePaymentModal();
       fetchInvoices();
+      fetchAggregateStats();
     } catch (error) {
       console.error('Error recording payment:', error);
       toast('error', 'Failed to record payment');
@@ -462,6 +481,7 @@ export default function BillingPage() {
       .update({
         status: 'paid',
         amount_paid: invoice.total_amount,
+        paid_amount: invoice.total_amount,
       })
       .eq('id', invoice.id);
 
@@ -470,6 +490,7 @@ export default function BillingPage() {
     } else {
       toast('success', 'Invoice marked as paid');
       fetchInvoices();
+      fetchAggregateStats();
     }
   };
 
