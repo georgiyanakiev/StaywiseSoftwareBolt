@@ -39,6 +39,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
     sync_enabled: true,
   });
   const [saving, setSaving] = useState(false);
+  const [savedSecrets, setSavedSecrets] = useState<Record<string, boolean>>({});
   const [showSecret, setShowSecret] = useState(false);
 
   useEffect(() => {
@@ -46,13 +47,14 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
       setForm({
         name: channel.name,
         type: channel.type || 'other',
-        api_key: channel.api_key || '',
+        api_key: '',
         property_id: channel.property_id || '',
         client_id: channel.client_id || '',
-        client_secret: channel.client_secret || '',
+        client_secret: '',
         commission_pct: String(channel.commission_pct ?? 0),
         sync_enabled: channel.sync_enabled ?? true,
       });
+      setSavedSecrets({ api_key: !!(channel.api_key), client_secret: !!(channel.client_secret) });
     }
   }, [channel]);
 
@@ -75,10 +77,10 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
     if (!form.name.trim()) return;
     setSaving(true);
     try {
-      await onSave({
-        ...form,
-        commission_pct: parseFloat(form.commission_pct) || 0,
-      });
+      const secretFields = ['api_key', 'client_secret'] as const;
+      const saveData = { ...form, commission_pct: parseFloat(form.commission_pct) || 0 } as Record<string, unknown>;
+      secretFields.forEach(f => { if (!saveData[f]) delete saveData[f]; });
+      await onSave(saveData as Omit<typeof form, 'commission_pct'> & { commission_pct: number });
       onClose();
     } finally {
       setSaving(false);
@@ -152,10 +154,10 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">API Key</label>
             <input
-              type="text"
+              type="password"
               value={form.api_key}
               onChange={e => setForm(f => ({ ...f, api_key: e.target.value }))}
-              placeholder="sk-..."
+              placeholder={savedSecrets.api_key ? 'Saved — enter new value to update' : 'sk-...'}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
             />
           </div>
@@ -177,6 +179,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
                   type={showSecret ? 'text' : 'password'}
                   value={form.client_secret}
                   onChange={e => setForm(f => ({ ...f, client_secret: e.target.value }))}
+                  placeholder={savedSecrets.client_secret ? 'Saved — enter new value to update' : ''}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2.5 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
                 />
                 <button

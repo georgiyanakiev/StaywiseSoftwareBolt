@@ -52,6 +52,7 @@ export default function BookingComTab() {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [savedSecrets, setSavedSecrets] = useState<Record<string, boolean>>({});
   const [activeSection, setActiveSection] = useState<'credentials' | 'sync' | 'rooms' | 'logs'>('credentials');
 
   const [form, setForm] = useState({
@@ -82,10 +83,11 @@ export default function BookingComTab() {
 
       if (settingsRes.data) {
         setSettings(settingsRes.data as BookingComSettings);
+        setSavedSecrets({ client_secret: !!(settingsRes.data.client_secret) });
         setForm({
           property_id: settingsRes.data.property_id || '',
           client_id: settingsRes.data.client_id || '',
-          client_secret: settingsRes.data.client_secret || '',
+          client_secret: '',
           is_enabled: settingsRes.data.is_enabled || false,
           sync_reservations: settingsRes.data.sync_reservations ?? true,
           sync_availability: settingsRes.data.sync_availability ?? true,
@@ -128,16 +130,19 @@ export default function BookingComTab() {
     if (!currentHotel) return;
     setSaving(true);
     try {
+      const secretFields = ['client_secret'] as const;
+      const formPayload = { ...form } as Record<string, unknown>;
+      secretFields.forEach(f => { if (!formPayload[f]) delete formPayload[f]; });
       if (settings) {
         const { error } = await supabase
           .from('booking_com_settings')
-          .update({ ...form, updated_at: new Date().toISOString() })
+          .update({ ...formPayload, updated_at: new Date().toISOString() })
           .eq('hotel_id', currentHotel.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('booking_com_settings')
-          .insert({ hotel_id: currentHotel.id, ...form });
+          .insert({ hotel_id: currentHotel.id, ...formPayload });
         if (error) throw error;
       }
       await fetchData();
@@ -210,7 +215,7 @@ export default function BookingComTab() {
 
   if (loading) return <LoadingSpinner />;
 
-  const hasCredentials = form.property_id && form.client_id && form.client_secret;
+  const hasCredentials = form.property_id && form.client_id && (form.client_secret || savedSecrets.client_secret);
   const credentialsMissing = !hasCredentials;
 
   return (
@@ -312,7 +317,7 @@ export default function BookingComTab() {
                   onChange={handleChange}
                   disabled={!isAdmin}
                   className="input-field font-mono pr-10"
-                  placeholder="OAuth client secret"
+                  placeholder={savedSecrets.client_secret ? 'Saved — enter new value to update' : 'OAuth client secret'}
                 />
                 <button
                   type="button"

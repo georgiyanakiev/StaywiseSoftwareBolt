@@ -206,8 +206,6 @@ export default function PaymentAutomationPage() {
     if (!currentHotel || !tx.invoice_id) return;
     setChargingId(tx.id);
 
-    await new Promise(r => setTimeout(r, 1200));
-
     const { data: invoice } = await supabase
       .from('invoices')
       .select('total_amount, amount_paid, guest_id')
@@ -239,7 +237,7 @@ export default function PaymentAutomationPage() {
 
     setChargingId(null);
     loadData();
-    showToast(`${formatCurrency(tx.amount, currentHotel.currency)} charged successfully`, 'success');
+    showToast(`${formatCurrency(tx.amount, currentHotel.currency)} recorded as paid`, 'success');
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -290,6 +288,14 @@ export default function PaymentAutomationPage() {
           Payment Automation
         </h1>
         <p className="text-gray-500 text-sm mt-1">Automate deposits, pre-authorisations, and charges</p>
+      </div>
+
+      <div className="flex items-start gap-2.5 px-3.5 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+        <p className="text-amber-800">
+          <span className="font-semibold">Manual ledger entries only.</span>
+          <span className="ml-1">"Record as Paid" records the balance as settled in your ledger — no card or external payment gateway is charged.</span>
+        </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -481,7 +487,7 @@ export default function PaymentAutomationPage() {
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-70"
                       >
                         {chargingId === tx.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                        Charge Now
+                        Record as Paid
                       </button>
                     </div>
                   </div>
@@ -663,7 +669,7 @@ function TransactionTable({
                           }`}
                         >
                           {chargingId === tx.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                          Charge
+                          Record as Paid
                         </button>
                       )}
                       {tx.status === 'captured' && (

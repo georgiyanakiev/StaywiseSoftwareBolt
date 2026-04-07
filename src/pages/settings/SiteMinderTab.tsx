@@ -37,6 +37,7 @@ export default function SiteMinderTab() {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [savedSecrets, setSavedSecrets] = useState<Record<string, boolean>>({});
   const [activeSection, setActiveSection] = useState<'credentials' | 'sync' | 'rooms' | 'logs'>('credentials');
 
   const [form, setForm] = useState({
@@ -68,10 +69,11 @@ export default function SiteMinderTab() {
 
       if (settingsRes.data) {
         setSettings(settingsRes.data as SiteMinderSettings);
+        setSavedSecrets({ api_key: !!(settingsRes.data.api_key), api_secret: !!(settingsRes.data.api_secret) });
         setForm({
           property_id: settingsRes.data.property_id || '',
-          api_key: settingsRes.data.api_key || '',
-          api_secret: settingsRes.data.api_secret || '',
+          api_key: '',
+          api_secret: '',
           hotel_code: settingsRes.data.hotel_code || '',
           is_enabled: settingsRes.data.is_enabled || false,
           sync_reservations: settingsRes.data.sync_reservations ?? true,
@@ -115,16 +117,19 @@ export default function SiteMinderTab() {
     if (!currentHotel) return;
     setSaving(true);
     try {
+      const secretFields = ['api_key', 'api_secret'] as const;
+      const formPayload = { ...form } as Record<string, unknown>;
+      secretFields.forEach(f => { if (!formPayload[f]) delete formPayload[f]; });
       if (settings) {
         const { error } = await supabase
           .from('siteminder_settings')
-          .update({ ...form, updated_at: new Date().toISOString() })
+          .update({ ...formPayload, updated_at: new Date().toISOString() })
           .eq('hotel_id', currentHotel.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('siteminder_settings')
-          .insert({ hotel_id: currentHotel.id, ...form });
+          .insert({ hotel_id: currentHotel.id, ...formPayload });
         if (error) throw error;
       }
       await fetchData();
@@ -196,7 +201,7 @@ export default function SiteMinderTab() {
 
   if (loading) return <LoadingSpinner />;
 
-  const hasCredentials = form.api_key && form.hotel_code;
+  const hasCredentials = (form.api_key || savedSecrets.api_key) && form.hotel_code;
   const credentialsMissing = !hasCredentials;
 
   return (
@@ -298,7 +303,7 @@ export default function SiteMinderTab() {
                 onChange={handleChange}
                 disabled={!isAdmin}
                 className="input-field font-mono"
-                placeholder="SiteMinder API key"
+                placeholder={savedSecrets.api_key ? 'Saved — enter new value to update' : 'SiteMinder API key'}
               />
             </div>
             <div className="md:col-span-2">
@@ -311,7 +316,7 @@ export default function SiteMinderTab() {
                   onChange={handleChange}
                   disabled={!isAdmin}
                   className="input-field font-mono pr-10"
-                  placeholder="SiteMinder API secret"
+                  placeholder={savedSecrets.api_secret ? 'Saved — enter new value to update' : 'SiteMinder API secret'}
                 />
                 <button
                   type="button"

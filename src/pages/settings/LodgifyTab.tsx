@@ -37,6 +37,7 @@ export default function LodgifyTab() {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [savedSecrets, setSavedSecrets] = useState<Record<string, boolean>>({});
   const [activeSection, setActiveSection] = useState<'credentials' | 'sync' | 'rooms' | 'logs'>('credentials');
 
   const [form, setForm] = useState({
@@ -67,8 +68,9 @@ export default function LodgifyTab() {
 
       if (settingsRes.data) {
         setSettings(settingsRes.data as LodgifySettings);
+        setSavedSecrets({ api_key: !!(settingsRes.data.api_key) });
         setForm({
-          api_key: settingsRes.data.api_key || '',
+          api_key: '',
           property_id: settingsRes.data.property_id || '',
           website_id: settingsRes.data.website_id || '',
           is_enabled: settingsRes.data.is_enabled || false,
@@ -113,16 +115,19 @@ export default function LodgifyTab() {
     if (!currentHotel) return;
     setSaving(true);
     try {
+      const secretFields = ['api_key'] as const;
+      const formPayload = { ...form } as Record<string, unknown>;
+      secretFields.forEach(f => { if (!formPayload[f]) delete formPayload[f]; });
       if (settings) {
         const { error } = await supabase
           .from('lodgify_settings')
-          .update({ ...form, updated_at: new Date().toISOString() })
+          .update({ ...formPayload, updated_at: new Date().toISOString() })
           .eq('hotel_id', currentHotel.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('lodgify_settings')
-          .insert({ hotel_id: currentHotel.id, ...form });
+          .insert({ hotel_id: currentHotel.id, ...formPayload });
         if (error) throw error;
       }
       await fetchData();
@@ -194,7 +199,7 @@ export default function LodgifyTab() {
 
   if (loading) return <LoadingSpinner />;
 
-  const hasCredentials = !!(form.api_key && (form.property_id || form.website_id));
+  const hasCredentials = !!((form.api_key || savedSecrets.api_key) && (form.property_id || form.website_id));
   const credentialsMissing = !hasCredentials;
 
   return (
@@ -271,7 +276,7 @@ export default function LodgifyTab() {
                   onChange={handleChange}
                   disabled={!isAdmin}
                   className="input-field font-mono pr-10"
-                  placeholder="Your Lodgify API key"
+                  placeholder={savedSecrets.api_key ? 'Saved — enter new value to update' : 'Your Lodgify API key'}
                 />
                 <button
                   type="button"
