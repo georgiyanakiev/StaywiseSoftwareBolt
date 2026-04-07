@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, FlaskConical } from 'lucide-react';
 import { formatDateTime } from '../../lib/utils';
 
 export interface SyncLog {
@@ -60,12 +60,22 @@ export default function SyncLogTable({ logs }: Props) {
                     <span className="font-semibold text-gray-700">{log.dates_affected ?? 0}</span>
                   </td>
                   <td className="table-cell">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color}`}>
-                      <Icon className="w-3 h-3" />
-                      {cfg.label}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color}`}>
+                        <Icon className="w-3 h-3" />
+                        {cfg.label}
+                      </span>
+                      {log.error_message?.startsWith('Simulated') && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          <FlaskConical className="w-2.5 h-2.5" />
+                          Simulated
+                        </span>
+                      )}
+                    </div>
                   </td>
-                  <td className="table-cell text-gray-500 text-xs">{log.error_message || '—'}</td>
+                  <td className="table-cell text-gray-500 text-xs">
+                    {log.error_message && !log.error_message.startsWith('Simulated') ? log.error_message : '—'}
+                  </td>
                 </tr>
               );
             })}

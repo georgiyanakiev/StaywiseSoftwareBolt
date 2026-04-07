@@ -87,12 +87,21 @@ export default function InvoicingPage() {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [showEditor, setShowEditor] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
   const [actioning, setActioning] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const loadInvoices = useCallback(async () => {
     if (!currentHotel) return;
@@ -101,16 +110,16 @@ export default function InvoicingPage() {
       .from('invoices')
       .select('*, lines:invoice_line_items(*)', { count: 'exact' })
       .eq('hotel_id', currentHotel.id)
-      .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      .order('created_at', { ascending: false });
     if (statusFilter) q = q.eq('status', statusFilter);
     if (typeFilter) q = q.eq('type', typeFilter);
-    if (search) q = q.ilike('guest_name', `%${search}%`);
+    if (debouncedSearch) q = q.ilike('guest_name', `%${debouncedSearch}%`);
+    q = q.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
     const { data, count } = await q;
     setInvoices((data ?? []) as Invoice[]);
     setTotal(count ?? 0);
     setLoading(false);
-  }, [currentHotel, page, statusFilter, typeFilter, search]);
+  }, [currentHotel, page, statusFilter, typeFilter, debouncedSearch]);
 
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
@@ -245,7 +254,7 @@ export default function InvoicingPage() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} className="input-field pl-9 py-2" placeholder="Search by guest name..." />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2" placeholder="Search by guest name..." />
         </div>
         <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }} className="input-field py-2 w-36">
           <option value="">All Statuses</option>

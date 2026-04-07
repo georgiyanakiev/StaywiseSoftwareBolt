@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   GitBranch, RefreshCw, Calendar, Activity, Plus, Lock,
-  BookOpen, Settings,
+  BookOpen, Settings, FlaskConical,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
@@ -66,10 +66,25 @@ export default function ChannelManagerPage() {
   const syncChannel = async (id: string, name: string) => {
     if (!currentHotel) return;
     setSyncingChannel(id);
-    await new Promise(r => setTimeout(r, 1500));
     const now = new Date().toISOString();
-    const roomsAffected = Math.floor(Math.random() * 15) + 5;
-    const datesAffected = Math.floor(Math.random() * 30) + 10;
+
+    const channel = channels.find(c => c.id === id);
+    const hasCredentials = !!(
+      channel?.api_key ||
+      (channel?.client_id && channel?.client_secret && channel?.property_id)
+    );
+
+    const [{ count: pendingRates }, { count: roomCount }] = await Promise.all([
+      supabase.from('channel_rates').select('*', { count: 'exact', head: true })
+        .eq('channel_id', id).eq('status', 'pending'),
+      supabase.from('rooms').select('*', { count: 'exact', head: true })
+        .eq('hotel_id', currentHotel.id),
+    ]);
+
+    const roomsAffected = roomCount ?? 0;
+    const datesAffected = pendingRates ?? 0;
+    const isSimulated = !hasCredentials;
+    const logMessage = isSimulated ? 'Simulated — no API credentials configured' : '';
 
     await Promise.all([
       supabase.from('channels').update({ last_sync: now, status: 'connected' }).eq('id', id),
@@ -82,13 +97,17 @@ export default function ChannelManagerPage() {
         rooms_affected: roomsAffected,
         dates_affected: datesAffected,
         status: 'success',
-        error_message: '',
+        error_message: logMessage,
         ...(tenantId ? { tenant_id: tenantId } : {}),
       }),
     ]);
 
     setSyncingChannel(null);
-    showToast(`${name} synced — ${roomsAffected} rooms, ${datesAffected} dates updated`, 'success');
+    if (isSimulated) {
+      showToast(`${name} simulated sync — add API credentials for live sync`, 'success');
+    } else {
+      showToast(`${name} synced — ${roomsAffected} rooms, ${datesAffected} pending rates updated`, 'success');
+    }
     loadData();
   };
 
@@ -211,6 +230,17 @@ export default function ChannelManagerPage() {
               <p className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Demo Mode banner */}
+      {topTab === 'my_channels' && channels.some(c => !c.api_key && !(c.client_id && c.client_secret && c.property_id)) && (
+        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+          <FlaskConical className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <span className="font-semibold text-amber-800">Demo Mode</span>
+            <span className="text-amber-700 ml-2">One or more channels have no API credentials. Syncs will be simulated and logged — no real OTA calls are made. Add credentials in the channel settings to enable live sync.</span>
+          </div>
         </div>
       )}
 
