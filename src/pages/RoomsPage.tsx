@@ -166,8 +166,8 @@ export default function RoomsPage() {
     if (currentHotel) {
       fetchAll();
 
-      const roomsSubscription = supabase
-        .channel('rooms-changes')
+      const channel = supabase
+        .channel(`rooms-changes-${currentHotel.id}`)
         .on(
           'postgres_changes',
           {
@@ -183,10 +183,9 @@ export default function RoomsPage() {
         .subscribe();
 
       return () => {
-        roomsSubscription.unsubscribe();
+        supabase.removeChannel(channel);
       };
     } else {
-      // If no hotel is selected, stop loading
       setLoading(false);
     }
   }, [currentHotel?.id]);
