@@ -198,7 +198,7 @@ export function getModuleForPath(pathname: string): ModuleKey | undefined {
 }
 
 export function canAccessPath(permissions: PermissionsMap | null, pathname: string): boolean {
-  if (!permissions) return true;
+  if (!permissions) return false;
   const module = getModuleForPath(pathname);
   if (!module) return true;
   return permissions[module]?.can_view ?? false;

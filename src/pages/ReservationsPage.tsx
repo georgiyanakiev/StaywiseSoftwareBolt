@@ -347,7 +347,8 @@ export default function ReservationsPage() {
         .eq('hotel_id', currentHotel.id)
         .eq('room_id', form.room_id)
         .in('status', ['pending', 'confirmed', 'checked_in'])
-        .or(`check_in.lte.${form.check_out},check_out.gte.${form.check_in}`);
+        .lt('check_in', form.check_out)
+        .gt('check_out', form.check_in);
 
       if (checkError) {
         toast('error', 'Failed to check room availability');

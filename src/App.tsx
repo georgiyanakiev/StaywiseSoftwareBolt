@@ -44,6 +44,7 @@ import PrivacyPage from './pages/legal/PrivacyPage';
 import DpaPage from './pages/legal/DpaPage';
 import DpaAcceptanceModal from './components/legal/DpaAcceptanceModal';
 import { useDpaAcceptance } from './pages/legal/useDpaAcceptance';
+import InactivityGuard from './components/layout/InactivityGuard';
 
 function AuthenticatedApp() {
   return (
@@ -147,6 +148,7 @@ function AppWithAuth() {
   return (
     <>
       <AuthenticatedApp />
+      <InactivityGuard />
       {showDpaBanner && (
         <DpaAcceptanceModal
           userId={user.id}

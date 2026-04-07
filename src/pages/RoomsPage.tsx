@@ -347,6 +347,27 @@ export default function RoomsPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+
+    if (deleteTarget.type === 'room') {
+      const { data: activeRes, error: resCheckError } = await supabase
+        .from('reservations')
+        .select('id')
+        .eq('room_id', deleteTarget.id)
+        .in('status', ['pending', 'confirmed', 'checked_in'])
+        .limit(1);
+
+      if (resCheckError) {
+        toast('error', 'Failed to check room reservations');
+        return;
+      }
+
+      if (activeRes && activeRes.length > 0) {
+        toast('error', 'Cannot delete room — it has active reservations. Cancel or complete them first.');
+        setDeleteTarget(null);
+        return;
+      }
+    }
+
     const table = deleteTarget.type === 'room' ? 'rooms' : 'room_types';
     const { error } = await supabase.from(table).delete().eq('id', deleteTarget.id);
     if (error) {

@@ -621,8 +621,8 @@ function UsersPermissionsTab() {
 
   const handleAddStaff = async () => {
     if (!currentHotel) return;
-    if (!addPassword || addPassword.length < 6) {
-      toast('error', 'Password must be at least 6 characters.');
+    if (!addPassword || addPassword.length < 8) {
+      toast('error', 'Password must be at least 8 characters.');
       return;
     }
     setSubmitting(true);
@@ -659,8 +659,8 @@ function UsersPermissionsTab() {
     if (error) { toast('error', error.message); setSubmitting(false); return; }
 
     if (editPassword.trim()) {
-      if (editPassword.length < 6) {
-        toast('error', 'Password must be at least 6 characters.');
+      if (editPassword.length < 8) {
+        toast('error', 'Password must be at least 8 characters.');
         setSubmitting(false);
         return;
       }
@@ -804,8 +804,8 @@ function UsersPermissionsTab() {
               {showAddPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {addPassword && addPassword.length < 6 && (
-            <p className="text-xs text-red-500 mt-1">Password must be at least 6 characters.</p>
+          {addPassword && addPassword.length < 8 && (
+            <p className="text-xs text-red-500 mt-1">Password must be at least 8 characters.</p>
           )}
         </div>
         <div className="mt-6 flex justify-end gap-3">
@@ -834,8 +834,8 @@ function UsersPermissionsTab() {
               {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {editPassword && editPassword.length < 6 && (
-            <p className="text-xs text-red-500 mt-1">Password must be at least 6 characters.</p>
+          {editPassword && editPassword.length < 8 && (
+            <p className="text-xs text-red-500 mt-1">Password must be at least 8 characters.</p>
           )}
         </div>
         <div className="mt-6 flex justify-end gap-3">

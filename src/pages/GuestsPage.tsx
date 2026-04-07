@@ -1442,8 +1442,8 @@ export default function GuestsPage() {
               />
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-              This is a simulated communication. No actual {communicationType} will be sent.
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              <strong>Communication Logging:</strong> This message will be recorded in the guest's communication history. Direct {communicationType} delivery requires an email/SMS integration to be configured by your account administrator.
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
