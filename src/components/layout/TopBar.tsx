@@ -572,11 +572,11 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
     return (
       <header className="sticky top-0 z-50 w-full h-[48px] bg-[#1e3a5f] flex items-center px-6 gap-4">
         <button
-          onClick={() => navigate('/lobby')}
+          onClick={() => navigate('/')}
           className="flex items-center gap-1.5 text-[#94a3b8] hover:text-white text-[13px] font-medium transition-colors flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Back to Lobby</span>
+          <span className="hidden sm:inline">Back to Dashboard</span>
         </button>
         <div className="flex items-center gap-2 flex-shrink-0">
           <div className="w-[34px] h-[34px] rounded-lg bg-red-600 flex items-center justify-center">
