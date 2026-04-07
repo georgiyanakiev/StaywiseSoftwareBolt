@@ -125,6 +125,7 @@ export default function BookingWidgetPage() {
   const [hotelTaxRate, setHotelTaxRate] = useState(0);
   const [bookingError, setBookingError] = useState('');
   const [hotelMissing, setHotelMissing] = useState(false);
+  const [emailSent, setEmailSent] = useState<boolean | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -278,8 +279,32 @@ export default function BookingWidgetPage() {
 
     setBookingId(inserted.id);
     setConfirmationNumber(confNum);
+    setEmailSent(null);
     setLoading(false);
     setStep(4);
+
+    supabase.functions
+      .invoke('send-booking-confirmation', {
+        body: {
+          confirmationNumber: confNum,
+          guestName,
+          guestEmail,
+          hotelName,
+          roomName: selectedRoom.name,
+          checkIn,
+          checkOut,
+          nights,
+          adults,
+          children,
+          total,
+          depositAmount,
+          currency,
+          requireDeposit,
+          cancellationPolicy: config?.cancellation_policy ?? '',
+        },
+      })
+      .then(({ error: fnError }) => setEmailSent(!fnError))
+      .catch(() => setEmailSent(false));
   };
 
   const downloadICS = () => {
@@ -338,6 +363,7 @@ export default function BookingWidgetPage() {
     setBookingId('');
     setSelectedUpsells(new Set());
     setBookingError('');
+    setEmailSent(null);
   };
 
   if (hotelMissing) {
@@ -762,8 +788,20 @@ export default function BookingWidgetPage() {
                   <Check className="w-9 h-9" style={{ color: primaryColor }} />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">Booking Confirmed!</h2>
-                <p className="text-gray-500 mb-1">A confirmation has been sent to</p>
-                <p className="font-medium text-gray-700 mb-6">{guestEmail}</p>
+                {emailSent === true && (
+                  <>
+                    <p className="text-gray-500 mb-1">A confirmation has been sent to</p>
+                    <p className="font-medium text-gray-700 mb-6">{guestEmail}</p>
+                  </>
+                )}
+                {emailSent === null && (
+                  <p className="text-gray-400 text-sm mb-6">{guestEmail}</p>
+                )}
+                {emailSent === false && (
+                  <p className="text-sm text-amber-600 mb-6">
+                    We were unable to send a confirmation email. Please save your reference number.
+                  </p>
+                )}
 
                 <div className="text-4xl font-black font-mono tracking-widest mb-6" style={{ color: primaryColor }}>
                   {confirmationNumber}
