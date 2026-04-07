@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -94,6 +94,10 @@ export default function GuestsPage() {
   const [profileDocuments, setProfileDocuments] = useState<GuestDocument[]>([]);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileTab, setProfileTab] = useState<'overview' | 'bookings' | 'communications' | 'documents' | 'preferences'>('overview');
+
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
 
   const [showCommunicationModal, setShowCommunicationModal] = useState(false);
   const [communicationType, setCommunicationType] = useState<GuestCommunication['type']>('email');
@@ -383,6 +387,78 @@ export default function GuestsPage() {
     setProfileReservations([]);
     setProfileCommunications([]);
     setProfileDocuments([]);
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentHotel || !profileGuest) return;
+    e.target.value = '';
+
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast('error', 'File too large — maximum 10 MB');
+      return;
+    }
+
+    setUploadingDocument(true);
+    const ext = file.name.split('.').pop();
+    const path = `${currentHotel.id}/${profileGuest.id}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('guest-documents')
+      .upload(path, file, { upsert: false });
+
+    if (uploadError) {
+      toast('error', 'Upload failed');
+      setUploadingDocument(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('guest-documents')
+      .getPublicUrl(path);
+
+    const { data: doc, error: dbError } = await supabase
+      .from('guest_documents')
+      .insert({
+        guest_id: profileGuest.id,
+        hotel_id: currentHotel.id,
+        type: 'other',
+        file_name: file.name,
+        file_url: urlData?.publicUrl ?? path,
+        file_size: file.size,
+        uploaded_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      toast('error', 'Failed to save document record');
+    } else {
+      setProfileDocuments(prev => [doc as GuestDocument, ...prev]);
+      toast('success', `${file.name} uploaded`);
+    }
+    setUploadingDocument(false);
+  };
+
+  const handleDeleteDocument = async (doc: GuestDocument) => {
+    setDeletingDocumentId(doc.id);
+    const storagePath = doc.file_url.includes('/guest-documents/')
+      ? doc.file_url.split('/guest-documents/')[1]
+      : null;
+
+    if (storagePath) {
+      await supabase.storage.from('guest-documents').remove([storagePath]);
+    }
+
+    const { error } = await supabase.from('guest_documents').delete().eq('id', doc.id);
+    if (error) {
+      toast('error', 'Failed to delete document');
+    } else {
+      setProfileDocuments(prev => prev.filter(d => d.id !== doc.id));
+      toast('success', 'Document deleted');
+    }
+    setDeletingDocumentId(null);
   };
 
   const openCommunicationModal = (guest: Guest) => {
@@ -1297,33 +1373,63 @@ export default function GuestsPage() {
                 {profileTab === 'documents' && (
                   <div>
                     <div className="flex justify-end mb-4">
-                      <button className="btn-primary" disabled>
+                      <input
+                        ref={docFileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        className="hidden"
+                        onChange={handleDocumentUpload}
+                      />
+                      <button
+                        className="btn-primary"
+                        disabled={uploadingDocument}
+                        onClick={() => docFileInputRef.current?.click()}
+                      >
                         <Upload className="w-4 h-4" />
-                        Upload Document
+                        {uploadingDocument ? 'Uploading...' : 'Upload Document'}
                       </button>
                     </div>
                     {profileDocuments.length === 0 ? (
                       <EmptyState
                         icon={<FileText className="w-6 h-6" />}
                         title="No documents uploaded"
-                        description="No documents have been uploaded for this guest."
+                        description="Upload passport, ID card, or other guest documents (JPEG, PNG, PDF — max 10 MB)."
                       />
                     ) : (
                       <div className="space-y-2">
                         {profileDocuments.map(doc => (
-                          <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-brand-300 transition-colors">
+                          <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                             <div className="flex items-center gap-3">
-                              <FileText className="w-5 h-5 text-gray-400" />
+                              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-4 h-4 text-blue-600" />
+                              </div>
                               <div>
-                                <p className="font-medium text-gray-900">{doc.file_name}</p>
-                                <p className="text-sm text-gray-500">
+                                <p className="font-medium text-gray-900 text-sm">{doc.file_name}</p>
+                                <p className="text-xs text-gray-500">
                                   {doc.type} • Uploaded {formatDate(doc.uploaded_at)}
+                                  {doc.file_size ? ` • ${(doc.file_size / 1024).toFixed(0)} KB` : ''}
                                 </p>
                               </div>
                             </div>
-                            <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={doc.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors rounded"
+                                title="View document"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </a>
+                              <button
+                                onClick={() => handleDeleteDocument(doc)}
+                                disabled={deletingDocumentId === doc.id}
+                                className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded disabled:opacity-40"
+                                title="Delete document"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>

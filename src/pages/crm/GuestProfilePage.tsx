@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, Tag, AlertTriangle, Star, CreditCard as Edit2, Plus, FileText, MessageSquare, PhoneCall, Send, Calendar, Euro, TrendingUp, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Tag, AlertTriangle, Star, CreditCard as Edit2, Plus, FileText, MessageSquare, PhoneCall, Send, Calendar, Euro, TrendingUp, Clock, Upload, Eye, Trash2 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
@@ -48,13 +48,24 @@ export default function GuestProfilePage() {
 
   const [editingRating, setEditingRating] = useState<string | null>(null);
 
+  const [documents, setDocuments] = useState<Array<{ id: string; file_name: string; file_url: string; file_size: number | null; type: string; uploaded_at: string }>>([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
-    const [g, s, c] = await Promise.all([fetchGuestProfile(id), fetchGuestStays(id), fetchGuestComms(id)]);
+    const [g, s, c, docsRes] = await Promise.all([
+      fetchGuestProfile(id),
+      fetchGuestStays(id),
+      fetchGuestComms(id),
+      supabase.from('guest_documents').select('*').eq('guest_id', id).order('uploaded_at', { ascending: false }),
+    ]);
     setGuest(g);
     setStays(s);
     setComms(c);
+    setDocuments((docsRes.data || []) as typeof documents);
     setLoading(false);
   }, [id]);
 
@@ -93,6 +104,39 @@ export default function GuestProfilePage() {
     await supabase.from('guest_profiles').update({ blacklisted: newVal }).eq('id', guest.id);
     setGuest(p => p ? { ...p, blacklisted: newVal } : p);
     toast('success', newVal ? 'Guest blacklisted' : 'Guest removed from blacklist');
+  };
+
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentHotel || !id) return;
+    e.target.value = '';
+    if (file.size > 10 * 1024 * 1024) { toast('error', 'File too large — maximum 10 MB'); return; }
+    setUploadingDoc(true);
+    const ext = file.name.split('.').pop();
+    const path = `${currentHotel.id}/${id}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('guest-documents').upload(path, file, { upsert: false });
+    if (upErr) { toast('error', 'Upload failed'); setUploadingDoc(false); return; }
+    const { data: urlData } = supabase.storage.from('guest-documents').getPublicUrl(path);
+    const { data: doc, error: dbErr } = await supabase.from('guest_documents').insert({
+      guest_id: id, hotel_id: currentHotel.id, type: 'other',
+      file_name: file.name, file_url: urlData?.publicUrl ?? path,
+      file_size: file.size, uploaded_at: new Date().toISOString(),
+    }).select().single();
+    if (dbErr) toast('error', 'Failed to save document record');
+    else { setDocuments(prev => [doc as (typeof documents)[0], ...prev]); toast('success', `${file.name} uploaded`); }
+    setUploadingDoc(false);
+  };
+
+  const handleDocDelete = async (doc: (typeof documents)[0]) => {
+    setDeletingDocId(doc.id);
+    const storagePath = doc.file_url.includes('/guest-documents/')
+      ? doc.file_url.split('/guest-documents/')[1]
+      : null;
+    if (storagePath) await supabase.storage.from('guest-documents').remove([storagePath]);
+    const { error } = await supabase.from('guest_documents').delete().eq('id', doc.id);
+    if (error) toast('error', 'Failed to delete document');
+    else { setDocuments(prev => prev.filter(d => d.id !== doc.id)); toast('success', 'Document deleted'); }
+    setDeletingDocId(null);
   };
 
   if (loading) return <div className="py-20 flex justify-center"><LoadingSpinner size="lg" /></div>;
@@ -345,10 +389,68 @@ export default function GuestProfilePage() {
           )}
 
           {activeTab === 'documents' && (
-            <div className="text-center py-12 text-gray-400">
-              <FileText className="w-10 h-10 mx-auto mb-3 text-gray-200" />
-              <p className="text-sm">No documents uploaded</p>
-              <p className="text-xs mt-1">Documents uploaded during digital check-in will appear here</p>
+            <div>
+              <div className="flex justify-end mb-4">
+                <input
+                  ref={docInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={handleDocUpload}
+                />
+                <button
+                  className="btn-primary"
+                  disabled={uploadingDoc}
+                  onClick={() => docInputRef.current?.click()}
+                >
+                  <Upload className="w-4 h-4" />
+                  {uploadingDoc ? 'Uploading...' : 'Upload Document'}
+                </button>
+              </div>
+              {documents.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <FileText className="w-10 h-10 mx-auto mb-3 text-gray-200" />
+                  <p className="text-sm font-medium">No documents uploaded</p>
+                  <p className="text-xs mt-1 text-gray-400">Upload passport, ID card, or other documents (JPEG, PNG, PDF — max 10 MB)</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {documents.map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{doc.file_name}</p>
+                          <p className="text-xs text-gray-500">
+                            {doc.type}
+                            {doc.uploaded_at ? ` • Uploaded ${format(parseISO(doc.uploaded_at), 'd MMM yyyy')}` : ''}
+                            {doc.file_size ? ` • ${(doc.file_size / 1024).toFixed(0)} KB` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <a
+                          href={doc.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors rounded"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDocDelete(doc)}
+                          disabled={deletingDocId === doc.id}
+                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded disabled:opacity-40"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

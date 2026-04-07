@@ -74,6 +74,7 @@ export default function GuestPortal() {
 
   const [personal, setPersonal] = useState({ fullName: '', dateOfBirth: '', nationality: '', phone: '', email: '' });
   const [docData, setDocData] = useState({ type: 'passport', number: '', nationality: '', dob: '', issueDate: '', expiryDate: '' });
+  const [docFile, setDocFile] = useState<File | null>(null);
   const [prefs, setPrefs] = useState({ arrivalTime: '', transport: '', specialRequests: '', dietary: '', celebration: '', roomPrefs: [] as string[] });
   const [terms, setTerms] = useState({ agreed: false });
   const signatureRef = useRef<HTMLCanvasElement>(null);
@@ -141,6 +142,19 @@ export default function GuestPortal() {
     setSubmitting(true);
     const sigData = signatureRef.current?.toDataURL() ?? '';
 
+    let docFileUrl = '';
+    let docFileName = '';
+    if (docFile) {
+      const ext = docFile.name.split('.').pop();
+      const path = `portal/${session.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('guest-documents').upload(path, docFile, { upsert: false });
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from('guest-documents').getPublicUrl(path);
+        docFileUrl = urlData?.publicUrl ?? '';
+        docFileName = docFile.name;
+      }
+    }
+
     await Promise.all([
       supabase.from('guest_documents').upsert({
         session_id: session.id,
@@ -153,6 +167,7 @@ export default function GuestPortal() {
         date_of_birth: docData.dob || null,
         issue_date: docData.issueDate || null,
         expiry_date: docData.expiryDate || null,
+        ...(docFileUrl ? { file_url: docFileUrl, file_name: docFileName, type: docData.type } : {}),
       }, { onConflict: 'session_id' }),
 
       supabase.from('pre_arrival_forms').upsert({
@@ -307,7 +322,7 @@ export default function GuestPortal() {
             <StepPersonal data={personal} onChange={setPersonal} onNext={() => advanceTo(3)} onBack={() => setStep(1)} />
           )}
           {step === 3 && (
-            <StepDocument data={docData} onChange={setDocData} nationality={personal.nationality} onNext={() => advanceTo(4)} onBack={() => setStep(2)} />
+            <StepDocument data={docData} onChange={setDocData} nationality={personal.nationality} file={docFile} onFileChange={setDocFile} onNext={() => advanceTo(4)} onBack={() => setStep(2)} />
           )}
           {step === 4 && (
             <StepPreferences data={prefs} onChange={setPrefs} roomPrefs={ROOM_PREFS} togglePref={togglePref} onNext={() => advanceTo(5)} onBack={() => setStep(3)} />
@@ -456,14 +471,17 @@ function StepPersonal({ data, onChange, onNext, onBack }: {
   );
 }
 
-function StepDocument({ data, onChange, nationality, onNext, onBack }: {
+function StepDocument({ data, onChange, nationality, file, onFileChange, onNext, onBack }: {
   data: { type: string; number: string; nationality: string; dob: string; issueDate: string; expiryDate: string };
   onChange: (d: typeof data) => void;
   nationality: string;
+  file: File | null;
+  onFileChange: (f: File | null) => void;
   onNext: () => void; onBack: () => void;
 }) {
   const set = (k: string, v: string) => onChange({ ...data, [k]: v });
   const valid = data.type && data.number;
+  const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-2 mb-2">
@@ -502,6 +520,44 @@ function StepDocument({ data, onChange, nationality, onNext, onBack }: {
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
         <input type="date" value={data.expiryDate} onChange={e => set('expiryDate', e.target.value)} className="input-field" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          Scan / Photo <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0] ?? null; onFileChange(f); e.target.value = ''; }}
+        />
+        {file ? (
+          <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+              <span className="text-sm text-blue-800 truncate">{file.name}</span>
+              <span className="text-xs text-blue-500 flex-shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onFileChange(null)}
+              className="text-xs text-red-500 hover:text-red-700 flex-shrink-0 ml-2"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-200 rounded-lg text-sm text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 rotate-90" />
+            Tap to attach a photo or scan
+          </button>
+        )}
+        <p className="text-xs text-gray-400 mt-1">JPEG, PNG or PDF — max 10 MB. Stored securely.</p>
       </div>
       <NavButtons onBack={onBack} onNext={onNext} nextDisabled={!valid} />
     </div>
