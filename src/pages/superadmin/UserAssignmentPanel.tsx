@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircle2, Loader2, Building2, AlertCircle, X, Info } from 'lucide-react';
-import { supabaseAdmin, supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import type { AdminUser, Tenant, HotelAssignment, AssignmentRole } from './types';
 import { ASSIGNMENT_ROLES } from './types';
 import {
@@ -109,7 +109,7 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<Tenant | null>(null);
   const [openTooltip, setOpenTooltip] = useState<string | null>(null);
-  const db = supabaseAdmin ?? supabase;
+  const db = supabase;
 
   const displayName = getUserDisplayName(user);
   const initials = displayName !== user.email

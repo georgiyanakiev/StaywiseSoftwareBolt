@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Plus, RefreshCw, AlertTriangle, Building2, Users, ArrowLeft, ShieldCheck } from 'lucide-react';
-import { supabase, supabaseAdmin } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import StatsBar from './StatsBar';
 import TenantTable from './TenantTable';
 import TenantFormModal from './TenantFormModal';
@@ -99,10 +99,22 @@ export default function SuperAdminPage() {
       if (formData.owner_email && newHotel) {
         let ownerId: string | null = null;
 
-        if (supabaseAdmin) {
-          const { data: usersPage } = await supabaseAdmin.auth.admin.listUsers();
-          const match = (usersPage?.users ?? []).find(u => u.email === formData.owner_email);
-          if (match) ownerId = match.id;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+          const res = await fetch(`${supabaseUrl}/functions/v1/superadmin-lookup-user`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+            },
+            body: JSON.stringify({ email: formData.owner_email }),
+          });
+          if (res.ok) {
+            const result = await res.json();
+            ownerId = result.user_id ?? null;
+          }
         }
 
         if (ownerId) {

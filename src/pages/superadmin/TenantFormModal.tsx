@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react';
-import { supabaseAdmin, supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import type { Tenant, TenantFormData } from './types';
 
 interface TenantFormModalProps {
@@ -99,7 +99,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [subdomainStatus, setSubdomainStatus] = useState<SubdomainStatus>('idle');
   const checkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const db = supabaseAdmin ?? supabase;
+  const db = supabase;
 
   useEffect(() => {
     if (mode === 'edit' && tenant) {

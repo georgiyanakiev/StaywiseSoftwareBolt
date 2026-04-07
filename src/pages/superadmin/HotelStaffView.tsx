@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, UserX, UserPlus, Search, Building2 } from 'lucide-react';
-import { supabaseAdmin, supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import type { AdminUser, Tenant, HotelAssignment, AssignmentRole } from './types';
 import { ASSIGNMENT_ROLES } from './types';
 
@@ -32,7 +32,7 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
   const [addUserId, setAddUserId] = useState('');
   const [addRole, setAddRole] = useState<AssignmentRole>('front_desk');
   const [adding, setAdding] = useState(false);
-  const db = supabaseAdmin ?? supabase;
+  const db = supabase;
 
   const fetchAssignments = useCallback(async () => {
     if (!selectedTenantId) return;
