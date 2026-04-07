@@ -222,32 +222,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         };
 
-        fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-approval-request`,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              staffMemberId: staffData.id,
-              firstName,
-              lastName,
-              email,
-            }),
-          }
-        ).catch(() => {});
+        const results = await Promise.allSettled([
+          fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-approval-request`,
+            {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                staffMemberId: staffData.id,
+                firstName,
+                lastName,
+                email,
+              }),
+            }
+          ),
+          fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/schedule-onboarding-emails`,
+            {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                userId: data.user.id,
+                email,
+                firstName,
+              }),
+            }
+          ),
+        ]);
 
-        fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/schedule-onboarding-emails`,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              userId: data.user.id,
-              email,
-              firstName,
-            }),
+        for (const result of results) {
+          if (result.status === 'rejected') {
+            console.error('[AuthContext] Post-signup notification failed:', result.reason);
+          } else if (!result.value.ok) {
+            console.error('[AuthContext] Post-signup notification returned', result.value.status, result.value.url);
           }
-        ).catch(() => {});
+        }
       }
     }
 
