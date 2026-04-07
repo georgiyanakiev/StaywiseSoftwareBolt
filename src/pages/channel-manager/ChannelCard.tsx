@@ -9,12 +9,12 @@ export interface Channel {
   type: string;
   status: 'connected' | 'disconnected' | 'error';
   last_sync: string | null;
-  api_key: string;
   property_id: string;
   commission_pct: number;
   sync_enabled: boolean;
   client_id: string;
-  client_secret: string;
+  api_key_vault_id: string | null;
+  client_secret_vault_id: string | null;
 }
 
 interface Props {

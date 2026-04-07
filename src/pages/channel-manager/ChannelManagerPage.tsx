@@ -39,7 +39,9 @@ export default function ChannelManagerPage() {
     setLoading(true);
     try {
       const [{ data: ch }, { data: logs }] = await Promise.all([
-        supabase.from('channels').select('*').eq('hotel_id', currentHotel.id).order('name'),
+        supabase.from('channels')
+          .select('id, name, type, status, last_sync, property_id, client_id, commission_pct, sync_enabled, api_key_vault_id, client_secret_vault_id')
+          .eq('hotel_id', currentHotel.id).order('name'),
         supabase.from('channel_sync_logs').select('*').eq('hotel_id', currentHotel.id)
           .order('created_at', { ascending: false }).limit(50),
       ]);
@@ -70,8 +72,8 @@ export default function ChannelManagerPage() {
 
     const channel = channels.find(c => c.id === id);
     const hasCredentials = !!(
-      channel?.api_key ||
-      (channel?.client_id && channel?.client_secret && channel?.property_id)
+      channel?.api_key_vault_id ||
+      (channel?.client_id && channel?.client_secret_vault_id && channel?.property_id)
     );
 
     const [{ count: pendingRates }, { count: roomCount }] = await Promise.all([
@@ -125,21 +127,51 @@ export default function ChannelManagerPage() {
     formData: { name: string; type: string; api_key: string; property_id: string; client_id: string; client_secret: string; commission_pct: number; sync_enabled: boolean }
   ) => {
     if (!currentHotel) return;
+
+    let apiKeyVaultId = channelModal.channel?.api_key_vault_id ?? null;
+    let clientSecretVaultId = channelModal.channel?.client_secret_vault_id ?? null;
+
+    if (formData.api_key) {
+      const { data: vaultId, error: vaultErr } = await supabase.rpc('store_channel_secret', {
+        p_vault_id: apiKeyVaultId,
+        p_name: `channel_api_key_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
+        p_value: formData.api_key,
+      });
+      if (vaultErr) throw new Error(vaultErr.message);
+      apiKeyVaultId = vaultId as string;
+    }
+
+    if (formData.client_secret) {
+      const { data: vaultId, error: vaultErr } = await supabase.rpc('store_channel_secret', {
+        p_vault_id: clientSecretVaultId,
+        p_name: `channel_client_secret_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
+        p_value: formData.client_secret,
+      });
+      if (vaultErr) throw new Error(vaultErr.message);
+      clientSecretVaultId = vaultId as string;
+    }
+
+    const channelPayload = {
+      name: formData.name,
+      type: formData.type,
+      property_id: formData.property_id,
+      client_id: formData.client_id,
+      commission_pct: formData.commission_pct,
+      sync_enabled: formData.sync_enabled,
+      api_key_vault_id: apiKeyVaultId,
+      client_secret_vault_id: clientSecretVaultId,
+    };
+
     if (channelModal.channel) {
-      const { error } = await supabase.from('channels').update({
-        name: formData.name, type: formData.type, api_key: formData.api_key,
-        property_id: formData.property_id, client_id: formData.client_id,
-        client_secret: formData.client_secret, commission_pct: formData.commission_pct,
-        sync_enabled: formData.sync_enabled, updated_at: new Date().toISOString(),
-      }).eq('id', channelModal.channel.id);
+      const { error } = await supabase.from('channels')
+        .update({ ...channelPayload, updated_at: new Date().toISOString() })
+        .eq('id', channelModal.channel.id);
       if (error) throw new Error(error.message);
       showToast('Channel updated', 'success');
     } else {
       const { error } = await supabase.from('channels').insert({
-        hotel_id: currentHotel.id, name: formData.name, type: formData.type,
-        api_key: formData.api_key, property_id: formData.property_id,
-        client_id: formData.client_id, client_secret: formData.client_secret,
-        commission_pct: formData.commission_pct, sync_enabled: formData.sync_enabled,
+        hotel_id: currentHotel.id,
+        ...channelPayload,
         status: 'disconnected',
         ...(tenantId ? { tenant_id: tenantId } : {}),
       });
@@ -234,7 +266,7 @@ export default function ChannelManagerPage() {
       )}
 
       {/* Demo Mode banner */}
-      {topTab === 'my_channels' && channels.some(c => !c.api_key && !(c.client_id && c.client_secret && c.property_id)) && (
+      {topTab === 'my_channels' && channels.some(c => !c.api_key_vault_id && !(c.client_id && c.client_secret_vault_id && c.property_id)) && (
         <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
           <FlaskConical className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>

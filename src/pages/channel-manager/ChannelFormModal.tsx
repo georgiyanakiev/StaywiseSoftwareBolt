@@ -54,7 +54,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
         commission_pct: String(channel.commission_pct ?? 0),
         sync_enabled: channel.sync_enabled ?? true,
       });
-      setSavedSecrets({ api_key: !!(channel.api_key), client_secret: !!(channel.client_secret) });
+      setSavedSecrets({ api_key: !!(channel.api_key_vault_id), client_secret: !!(channel.client_secret_vault_id) });
     }
   }, [channel]);
 

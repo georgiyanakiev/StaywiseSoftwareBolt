@@ -71,14 +71,14 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
       .gt('check_out', today)
       .eq('status', 'checked_in');
 
-    const existingRoomIds = new Set(
-      tasks.filter(t => t.scheduled_date === today).map(t => t.room_id)
+    const existingKeys = new Set(
+      tasks.filter(t => t.scheduled_date === today).map(t => `${t.room_id}:${t.task_type}`)
     );
 
     const toInsert: object[] = [];
 
     for (const r of (checkouts ?? [])) {
-      if (!r.room_id || existingRoomIds.has(r.room_id)) continue;
+      if (!r.room_id || existingKeys.has(`${r.room_id}:checkout_clean`)) continue;
       const room = r.rooms as { number: string; floor: number } | null;
       toInsert.push({
         hotel_id: hotelId,
@@ -91,11 +91,11 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
         priority: 'normal',
         scheduled_date: today,
       });
-      existingRoomIds.add(r.room_id);
+      existingKeys.add(`${r.room_id}:checkout_clean`);
     }
 
     for (const r of (occupied ?? [])) {
-      if (!r.room_id || existingRoomIds.has(r.room_id)) continue;
+      if (!r.room_id || existingKeys.has(`${r.room_id}:stayover_clean`)) continue;
       const room = r.rooms as { number: string; floor: number } | null;
       toInsert.push({
         hotel_id: hotelId,
@@ -108,7 +108,7 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
         priority: 'normal',
         scheduled_date: today,
       });
-      existingRoomIds.add(r.room_id);
+      existingKeys.add(`${r.room_id}:stayover_clean`);
     }
 
     if (toInsert.length > 0) {
