@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Search, Plus, CheckCircle, Circle, ExternalLink, Globe,
-  Settings, X,
+  Settings, X, Zap, Users, Code2, Wrench, FileText,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Channel } from './ChannelCard';
@@ -20,6 +20,9 @@ export interface CatalogItem {
   commission_typical: number | null;
   regions: string[] | null;
   popularity_rank: number;
+  connection_type: string;
+  features: string[];
+  connect_note: string | null;
 }
 
 const CATEGORY_META: Record<string, { label: string; pill: string }> = {
@@ -30,6 +33,14 @@ const CATEGORY_META: Record<string, { label: string; pill: string }> = {
   gds:             { label: 'GDS',             pill: 'bg-sky-50 text-sky-700 border-sky-100' },
   direct:          { label: 'Direct',          pill: 'bg-green-50 text-green-700 border-green-100' },
   corporate:       { label: 'Corporate',       pill: 'bg-orange-50 text-orange-700 border-orange-100' },
+};
+
+const CONNECTION_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  direct_api:      { label: 'Direct API',      icon: Zap,      color: 'bg-blue-50 text-blue-700 border-blue-100' },
+  oauth:           { label: 'OAuth 2.0',        icon: Code2,    color: 'bg-sky-50 text-sky-700 border-sky-100' },
+  xml_api:         { label: 'XML / SOAP API',   icon: Code2,    color: 'bg-gray-100 text-gray-600 border-gray-200' },
+  channel_manager: { label: 'Via Channel Mgr',  icon: Users,    color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  manual:          { label: 'Manual',           icon: FileText, color: 'bg-gray-50 text-gray-500 border-gray-200' },
 };
 
 const REGION_META: Record<string, string> = {
@@ -59,6 +70,8 @@ const REGION_FILTERS = [
   { value: 'us',     label: 'US' },
   { value: 'latam',  label: 'LatAm' },
 ];
+
+const FEATURED_SLUGS = ['booking_com', 'expedia', 'airbnb'];
 
 interface Props {
   hotelChannels: Channel[];
@@ -111,6 +124,10 @@ export default function ChannelCatalog({
     return matchSearch && matchCat && matchRegion;
   });
 
+  const featuredItems  = filtered.filter(i => FEATURED_SLUGS.includes(i.slug));
+  const remainingItems = filtered.filter(i => !FEATURED_SLUGS.includes(i.slug));
+  const showFeatured   = !search && categoryFilter === 'all' && regionFilter === 'all';
+
   const handleAdd = async (item: CatalogItem) => {
     setAdding(item.slug);
     try {
@@ -159,10 +176,9 @@ export default function ChannelCatalog({
   }
 
   return (
-    <div className="space-y-5">
-      {/* ── Toolbar ── */}
+    <div className="space-y-6">
+      {/* Toolbar */}
       <div className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
-        {/* Search row */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
@@ -182,7 +198,6 @@ export default function ChannelCatalog({
           )}
         </div>
 
-        {/* Category pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mr-1">Type</span>
           {CATEGORY_FILTERS.map(f => (
@@ -200,7 +215,6 @@ export default function ChannelCatalog({
           ))}
         </div>
 
-        {/* Region pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mr-1">Region</span>
           {REGION_FILTERS.map(f => (
@@ -219,7 +233,6 @@ export default function ChannelCatalog({
         </div>
       </div>
 
-      {/* Result count + clear */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
           <span className="font-semibold text-gray-700">{filtered.length}</span>
@@ -233,7 +246,6 @@ export default function ChannelCatalog({
         )}
       </div>
 
-      {/* Empty search result */}
       {filtered.length === 0 && (
         <div className="py-16 text-center">
           <Globe className="w-10 h-10 mx-auto mb-3 text-gray-300" />
@@ -244,141 +256,219 @@ export default function ChannelCatalog({
         </div>
       )}
 
-      {/* ── Card grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filtered.map(item => {
-          const hotelCh = getHotelChannel(item);
-          const addedId = getAddedChannelId(item);
-          const isAdded = !!addedId;
-          const isConnected = hotelCh?.status === 'connected';
-          const isAdding = adding === item.slug;
-          const catMeta = CATEGORY_META[item.category];
-          const fallback = getChannelIcon(item.slug ?? item.type);
-          const logoColor = item.logo_color ?? fallback.color;
-          const logoLetter = item.logo_letter ?? fallback.letter;
-
-          return (
-            <div
-              key={item.id}
-              className={`group relative bg-white rounded-2xl border flex flex-col overflow-hidden transition-all duration-200 hover:shadow-lg ${
-                isAdded ? 'border-emerald-200' : 'border-gray-100 hover:border-gray-200'
-              }`}
-              style={isAdded ? {} : {
-                '--hover-color': logoColor,
-              } as React.CSSProperties}
-            >
-              {/* Colored top bar */}
-              <div
-                className="h-1.5 w-full flex-shrink-0"
-                style={{ backgroundColor: isAdded ? '#10b981' : logoColor }}
+      {/* Featured row — Booking.com, Expedia, Airbnb */}
+      {showFeatured && featuredItems.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <h3 className="text-sm font-semibold text-gray-700">Most Popular</h3>
+            <span className="text-xs text-gray-400">Direct API integrations</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {featuredItems.map(item => (
+              <ChannelCard
+                key={item.id}
+                item={item}
+                hotelChannel={getHotelChannel(item)}
+                addedId={getAddedChannelId(item)}
+                isAdding={adding === item.slug}
+                featured
+                onAdd={handleAdd}
+                onConfigure={handleConfigure}
               />
+            ))}
+          </div>
+        </div>
+      )}
 
-              <div className="p-5 flex flex-col gap-3 flex-1">
-                {/* Logo + name */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0 shadow-sm"
-                      style={{ backgroundColor: logoColor }}
-                    >
-                      {logoLetter}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 text-[14px] leading-tight">{item.name}</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {catMeta?.label ?? item.category}
-                      </p>
-                    </div>
-                  </div>
-                  {item.website_url && (
-                    <a
-                      href={item.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
-                      title={`Visit ${item.name}`}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
+      {/* All channels grid */}
+      {(showFeatured ? remainingItems : filtered).length > 0 && (
+        <div className="space-y-3">
+          {showFeatured && <h3 className="text-sm font-semibold text-gray-700">All Channels</h3>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {(showFeatured ? remainingItems : filtered).map(item => (
+              <ChannelCard
+                key={item.id}
+                item={item}
+                hotelChannel={getHotelChannel(item)}
+                addedId={getAddedChannelId(item)}
+                isAdding={adding === item.slug}
+                featured={false}
+                onAdd={handleAdd}
+                onConfigure={handleConfigure}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
-                {/* Commission */}
-                <p className="text-xs text-gray-500">
-                  {item.commission_typical != null && item.commission_typical > 0
-                    ? `Typical commission: ${item.commission_typical}%`
-                    : 'No commission'}
-                </p>
+function ChannelCard({
+  item,
+  hotelChannel,
+  addedId,
+  isAdding,
+  featured,
+  onAdd,
+  onConfigure,
+}: {
+  item: CatalogItem;
+  hotelChannel: Channel | undefined;
+  addedId: string | undefined;
+  isAdding: boolean;
+  featured: boolean;
+  onAdd: (item: CatalogItem) => void;
+  onConfigure: (item: CatalogItem) => void;
+}) {
+  const isAdded     = !!addedId;
+  const isConnected = hotelChannel?.status === 'connected';
+  const catMeta     = CATEGORY_META[item.category];
+  const connMeta    = CONNECTION_META[item.connection_type] ?? CONNECTION_META.direct_api;
+  const ConnIcon    = connMeta.icon;
+  const fallback    = getChannelIcon(item.slug ?? item.type);
+  const logoColor   = item.logo_color ?? fallback.color;
+  const logoLetter  = item.logo_letter ?? fallback.letter;
 
-                {/* Description */}
-                {item.description && (
-                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 flex-1">
-                    {item.description}
-                  </p>
-                )}
+  return (
+    <div
+      className={`group relative bg-white rounded-2xl border flex flex-col overflow-hidden transition-all duration-200 hover:shadow-lg ${
+        isAdded ? 'border-emerald-200' : 'border-gray-100 hover:border-gray-200'
+      }`}
+    >
+      <div
+        className="h-1.5 w-full flex-shrink-0"
+        style={{ backgroundColor: isAdded ? '#10b981' : logoColor }}
+      />
 
-                {/* Region tags */}
-                {(item.regions ?? []).length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {(item.regions ?? []).map(r => (
-                      <span
-                        key={r}
-                        className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-50 border border-gray-100 text-gray-500 uppercase tracking-wide"
-                      >
-                        <Globe className="w-2.5 h-2.5" />
-                        {REGION_META[r] ?? r}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* CTA button */}
-                <div className="mt-auto pt-1">
-                  {isAdded ? (
-                    <div className="flex gap-2">
-                      <div
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border ${
-                          isConnected
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-gray-50 text-gray-600 border-gray-200'
-                        }`}
-                      >
-                        {isConnected ? (
-                          <CheckCircle className="w-3.5 h-3.5" />
-                        ) : (
-                          <Circle className="w-3.5 h-3.5" />
-                        )}
-                        {isConnected ? 'Connected' : 'Disconnected'}
-                      </div>
-                      <button
-                        onClick={() => handleConfigure(item)}
-                        className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                        title="Configure credentials"
-                      >
-                        <Settings className="w-3.5 h-3.5" />
-                        Configure
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleAdd(item)}
-                      disabled={isAdding}
-                      className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 hover:opacity-90 active:scale-[0.98]"
-                      style={{ backgroundColor: logoColor }}
-                    >
-                      {isAdding ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <Plus className="w-3.5 h-3.5" />
-                      )}
-                      {isAdding ? 'Adding...' : 'Add Channel'}
-                    </button>
-                  )}
-                </div>
-              </div>
+      <div className={`p-5 flex flex-col gap-3 flex-1 ${featured ? 'p-5' : ''}`}>
+        {/* Logo + name */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0 shadow-sm"
+              style={{ backgroundColor: logoColor }}
+            >
+              {logoLetter}
             </div>
-          );
-        })}
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 text-[14px] leading-tight">{item.name}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{catMeta?.label ?? item.category}</p>
+            </div>
+          </div>
+          {item.website_url && (
+            <a
+              href={item.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+              title={`Visit ${item.name}`}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </div>
+
+        {/* Connection type + commission */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${connMeta.color}`}>
+            <ConnIcon className="w-2.5 h-2.5" />
+            {connMeta.label}
+          </span>
+          {item.commission_typical != null && item.commission_typical > 0 && (
+            <span className="text-[11px] text-gray-400">{item.commission_typical}% commission</span>
+          )}
+          {item.commission_typical === 0 && (
+            <span className="text-[11px] text-emerald-600 font-medium">No commission</span>
+          )}
+        </div>
+
+        {/* Description */}
+        {item.description && (
+          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+            {item.description}
+          </p>
+        )}
+
+        {/* Features list (featured cards show all, others show 3) */}
+        {(item.features ?? []).length > 0 && (
+          <ul className="space-y-0.5">
+            {(featured ? item.features : item.features.slice(0, 3)).map((f, i) => (
+              <li key={i} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: logoColor }} />
+                {f}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Region tags */}
+        {(item.regions ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {(item.regions ?? []).map(r => (
+              <span
+                key={r}
+                className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-50 border border-gray-100 text-gray-500 uppercase tracking-wide"
+              >
+                <Globe className="w-2.5 h-2.5" />
+                {REGION_META[r] ?? r}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* CTA */}
+        <div className="mt-auto pt-1 space-y-2">
+          {isAdded ? (
+            <div className="flex gap-2">
+              <div
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border ${
+                  isConnected
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-gray-50 text-gray-600 border-gray-200'
+                }`}
+              >
+                {isConnected ? (
+                  <CheckCircle className="w-3.5 h-3.5" />
+                ) : (
+                  <Circle className="w-3.5 h-3.5" />
+                )}
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </div>
+              <button
+                onClick={() => onConfigure(item)}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                title="Configure credentials"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                Configure
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => onAdd(item)}
+              disabled={isAdding}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: logoColor }}
+            >
+              {isAdding ? (
+                <div className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              {isAdding ? 'Adding...' : 'Add Channel'}
+            </button>
+          )}
+
+          {/* Connect note */}
+          {!isAdded && item.connect_note && (
+            <p className="text-[10px] text-gray-400 leading-snug flex items-start gap-1">
+              <Wrench className="w-2.5 h-2.5 flex-shrink-0 mt-0.5" />
+              {item.connect_note}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
