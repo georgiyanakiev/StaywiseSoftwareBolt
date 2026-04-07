@@ -89,6 +89,26 @@ function startOfYear() {
   return isoDate(d);
 }
 
+function tomorrow() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return isoDate(d);
+}
+
+function nightlyRate(r: { total_amount: number; check_in: string; check_out: string }): number {
+  const nights = Math.max(1, Math.round(
+    (new Date(r.check_out).getTime() - new Date(r.check_in).getTime()) / (1000 * 60 * 60 * 24)
+  ));
+  return (r.total_amount || 0) / nights;
+}
+
+function overlapNights(rIn: string, rOut: string, rangeStart: string, rangeEnd: string): number {
+  const s = rIn > rangeStart ? rIn : rangeStart;
+  const e = rOut < rangeEnd ? rOut : rangeEnd;
+  if (e <= s) return 0;
+  return Math.round((new Date(e).getTime() - new Date(s).getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export function useDashboardData(currentHotel: Hotel | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -162,12 +182,24 @@ export function useDashboardData(currentHotel: Hotel | null) {
     const weekStart = startOfWeek();
     const monthStart = startOfMonth();
     const yearStart = startOfYear();
+    const tomorrowStr = tomorrow();
 
     const nonCancelled = reservations.filter(r => r.status !== 'cancelled');
-    const todayRevenue = nonCancelled.filter(r => r.check_in === today).reduce((s, r) => s + (r.total_amount || 0), 0);
-    const weekRevenue = nonCancelled.filter(r => r.check_in >= weekStart).reduce((s, r) => s + (r.total_amount || 0), 0);
-    const monthRevenue = nonCancelled.filter(r => r.check_in >= monthStart).reduce((s, r) => s + (r.total_amount || 0), 0);
-    const ytdRevenue = nonCancelled.filter(r => r.check_in >= yearStart).reduce((s, r) => s + (r.total_amount || 0), 0);
+    const todayRevenue = nonCancelled
+      .filter(r => r.check_in <= today && r.check_out > today)
+      .reduce((s, r) => s + nightlyRate(r), 0);
+    const weekRevenue = nonCancelled.reduce((s, r) => {
+      const o = overlapNights(r.check_in, r.check_out, weekStart, tomorrowStr);
+      return s + nightlyRate(r) * o;
+    }, 0);
+    const monthRevenue = nonCancelled.reduce((s, r) => {
+      const o = overlapNights(r.check_in, r.check_out, monthStart, tomorrowStr);
+      return s + nightlyRate(r) * o;
+    }, 0);
+    const ytdRevenue = nonCancelled.reduce((s, r) => {
+      const o = overlapNights(r.check_in, r.check_out, yearStart, tomorrowStr);
+      return s + nightlyRate(r) * o;
+    }, 0);
 
     setStats({
       totalRooms, availableRooms, occupiedRooms, dirtyRooms, maintenanceRooms,
@@ -193,29 +225,35 @@ export function useDashboardData(currentHotel: Hotel | null) {
 
   async function fetchRevenue() {
     if (!currentHotel) return;
-    const points: RevenueDataPoint[] = [];
+    const daySlots: { date: string; label: string }[] = [];
     for (let i = 13; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      points.push({ date: formatDate(d, 'MMM d'), revenue: 0 });
+      daySlots.push({ date: isoDate(d), label: formatDate(d, 'MMM d') });
     }
 
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 13);
     const { data } = await supabase
       .from('reservations')
-      .select('check_in, total_amount, status')
+      .select('check_in, check_out, total_amount, status')
       .eq('hotel_id', currentHotel.id)
       .neq('status', 'cancelled')
-      .gte('check_in', isoDate(cutoff));
+      .gte('check_out', isoDate(cutoff));
+
+    const revenueMap: Record<string, number> = {};
+    daySlots.forEach(s => { revenueMap[s.date] = 0; });
 
     (data || []).forEach(r => {
-      const label = formatDate(r.check_in, 'MMM d');
-      const pt = points.find(p => p.date === label);
-      if (pt) pt.revenue += r.total_amount || 0;
+      const rate = nightlyRate(r);
+      daySlots.forEach(s => {
+        if (r.check_in <= s.date && r.check_out > s.date) {
+          revenueMap[s.date] += rate;
+        }
+      });
     });
 
-    setRevenueData(points);
+    setRevenueData(daySlots.map(s => ({ date: s.label, revenue: Math.round(revenueMap[s.date]) })));
   }
 
   async function fetchActivity() {
