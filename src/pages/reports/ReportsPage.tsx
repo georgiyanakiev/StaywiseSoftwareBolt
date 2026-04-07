@@ -189,6 +189,7 @@ export default function ReportsPage() {
               totalRevenue={data.plData.totalRevenue}
               totalCosts={data.plData.totalCosts}
               grossProfit={data.plData.grossProfit}
+              monthlyBreakdown={data.plData.monthlyBreakdown}
               currency={currency}
               onExport={handleExport}
             />

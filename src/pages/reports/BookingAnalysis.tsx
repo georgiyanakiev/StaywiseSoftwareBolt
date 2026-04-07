@@ -43,61 +43,88 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-base font-semibold text-gray-900 mb-4">Bookings by Source</h3>
-          <div className="flex items-center gap-6">
-            <div className="h-56 flex-1 min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={bookingSourcePie} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3} dataKey="value">
-                    {bookingSourcePie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)}%`, 'Share']} />
-                </PieChart>
-              </ResponsiveContainer>
+          {bookingSourcePie.length === 0 ? (
+            <div className="flex items-center justify-center h-56">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-500">No booking data</p>
+                <p className="text-xs text-gray-400 mt-1">Source distribution will appear once reservations are recorded</p>
+              </div>
             </div>
-            <div className="space-y-2 min-w-[120px]">
-              {bookingSourcePie.map((entry, i) => (
-                <div key={entry.name} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
-                  <span className="text-xs text-gray-600 flex-1 truncate">{entry.name}</span>
-                  <span className="text-xs font-semibold text-gray-900">{entry.value}%</span>
-                </div>
-              ))}
+          ) : (
+            <div className="flex items-center gap-6">
+              <div className="h-56 flex-1 min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={bookingSourcePie} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3} dataKey="value">
+                      {bookingSourcePie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)}%`, 'Share']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2 min-w-[120px]">
+                {bookingSourcePie.map((entry, i) => (
+                  <div key={entry.name} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-xs text-gray-600 flex-1 truncate">{entry.name}</span>
+                    <span className="text-xs font-semibold text-gray-900">{entry.value}%</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-base font-semibold text-gray-900 mb-1">Cancellation Rate Trend</h3>
-          <p className="text-xs text-gray-500 mb-4">Monthly cancellation rate (%)</p>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={cancellationTrend} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}%`} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)}%`, 'Cancellation Rate']} />
-                <Line type="monotone" dataKey="rate" name="Cancellation Rate" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3, fill: '#ef4444' }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <p className="text-xs text-gray-400 mb-4">Current year — monthly cancellation rate (%)</p>
+          {cancellationTrend.length === 0 ? (
+            <div className="flex items-center justify-center h-56">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-500">Insufficient data</p>
+                <p className="text-xs text-gray-400 mt-1">Cancellation trend will appear once reservation history exists</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={cancellationTrend} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}%`} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)}%`, 'Cancellation Rate']} />
+                  <Line type="monotone" dataKey="rate" name="Cancellation Rate" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3, fill: '#ef4444' }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-base font-semibold text-gray-900 mb-1">Average Stay Length</h3>
-          <p className="text-xs text-gray-500 mb-4">Average nights per booking by month</p>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={avgStayTrend} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}n`} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)} nights`, 'Avg Stay']} />
-                <Line type="monotone" dataKey="avgNights" name="Avg Nights" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3, fill: '#10b981' }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <p className="text-xs text-gray-400 mb-4">Current year — average nights per booking by month</p>
+          {avgStayTrend.length === 0 ? (
+            <div className="flex items-center justify-center h-56">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-500">Insufficient data</p>
+                <p className="text-xs text-gray-400 mt-1">Average stay trend will appear once reservation history exists</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={avgStayTrend} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}n`} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)} nights`, 'Avg Stay']} />
+                  <Line type="monotone" dataKey="avgNights" name="Avg Nights" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3, fill: '#10b981' }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
 

@@ -54,29 +54,40 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-base font-semibold text-gray-900 mb-4">Revenue by Source</h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueBySource} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="source" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [formatCurrency(Number(v || 0), currency), 'Revenue']} />
-                <Bar dataKey="revenue" name="Revenue" radius={[6, 6, 0, 0]}>
-                  {revenueBySource.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-2">
-            {revenueBySource.map((row, i) => (
-              <div key={row.source} className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: SOURCE_COLORS[i % SOURCE_COLORS.length] }} />
-                <span className="text-xs text-gray-600 flex-1">{row.source}</span>
-                <span className="text-xs font-semibold text-gray-900">{formatCurrency(row.revenue, currency)}</span>
-                <span className="text-xs text-gray-400 w-10 text-right">{row.pct.toFixed(1)}%</span>
+          {revenueBySource.length === 0 ? (
+            <div className="flex items-center justify-center h-72">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-500">No revenue data</p>
+                <p className="text-xs text-gray-400 mt-1">Revenue by source will appear once reservations are recorded for this period</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenueBySource} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="source" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [formatCurrency(Number(v || 0), currency), 'Revenue']} />
+                    <Bar dataKey="revenue" name="Revenue" radius={[6, 6, 0, 0]}>
+                      {revenueBySource.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 space-y-2">
+                {revenueBySource.map((row, i) => (
+                  <div key={row.source} className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: SOURCE_COLORS[i % SOURCE_COLORS.length] }} />
+                    <span className="text-xs text-gray-600 flex-1">{row.source}</span>
+                    <span className="text-xs font-semibold text-gray-900">{formatCurrency(row.revenue, currency)}</span>
+                    <span className="text-xs text-gray-400 w-10 text-right">{row.pct.toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -97,36 +108,43 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-4">Room Type Performance</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                {['Room Type', 'Nights Sold', 'Revenue', 'Occupancy', 'ADR', 'RevPAR'].map(h => (
-                  <th key={h} className={`text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 ${h === 'Room Type' ? 'text-left' : 'text-right'}`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {roomTypePerf.map(row => (
-                <tr key={row.roomType} className="hover:bg-gray-50 transition-colors">
-                  <td className="py-3 text-sm font-medium text-gray-900">{row.roomType}</td>
-                  <td className="py-3 text-sm text-gray-600 text-right">{row.nightsSold.toLocaleString()}</td>
-                  <td className="py-3 text-sm font-semibold text-gray-900 text-right">{formatCurrency(row.revenue, currency)}</td>
-                  <td className="py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="w-14 bg-gray-100 rounded-full h-1.5">
-                        <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${row.occupancyPct}%` }} />
-                      </div>
-                      <span className="text-sm text-gray-700 w-10 text-right">{row.occupancyPct.toFixed(0)}%</span>
-                    </div>
-                  </td>
-                  <td className="py-3 text-sm text-gray-700 text-right">{formatCurrency(row.adr, currency)}</td>
-                  <td className="py-3 text-sm font-semibold text-gray-900 text-right">{formatCurrency(row.revpar, currency)}</td>
+        {roomTypePerf.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-sm font-medium text-gray-500">No room type data</p>
+            <p className="text-xs text-gray-400 mt-1">Configure room types in Settings to see performance metrics</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  {['Room Type', 'Nights Sold', 'Revenue', 'Occupancy', 'ADR', 'RevPAR'].map(h => (
+                    <th key={h} className={`text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 ${h === 'Room Type' ? 'text-left' : 'text-right'}`}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {roomTypePerf.map(row => (
+                  <tr key={row.roomType} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 text-sm font-medium text-gray-900">{row.roomType}</td>
+                    <td className="py-3 text-sm text-gray-600 text-right">{row.nightsSold.toLocaleString()}</td>
+                    <td className="py-3 text-sm font-semibold text-gray-900 text-right">{formatCurrency(row.revenue, currency)}</td>
+                    <td className="py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="w-14 bg-gray-100 rounded-full h-1.5">
+                          <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${row.occupancyPct}%` }} />
+                        </div>
+                        <span className="text-sm text-gray-700 w-10 text-right">{row.occupancyPct.toFixed(0)}%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 text-sm text-gray-700 text-right">{formatCurrency(row.adr, currency)}</td>
+                    <td className="py-3 text-sm font-semibold text-gray-900 text-right">{formatCurrency(row.revpar, currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

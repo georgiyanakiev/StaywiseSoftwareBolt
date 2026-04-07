@@ -1,5 +1,5 @@
 import { Download } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '../../lib/utils';
 import type { OccupancyDay, MonthOccupancy, RoomPerf } from './types';
 
@@ -98,24 +98,36 @@ export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPe
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Month-by-Month Comparison</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthOccupancy} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)}%`, '']} />
-              <Legend />
-              <Bar dataKey="occupancyPct" name="This Year" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="prevOccupancyPct" name="Last Year" fill="#e5e7eb" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Monthly Occupancy</h3>
+        <p className="text-xs text-gray-400 mb-4">Current year — months with recorded reservations</p>
+        {monthOccupancy.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-sm font-medium text-gray-500">Insufficient data</p>
+            <p className="text-xs text-gray-400 mt-1">Monthly occupancy will appear once reservations exist for the current year</p>
+          </div>
+        ) : (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthOccupancy} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${Number(v || 0)}%`, '']} />
+                <Bar dataKey="occupancyPct" name="Occupancy %" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-4">Room Performance</h3>
+        {roomPerf.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-sm font-medium text-gray-500">No room data</p>
+            <p className="text-xs text-gray-400 mt-1">Configure rooms in Settings to see individual performance metrics</p>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -146,6 +158,7 @@ export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPe
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );
