@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Printer, X, Building2 } from 'lucide-react';
+import { Printer, X, Building2, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import type { Invoice, InvoiceLine } from './InvoicingPage';
+import { downloadInvoicePdf } from './invoicePdf';
 
 interface Hotel {
   id: string;
@@ -59,6 +60,7 @@ export default function InvoicePrintView({ invoice, hotel, onClose }: Props) {
   const balance = Number(invoice.total_amount) - Number(invoice.paid_amount);
 
   const handlePrint = () => window.print();
+  const handleDownloadPdf = () => downloadInvoicePdf(invoice, hotel, settings);
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-900/70 flex items-start justify-center p-4 overflow-y-auto">
@@ -66,8 +68,11 @@ export default function InvoicePrintView({ invoice, hotel, onClose }: Props) {
         <div className="flex items-center justify-between mb-4 print:hidden">
           <h2 className="text-white font-semibold text-sm">Invoice Preview — {invoice.invoice_number}</h2>
           <div className="flex items-center gap-2">
-            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors">
-              <Printer className="w-4 h-4" /> Print / Download PDF
+            <button onClick={handleDownloadPdf} className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors">
+              <Download className="w-4 h-4" /> Download PDF
+            </button>
+            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-medium hover:bg-white/20 transition-colors">
+              <Printer className="w-4 h-4" /> Print
             </button>
             <button onClick={onClose} className="p-2 text-white/70 hover:text-white transition-colors">
               <X className="w-5 h-5" />
