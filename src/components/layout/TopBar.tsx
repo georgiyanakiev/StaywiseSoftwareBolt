@@ -475,13 +475,13 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin }
                   padding: '10px 16px',
                   fontSize: 14,
                   fontWeight: active ? 500 : 400,
-                  color: active ? '#d97706' : '#f59e0b',
-                  background: active ? '#fef3c7' : 'transparent',
+                  color: active ? '#172e4c' : '#1e3a5f',
+                  background: active ? '#dbeafe' : 'transparent',
                   textDecoration: 'none',
                   transition: 'background 0.15s',
                 })}
               >
-                <Shield style={{ width: 16, height: 16, flexShrink: 0, color: '#f59e0b' }} />
+                <Shield style={{ width: 16, height: 16, flexShrink: 0, color: '#1e3a5f' }} />
                 <span>Super Admin</span>
               </NavLink>
             </div>
@@ -730,14 +730,14 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
                           borderRadius: 6,
                           fontSize: 12,
                           fontWeight: isActive ? 500 : 400,
-                          color: isActive ? '#d97706' : '#f59e0b',
-                          background: isActive ? '#fef3c7' : 'transparent',
+                          color: isActive ? '#172e4c' : '#1e3a5f',
+                          background: isActive ? '#dbeafe' : 'transparent',
                           textDecoration: 'none',
                           whiteSpace: 'nowrap',
                           flexShrink: 0,
                         })}
                       >
-                        <Shield style={{ width: 13, height: 13, flexShrink: 0 }} />
+                        <Shield style={{ width: 13, height: 13, flexShrink: 0, color: '#1e3a5f' }} />
                         Super Admin
                       </NavLink>
                     </>
