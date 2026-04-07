@@ -156,7 +156,7 @@ export function useDashboardData(currentHotel: Hotel | null) {
     const totalRooms = rooms.length;
     const availableRooms = rooms.filter(r => r.status === 'available').length;
     const occupiedRooms = rooms.filter(r => r.status === 'occupied').length;
-    const dirtyRooms = rooms.filter(r => r.status === 'dirty' || r.status === 'clean').length;
+    const dirtyRooms = rooms.filter(r => r.status === 'dirty').length;
     const maintenanceRooms = rooms.filter(r => r.status === 'maintenance' || r.status === 'out_of_service').length;
     const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
