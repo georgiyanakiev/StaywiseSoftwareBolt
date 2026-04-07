@@ -104,7 +104,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
             <select
               value={form.type}
               onChange={e => handleTypeChange(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
             >
               {TYPE_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -120,7 +120,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               required
               placeholder="e.g. Booking.com"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
             />
           </div>
 
@@ -132,7 +132,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
                 value={form.property_id}
                 onChange={e => setForm(f => ({ ...f, property_id: e.target.value }))}
                 placeholder="123456"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
               />
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
                 step="0.1"
                 value={form.commission_pct}
                 onChange={e => setForm(f => ({ ...f, commission_pct: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
               />
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
               value={form.api_key}
               onChange={e => setForm(f => ({ ...f, api_key: e.target.value }))}
               placeholder="sk-..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
             />
           </div>
 
@@ -167,7 +167,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
                 type="text"
                 value={form.client_id}
                 onChange={e => setForm(f => ({ ...f, client_id: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
               />
             </div>
             <div>
@@ -177,7 +177,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
                   type={showSecret ? 'text' : 'password'}
                   value={form.client_secret}
                   onChange={e => setForm(f => ({ ...f, client_secret: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
                 />
                 <button
                   type="button"
@@ -195,7 +195,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
               type="checkbox"
               checked={form.sync_enabled}
               onChange={e => setForm(f => ({ ...f, sync_enabled: e.target.checked }))}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded text-[#1e3a5f] focus:ring-[#2d6b96]"
             />
             <span className="text-sm text-gray-700">Enable automatic sync</span>
           </label>
@@ -208,7 +208,7 @@ export default function ChannelFormModal({ channel, onClose, onSave }: Props) {
           <button
             onClick={handleSubmit}
             disabled={saving || !form.name.trim()}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-5 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
           >
             {saving ? 'Saving...' : channel ? 'Save Changes' : 'Add Channel'}
           </button>

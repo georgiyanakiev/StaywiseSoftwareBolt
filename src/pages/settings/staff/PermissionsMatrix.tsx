@@ -154,7 +154,7 @@ export default function PermissionsMatrix({ activeRole, onRoleChange }: Props) {
             onClick={() => onRoleChange(role)}
             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               activeRole === role
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#1e3a5f] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -193,7 +193,7 @@ export default function PermissionsMatrix({ activeRole, onRoleChange }: Props) {
                           title={isDisabled ? 'Owner always has full access' : ''}
                           className={`w-5 h-5 rounded flex items-center justify-center mx-auto transition-colors ${
                             checked
-                              ? 'bg-blue-600 text-white'
+                              ? 'bg-[#1e3a5f] text-white'
                               : 'bg-white border-2 border-gray-300 hover:border-blue-400'
                           } ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                         >

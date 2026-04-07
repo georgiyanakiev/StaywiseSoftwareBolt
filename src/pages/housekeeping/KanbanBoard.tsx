@@ -151,7 +151,7 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
           <button
             onClick={generateTasks}
             disabled={generating}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-70"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors disabled:opacity-70"
           >
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             Generate Today's Tasks
@@ -262,7 +262,7 @@ function TaskCard({ task, upsells, onClick, onAdvance }: {
       {nextLabel && (
         <button
           onClick={e => onAdvance(e, task)}
-          className="w-full flex items-center justify-center gap-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded py-1 font-medium transition-colors mt-1"
+          className="w-full flex items-center justify-center gap-1 text-xs text-[#1e3a5f] bg-blue-50 hover:bg-blue-100 rounded py-1 font-medium transition-colors mt-1"
         >
           <ChevronRight className="w-3 h-3" />
           {nextLabel}

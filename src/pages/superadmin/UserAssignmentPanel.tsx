@@ -233,7 +233,7 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
 
       <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
             {initials}
           </div>
           <div className="min-w-0">
@@ -321,7 +321,7 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
                       <button
                         onClick={() => handleToggle(tenant)}
                         disabled={isSaving}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${isAssigned ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${isAssigned ? 'bg-[#1e3a5f]' : 'bg-gray-200'}`}
                       >
                         {isSaving ? (
                           <span className="absolute inset-0 flex items-center justify-center">

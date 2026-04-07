@@ -151,7 +151,7 @@ export default function LodgifyPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-[#1e3a5f] flex items-center justify-center">
             <Link2 className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -223,7 +223,7 @@ export default function LodgifyPage() {
           </div>
           <button
             onClick={() => navigate('/settings')}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="text-sm font-medium text-[#1e3a5f] hover:text-[#172e4c]"
           >
             Enable now
           </button>
@@ -272,7 +272,7 @@ export default function LodgifyPage() {
               <button
                 onClick={() => triggerSync('inbound')}
                 disabled={!!syncing || !isEnabled}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1e3a5f] text-white text-xs font-semibold hover:bg-[#172e4c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               >
                 {syncing === 'inbound'
                   ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" />Syncing...</>

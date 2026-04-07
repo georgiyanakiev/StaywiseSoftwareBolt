@@ -132,7 +132,7 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
         <select
           value={selectedTenantId}
           onChange={e => setSelectedTenantId(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
         >
           {tenants.map(t => (
             <option key={t.id} value={t.id}>{t.name}</option>
@@ -164,14 +164,14 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
                 value={addSearch}
                 onChange={e => setAddSearch(e.target.value)}
                 placeholder="Search users..."
-                className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={addUserId}
                 onChange={e => setAddUserId(e.target.value)}
-                className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
               >
                 <option value="">Select user...</option>
                 {availableUsers.map(u => (
@@ -183,7 +183,7 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
               <select
                 value={addRole}
                 onChange={e => setAddRole(e.target.value as AssignmentRole)}
-                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
               >
                 {ASSIGNMENT_ROLES.map(r => (
                   <option key={r.value} value={r.value}>{r.label}</option>
@@ -192,7 +192,7 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
               <button
                 onClick={handleAddUser}
                 disabled={!addUserId || adding}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] rounded-lg transition-colors disabled:opacity-50"
               >
                 {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
               </button>

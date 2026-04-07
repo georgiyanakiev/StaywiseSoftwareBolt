@@ -119,13 +119,13 @@ export default function LoginPage() {
                 <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
                   <button
                     onClick={() => setLang('en')}
-                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'en' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'en' ? 'bg-[#1e3a5f] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                   >
                     EN
                   </button>
                   <button
                     onClick={() => setLang('bg')}
-                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'bg' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'bg' ? 'bg-[#1e3a5f] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                   >
                     BG
                   </button>

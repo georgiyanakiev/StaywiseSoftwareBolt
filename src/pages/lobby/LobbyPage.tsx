@@ -51,7 +51,7 @@ export default function LobbyPage() {
       {entering && (
         <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-gray-500 font-medium">Loading hotel...</p>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function LobbyPage() {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#1e3a5f] rounded-lg flex items-center justify-center">
               <Hotel className="w-4.5 h-4.5 text-white" style={{ width: '18px', height: '18px' }} />
             </div>
             <span className="text-[15px] font-semibold text-gray-900 tracking-tight">StayWise</span>
@@ -67,7 +67,7 @@ export default function LobbyPage() {
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
                 <span className="text-xs font-semibold text-white">{getAvatarInitials(user?.email ?? 'U')}</span>
               </div>
               <span className="text-sm text-gray-600 hidden sm:block">{user?.email}</span>
@@ -102,7 +102,7 @@ export default function LobbyPage() {
           {superAdmin && (
             <button
               onClick={() => navigate('/superadmin')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
               Add Hotel
@@ -154,7 +154,7 @@ function EmptyState({ superAdmin, onAddHotel }: { superAdmin: boolean; onAddHote
       {superAdmin && (
         <button
           onClick={onAddHotel}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-sm font-medium rounded-xl transition-colors"
         >
           <Plus className="w-4 h-4" />
           Add Hotel

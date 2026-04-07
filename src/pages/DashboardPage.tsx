@@ -69,7 +69,7 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500 mt-0.5">{formatDate(new Date(), 'EEEE, MMMM d, yyyy')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
+          <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
             <LogIn className="w-3.5 h-3.5" /> {t.dashboard.quickCheckIn}
           </Link>
           <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
@@ -151,7 +151,7 @@ export default function DashboardPage() {
 
         <OperaTile
           title={t.dashboard.inHouse}
-          accentColor="bg-blue-600"
+          accentColor="bg-[#1e3a5f]"
           icon={<Users className="w-5 h-5 text-white" />}
           link="/reservations"
           linkLabel={t.dashboard.viewDetails}
@@ -246,7 +246,7 @@ export default function DashboardPage() {
               const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : pct >= 40 ? 'bg-blue-500' : 'bg-emerald-500';
               return (
                 <div key={day.date} className="flex items-center gap-2">
-                  <span className={`text-xs w-8 font-medium ${day.isToday ? 'text-blue-600' : 'text-gray-500'}`}>{day.label}</span>
+                  <span className={`text-xs w-8 font-medium ${day.isToday ? 'text-[#1e3a5f]' : 'text-gray-500'}`}>{day.label}</span>
                   <span className="text-xs text-gray-400 w-5">{day.dayNum}</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
@@ -269,7 +269,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl border border-gray-100 p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-gray-900">{t.dashboard.recentActivity}</h2>
-            <Link to="/reservations" className="text-xs font-medium text-blue-600 hover:text-blue-700">{t.dashboard.viewAll}</Link>
+            <Link to="/reservations" className="text-xs font-medium text-[#1e3a5f] hover:text-[#172e4c]">{t.dashboard.viewAll}</Link>
           </div>
           <ActivityFeed items={recentActivity} />
         </div>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-gray-900 mb-4">{t.dashboard.quickActions}</h2>
           <div className="space-y-2">
             {[
-              { label: t.dashboard.newReservation, to: '/reservations', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700 text-white' },
+              { label: t.dashboard.newReservation, to: '/reservations', icon: CalendarDays, color: 'bg-[#1e3a5f] hover:bg-[#172e4c] text-white' },
               { label: t.dashboard.quickCheckIn, to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
               { label: t.nav.frontDesk, to: '/front-desk', icon: ClipboardList, color: 'bg-cyan-600 hover:bg-cyan-700 text-white' },
               { label: t.nav.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
@@ -319,7 +319,7 @@ function OperaTile({
         {children}
       </div>
       <div className="px-4 pb-3">
-        <Link to={link} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+        <Link to={link} className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium flex items-center gap-1">
           {linkLabel} <ArrowRightCircle className="w-3.5 h-3.5" />
         </Link>
       </div>

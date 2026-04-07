@@ -705,7 +705,7 @@ export default function BookingWidgetPage() {
                                 disabled={savingUpsell}
                                 className={`flex items-center gap-1 text-xs px-3 py-1 rounded-full font-medium transition-colors ${
                                   added
-                                    ? 'bg-blue-600 text-white'
+                                    ? 'bg-[#1e3a5f] text-white'
                                     : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
                                 }`}
                               >

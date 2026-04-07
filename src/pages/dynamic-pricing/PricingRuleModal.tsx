@@ -199,7 +199,7 @@ export default function PricingRuleModal({ open, rule, roomTypes, onClose, onSav
                   onClick={() => toggleDow(idx)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     form.days_of_week.includes(idx)
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-[#1e3a5f] text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -239,7 +239,7 @@ export default function PricingRuleModal({ open, rule, roomTypes, onClose, onSav
         </div>
 
         <div className="flex items-center gap-2">
-          <input type="checkbox" id="active" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded text-blue-600" />
+          <input type="checkbox" id="active" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 rounded text-[#1e3a5f]" />
           <label htmlFor="active" className="text-sm text-gray-700">Rule is active</label>
         </div>
 

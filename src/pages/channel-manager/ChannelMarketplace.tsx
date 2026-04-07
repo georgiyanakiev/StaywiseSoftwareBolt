@@ -178,7 +178,7 @@ export default function ChannelCatalog({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -194,7 +194,7 @@ export default function ChannelCatalog({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search channels..."
-            className="w-full pl-9 pr-9 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full pl-9 pr-9 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
           />
           {search && (
             <button
@@ -214,7 +214,7 @@ export default function ChannelCatalog({
               onClick={() => setCategoryFilter(f.value)}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                 categoryFilter === f.value
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'
               }`}
             >
@@ -573,7 +573,7 @@ function AddChannelModal({
                 value={propertyId}
                 onChange={e => setPropertyId(e.target.value)}
                 placeholder="e.g. 12345678"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
               />
             </div>
             <div>
@@ -582,7 +582,7 @@ function AddChannelModal({
                 type="text"
                 value={clientId}
                 onChange={e => setClientId(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
               />
             </div>
           </div>
@@ -594,7 +594,7 @@ function AddChannelModal({
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
               placeholder="Your API key"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
             />
           </div>
 
@@ -605,7 +605,7 @@ function AddChannelModal({
                 type={showSecret ? 'text' : 'password'}
                 value={clientSecret}
                 onChange={e => setClientSecret(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] font-mono"
               />
               <button
                 type="button"

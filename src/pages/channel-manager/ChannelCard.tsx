@@ -90,7 +90,7 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
             isConnected
               ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-[#1e3a5f] text-white hover:bg-[#172e4c]'
           }`}
         >
           {toggling ? (

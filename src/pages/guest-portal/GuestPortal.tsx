@@ -194,7 +194,7 @@ export default function GuestPortal() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.strokeStyle = '#1e293b';
+    ctx.strokeStyle = '#1e3a5f';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -270,7 +270,7 @@ export default function GuestPortal() {
           {hotel?.logo_url ? (
             <img src={hotel.logo_url} alt={hotel.name} className="h-12 mx-auto mb-2 object-contain" />
           ) : (
-            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+            <div className="w-12 h-12 bg-[#1e3a5f] rounded-xl flex items-center justify-center mx-auto mb-2">
               <Building2 className="w-7 h-7 text-white" />
             </div>
           )}
@@ -284,7 +284,7 @@ export default function GuestPortal() {
                 <div key={s.n} className="flex items-center flex-1">
                   <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all ${
                     step > s.n ? 'bg-emerald-500 text-white' :
-                    step === s.n ? 'bg-blue-600 text-white' :
+                    step === s.n ? 'bg-[#1e3a5f] text-white' :
                     'bg-gray-200 text-gray-400'
                   }`}>
                     {step > s.n ? <CheckCircle2 className="w-4 h-4" /> : s.n}
@@ -553,7 +553,7 @@ function StepPreferences({ data, onChange, roomPrefs, togglePref, onNext, onBack
               onClick={() => togglePref(p)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
                 data.roomPrefs.includes(p)
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
               }`}
             >
@@ -580,7 +580,7 @@ function StepPreferences({ data, onChange, roomPrefs, togglePref, onNext, onBack
               onClick={() => set('celebration', c === 'None' ? '' : c)}
               className={`py-2 px-3 rounded-xl text-xs font-medium transition-colors border ${
                 (c === 'None' ? !data.celebration : data.celebration === c)
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-blue-200'
               }`}
             >
@@ -705,7 +705,7 @@ function StepDone({ hotel, reservation, dbUpsellItems, selectedDbUpsells, saving
               {'image_url' in item && item.image_url ? (
                 <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
               ) : (
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-blue-600' : 'bg-white border border-gray-200'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-[#1e3a5f]' : 'bg-white border border-gray-200'}`}>
                   <Star className={`w-5 h-5 ${active ? 'text-white' : 'text-gray-400'}`} />
                 </div>
               )}
@@ -719,7 +719,7 @@ function StepDone({ hotel, reservation, dbUpsellItems, selectedDbUpsells, saving
                   onClick={() => dbUpsellItems.length > 0 && onToggleDbUpsell(item as typeof dbUpsellItems[0])}
                   disabled={savingDbUpsell && dbUpsellItems.length > 0}
                   className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
-                    active ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
+                    active ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
                   }`}
                 >
                   {active ? 'Added' : 'Add to stay'}

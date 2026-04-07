@@ -178,7 +178,7 @@ function AcceptancePanel({
           <button
             onClick={onAccept}
             disabled={accepting}
-            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-[#1e3a5f] text-white text-sm font-semibold rounded-lg hover:bg-[#172e4c] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {accepting ? (
               <>
@@ -239,7 +239,7 @@ export default function DpaPage() {
       <div className="border-b border-gray-200 bg-white sticky top-0 z-40 print:hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <Link to="/lobby" className="flex items-center gap-2.5 text-gray-900 hover:opacity-80 transition-opacity">
-            <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center">
+            <div className="w-7 h-7 bg-[#1e3a5f] rounded-md flex items-center justify-center">
               <Building2 className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-semibold">StayWise</span>
@@ -256,7 +256,7 @@ export default function DpaPage() {
               <button
                 onClick={accept}
                 disabled={accepting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e3a5f] text-white text-xs font-semibold hover:bg-[#172e4c] transition-colors disabled:opacity-60"
               >
                 <Check className="w-3.5 h-3.5" />
                 I accept this DPA

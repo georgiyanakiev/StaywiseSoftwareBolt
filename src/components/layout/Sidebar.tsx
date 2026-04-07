@@ -94,7 +94,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { tenant } = useTenant();
   const location = useLocation();
 
-  const brandColor = tenant?.primary_color ?? '#2563eb';
+  const brandColor = tenant?.primary_color ?? '#1e3a5f';
   const displayName = tenant?.name ?? 'StayWise PMS';
 
   const isActive = (to: string) =>
@@ -169,13 +169,13 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       <div className="px-2 pb-4 border-t border-gray-100 pt-3">
         {!collapsed && (
           <div className="flex items-center gap-0.5 mb-3 px-1">
-            <button onClick={() => setLang('en')} className={`flex-1 py-1 text-xs font-semibold rounded-l-md border transition-colors ${lang === 'en' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>EN</button>
-            <button onClick={() => setLang('bg')} className={`flex-1 py-1 text-xs font-semibold rounded-r-md border-t border-b border-r transition-colors ${lang === 'bg' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>BG</button>
+            <button onClick={() => setLang('en')} className={`flex-1 py-1 text-xs font-semibold rounded-l-md border transition-colors ${lang === 'en' ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>EN</button>
+            <button onClick={() => setLang('bg')} className={`flex-1 py-1 text-xs font-semibold rounded-r-md border-t border-b border-r transition-colors ${lang === 'bg' ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>BG</button>
           </div>
         )}
         {!collapsed && staff && (
           <div className="flex items-center gap-2.5 px-2 py-2 mb-2 rounded-lg bg-gray-50">
-            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 flex-shrink-0">
+            <div className="w-7 h-7 rounded-full bg-[#eef3f9] flex items-center justify-center text-xs font-bold text-[#1e3a5f] flex-shrink-0">
               {staff.first_name[0]}{staff.last_name[0]}
             </div>
             <div className="min-w-0 flex-1">

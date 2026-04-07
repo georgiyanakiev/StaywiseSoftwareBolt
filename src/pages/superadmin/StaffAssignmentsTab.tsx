@@ -137,7 +137,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
               </div>
             </div>
             <div className="flex justify-end pt-1">
-              <button onClick={onClose} className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+              <button onClick={onClose} className="px-5 py-2 text-sm font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] rounded-lg transition-colors">
                 Done
               </button>
             </div>
@@ -170,7 +170,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
               onChange={e => { setEmail(e.target.value); if (emailTouched) setEmailTouched(true); }}
               onBlur={() => setEmailTouched(true)}
               className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
-                emailError ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-500'
+                emailError ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-[#2d6b96]'
               }`}
               placeholder="user@example.com"
               autoFocus
@@ -191,7 +191,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
               onChange={e => { setTenantId(e.target.value); setTenantTouched(true); }}
               onBlur={() => setTenantTouched(true)}
               className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
-                tenantError ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-500'
+                tenantError ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-[#2d6b96]'
               }`}
             >
               <option value="">— Select a hotel —</option>
@@ -213,7 +213,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
             <button
               type="submit"
               disabled={inviting || !!emailError || !!tenantError}
-              className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
+              className="px-5 py-2 text-sm font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] rounded-lg transition-colors disabled:opacity-60"
             >
               {inviting ? 'Creating...' : 'Create User'}
             </button>
@@ -286,7 +286,7 @@ export default function StaffAssignmentsTab({ tenants }: Props) {
           </button>
           <button
             onClick={() => setShowInvite(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] rounded-lg transition-colors"
           >
             <UserPlus className="w-3.5 h-3.5" />
             Invite User
@@ -311,7 +311,7 @@ export default function StaffAssignmentsTab({ tenants }: Props) {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search users..."
-                  className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
                 />
               </div>
             </div>
@@ -341,7 +341,7 @@ export default function StaffAssignmentsTab({ tenants }: Props) {
                         onClick={() => setSelectedUser(user)}
                         className={`w-full text-left flex items-center gap-3 px-3 py-2.5 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${isSelected ? 'bg-blue-600' : 'bg-gray-700'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${isSelected ? 'bg-[#1e3a5f]' : 'bg-gray-700'}`}>
                           {initials}
                         </div>
                         <div className="min-w-0 flex-1">

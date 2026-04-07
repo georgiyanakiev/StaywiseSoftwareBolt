@@ -32,7 +32,7 @@ export default function PendingApprovalPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md text-center">
           <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#1e3a5f] rounded-lg flex items-center justify-center">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-semibold text-gray-900">StayWise</span>

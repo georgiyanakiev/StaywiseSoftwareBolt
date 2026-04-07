@@ -188,7 +188,7 @@ export default function ChannelManagerPage() {
             <button
               onClick={syncAllChannels}
               disabled={syncingAll || connectedCount === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] disabled:opacity-50 transition-colors"
             >
               <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
               {syncingAll ? 'Syncing...' : 'Sync All'}
@@ -254,7 +254,7 @@ export default function ChannelManagerPage() {
                 onClick={() => setSubTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
                   subTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
+                    ? 'border-[#1e3a5f] text-[#1e3a5f]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -277,7 +277,7 @@ export default function ChannelManagerPage() {
                   </p>
                   <button
                     onClick={() => setTopTab('catalog')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1e3a5f] text-white text-sm font-medium rounded-xl hover:bg-[#172e4c] transition-colors"
                   >
                     <BookOpen className="w-4 h-4" />
                     Browse Channel Catalog →

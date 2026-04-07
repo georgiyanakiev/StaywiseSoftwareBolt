@@ -103,7 +103,7 @@ export default function GuestListPage() {
             <button onClick={() => setShowFilters(p => !p)} className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${showFilters || activeFilterCount > 0 ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
               <Filter className="w-4 h-4" />
               Filters
-              {activeFilterCount > 0 && <span className="bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{activeFilterCount}</span>}
+              {activeFilterCount > 0 && <span className="bg-[#1e3a5f] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{activeFilterCount}</span>}
             </button>
             {activeFilterCount > 0 && (
               <button onClick={() => setFilters(DEFAULT_FILTERS)} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
@@ -222,7 +222,7 @@ export default function GuestListPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {(g.tags || []).slice(0, 3).map(tag => (
-                            <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">
+                            <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-[#1e3a5f]">
                               <Tag className="w-2.5 h-2.5" />{tag}
                             </span>
                           ))}

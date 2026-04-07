@@ -109,7 +109,7 @@ export default function CookieConsent() {
         >
           <div
             className="w-full"
-            style={{ backgroundColor: '#1e293b' }}
+            style={{ backgroundColor: '#1e3a5f' }}
           >
             <div className="max-w-6xl mx-auto px-5 py-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">

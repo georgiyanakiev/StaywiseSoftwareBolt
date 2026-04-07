@@ -74,7 +74,7 @@ export default function DpaAcceptanceModal({ userId, tenantId, hotelName, onAcce
               />
               <div
                 className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                  checked ? 'bg-blue-600 border-blue-600' : 'border-gray-300 group-hover:border-blue-400'
+                  checked ? 'bg-[#1e3a5f] border-[#1e3a5f]' : 'border-gray-300 group-hover:border-blue-400'
                 }`}
               >
                 {checked && <Check className="w-3 h-3 text-white" />}
@@ -98,7 +98,7 @@ export default function DpaAcceptanceModal({ userId, tenantId, hotelName, onAcce
           <button
             onClick={handleAccept}
             disabled={!checked || accepting}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1e3a5f] text-white text-sm font-semibold rounded-xl hover:bg-[#172e4c] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {accepting ? (
               <>

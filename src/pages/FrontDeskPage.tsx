@@ -93,7 +93,7 @@ export default function FrontDeskPage() {
           </Link>
           <Link
             to="/reservations"
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
           >
             <CalendarDays className="w-3.5 h-3.5" /> New Booking
           </Link>
@@ -217,7 +217,7 @@ export default function FrontDeskPage() {
               <RoomStatusBar label="Clean" value={kpis.cleanRooms} total={kpis.totalRooms} color="bg-teal-400" textColor="text-teal-700" />
               <RoomStatusBar label="Maintenance" value={kpis.maintenanceRooms} total={kpis.totalRooms} color="bg-gray-400" textColor="text-gray-600" />
             </div>
-            <Link to="/rooms" className="mt-4 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/rooms" className="mt-4 flex items-center gap-1 text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium">
               Manage rooms <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -240,7 +240,7 @@ export default function FrontDeskPage() {
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
             <div className="space-y-2">
               {[
-                { label: 'New Reservation', to: '/reservations', icon: CalendarDays, color: 'bg-blue-600 hover:bg-blue-700 text-white' },
+                { label: 'New Reservation', to: '/reservations', icon: CalendarDays, color: 'bg-[#1e3a5f] hover:bg-[#172e4c] text-white' },
                 { label: 'Walk-in Check-in', to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
                 { label: 'Housekeeping', to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
                 { label: 'Guest Directory', to: '/guests', icon: Users, color: 'bg-slate-600 hover:bg-slate-700 text-white' },
@@ -385,7 +385,7 @@ function ArrivalsTable({ items }: { items: ArrivalItem[] }) {
                 <StatusBadge status={item.status} />
               </td>
               <td className="px-4 py-3">
-                <Link to="/reservations" className="text-xs text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap">
+                <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
                   View
                 </Link>
               </td>
@@ -450,7 +450,7 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
                 <StatusBadge status={item.status} />
               </td>
               <td className="px-4 py-3">
-                <Link to="/reservations" className="text-xs text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap">
+                <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
                   View
                 </Link>
               </td>
@@ -514,7 +514,7 @@ function StayoversTable({ items }: { items: StayoverItem[] }) {
                 {formatCurrency(item.totalAmount)}
               </td>
               <td className="px-4 py-3">
-                <Link to="/reservations" className="text-xs text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap">
+                <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
                   View
                 </Link>
               </td>

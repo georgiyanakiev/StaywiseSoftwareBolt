@@ -22,7 +22,7 @@ export default function AvailabilityCalendar({ days }: Props) {
 
         return (
           <div key={day.date} className="flex flex-col items-center gap-1 group relative">
-            <span className={`text-[10px] font-medium ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>
+            <span className={`text-[10px] font-medium ${day.isToday ? 'text-[#1e3a5f]' : 'text-gray-400'}`}>
               {day.label}
             </span>
             <div className="relative w-full">
@@ -36,10 +36,10 @@ export default function AvailabilityCalendar({ days }: Props) {
                 />
               </div>
               {day.isToday && (
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-600" />
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#1e3a5f]" />
               )}
             </div>
-            <span className={`text-[11px] font-semibold ${day.isToday ? 'text-blue-600' : 'text-gray-700'}`}>
+            <span className={`text-[11px] font-semibold ${day.isToday ? 'text-[#1e3a5f]' : 'text-gray-700'}`}>
               {day.dayNum}
             </span>
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">

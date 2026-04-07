@@ -217,7 +217,7 @@ export default function BookingComTab() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
             <Link2 className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -233,7 +233,7 @@ export default function BookingComTab() {
               type="button"
               onClick={() => isAdmin && handleToggle('is_enabled')}
               disabled={!isAdmin || credentialsMissing}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.is_enabled ? 'bg-blue-600' : 'bg-gray-300'} disabled:opacity-40 disabled:cursor-not-allowed`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.is_enabled ? 'bg-[#1e3a5f]' : 'bg-gray-300'} disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.is_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
@@ -264,7 +264,7 @@ export default function BookingComTab() {
               onClick={() => setActiveSection(section)}
               className={`border-b-2 px-1 py-2.5 text-sm font-medium transition-colors capitalize ${
                 activeSection === section
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-[#1e3a5f] text-[#1e3a5f]'
                   : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
               }`}
             >
@@ -354,7 +354,7 @@ export default function BookingComTab() {
                   type="button"
                   onClick={() => isAdmin && handleToggle('sync_reservations')}
                   disabled={!isAdmin}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${form.sync_reservations ? 'bg-blue-600' : 'bg-gray-300'} disabled:opacity-40`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${form.sync_reservations ? 'bg-[#1e3a5f]' : 'bg-gray-300'} disabled:opacity-40`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.sync_reservations ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -371,7 +371,7 @@ export default function BookingComTab() {
                   type="button"
                   onClick={() => isAdmin && handleToggle('sync_availability')}
                   disabled={!isAdmin}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${form.sync_availability ? 'bg-blue-600' : 'bg-gray-300'} disabled:opacity-40`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${form.sync_availability ? 'bg-[#1e3a5f]' : 'bg-gray-300'} disabled:opacity-40`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.sync_availability ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>

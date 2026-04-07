@@ -191,7 +191,7 @@ export default function SuperAdminPage() {
       <header className="bg-gray-950 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#1e3a5f] rounded-lg flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -249,7 +249,7 @@ export default function SuperAdminPage() {
           {tab === 'hotels' && (
             <button
               onClick={() => setModal({ mode: 'add' })}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
               Add Hotel
@@ -265,7 +265,7 @@ export default function SuperAdminPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search hotels, subdomains, owners..."
-                className="flex-1 max-w-sm border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="flex-1 max-w-sm border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
               />
               <button
                 onClick={fetchTenants}

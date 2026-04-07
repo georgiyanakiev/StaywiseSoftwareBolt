@@ -66,7 +66,7 @@ export default function InvoicePrintView({ invoice, hotel, onClose }: Props) {
         <div className="flex items-center justify-between mb-4 print:hidden">
           <h2 className="text-white font-semibold text-sm">Invoice Preview — {invoice.invoice_number}</h2>
           <div className="flex items-center gap-2">
-            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors">
               <Printer className="w-4 h-4" /> Print / Download PDF
             </button>
             <button onClick={onClose} className="p-2 text-white/70 hover:text-white transition-colors">
@@ -80,7 +80,7 @@ export default function InvoicePrintView({ invoice, hotel, onClose }: Props) {
             <div className="flex items-start justify-between mb-10">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-[#1e3a5f] rounded-xl flex items-center justify-center flex-shrink-0">
                     <Building2 className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -226,7 +226,7 @@ export default function InvoicePrintView({ invoice, hotel, onClose }: Props) {
 
             {(settings?.bank_name || settings?.bank_iban) && (
               <div className="border border-blue-100 bg-blue-50 rounded-xl p-5 mb-6">
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">Payment Information</p>
+                <p className="text-xs font-semibold text-[#1e3a5f] uppercase tracking-widest mb-3">Payment Information</p>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm">
                   {settings.bank_name && <><span className="text-gray-500">Bank</span><span className="font-medium text-gray-800">{settings.bank_name}</span></>}
                   {settings.bank_iban && <><span className="text-gray-500">IBAN</span><span className="font-mono font-medium text-gray-800">{settings.bank_iban}</span></>}

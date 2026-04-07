@@ -173,7 +173,7 @@ function LanguageSwitcher() {
               key={l}
               onClick={() => { setLang(l); setOpen(false); }}
               className={`flex items-center gap-2 w-[calc(100%-8px)] mx-1 px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
-                lang === l ? 'font-semibold text-[#3b82f6]' : 'text-[#374151] hover:bg-[#f9fafb]'
+                lang === l ? 'font-semibold text-[#1e3a5f]' : 'text-[#374151] hover:bg-[#f9fafb]'
               }`}
             >
               <span className="text-[11px] font-bold w-5">{l.toUpperCase()}</span>
@@ -271,12 +271,12 @@ function UserAvatar({ brandColor, userRole, dark }: { brandColor: string; userRo
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center p-0.5 rounded-full transition-all hover:ring-2 hover:ring-offset-1 hover:ring-offset-[#1e293b]"
+        className="flex items-center p-0.5 rounded-full transition-all hover:ring-2 hover:ring-offset-1 hover:ring-offset-[#1e3a5f]"
         style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
       >
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-semibold text-white flex-shrink-0"
-          style={{ background: `linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)` }}
+          style={{ background: `linear-gradient(135deg, #1e3a5f 0%, #2d6b96 100%)` }}
         >
           {initials}
         </div>
@@ -312,7 +312,7 @@ function R2Link({ item, brandColor }: { item: NavItem; brandColor: string }) {
       to={item.to}
       style={active ? { color: brandColor, backgroundColor: `${brandColor}14` } : undefined}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] whitespace-nowrap flex-shrink-0 transition-colors ${
-        active ? 'font-medium' : 'text-[#64748b] hover:text-[#1e293b] hover:bg-[#f8fafc]'
+        active ? 'font-medium' : 'text-[#64748b] hover:text-[#1e3a5f] hover:bg-[#f8fafc]'
       }`}
     >
       <item.icon className="w-[14px] h-[14px] flex-shrink-0 text-[#94a3b8]" />
@@ -396,7 +396,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin }
       <div className="absolute inset-0 bg-gray-900/50" onClick={onClose} />
       <aside className="relative z-10 w-72 h-full flex flex-col shadow-2xl overflow-hidden">
         {/* Drawer header */}
-        <div className="flex items-center justify-between px-4 h-14 flex-shrink-0 bg-[#1e293b]">
+        <div className="flex items-center justify-between px-4 h-14 flex-shrink-0 bg-[#1e3a5f]">
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
@@ -498,7 +498,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin }
           )}
           <button
             onClick={() => { onClose(); clearActiveHotel(); }}
-            className="flex items-center gap-2 text-sm font-medium text-[#6b7280] hover:text-[#1e293b] transition-colors mb-1.5 w-full"
+            className="flex items-center gap-2 text-sm font-medium text-[#6b7280] hover:text-[#1e3a5f] transition-colors mb-1.5 w-full"
           >
             <ArrowLeftRight className="w-3.5 h-3.5 flex-shrink-0" />
             Switch Hotel
@@ -543,7 +543,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
       });
   }, [user]);
 
-  const brandColor = session?.primaryColor ?? '#3b82f6';
+  const brandColor = session?.primaryColor ?? '#1e3a5f';
   const hotelName  = session?.hotelName ?? 'StayWise';
   const hotelLogo  = session?.hotelLogo ?? null;
   const plan       = session?.plan ?? null;
@@ -552,7 +552,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
   /* ── Lobby ── */
   if (variant === 'lobby') {
     return (
-      <header className="sticky top-0 z-50 w-full h-[48px] bg-[#1e293b] flex items-center px-6">
+      <header className="sticky top-0 z-50 w-full h-[48px] bg-[#1e3a5f] flex items-center px-6">
         <button onClick={() => navigate('/lobby')} className="flex items-center gap-2 flex-shrink-0">
           <div className="w-[34px] h-[34px] rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColor }}>
             <Building2 className="w-4 h-4 text-white" />
@@ -570,7 +570,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
   /* ── Super Admin ── */
   if (variant === 'superadmin') {
     return (
-      <header className="sticky top-0 z-50 w-full h-[48px] bg-[#1e293b] flex items-center px-6 gap-4">
+      <header className="sticky top-0 z-50 w-full h-[48px] bg-[#1e3a5f] flex items-center px-6 gap-4">
         <button
           onClick={() => navigate('/lobby')}
           className="flex items-center gap-1.5 text-[#94a3b8] hover:text-white text-[13px] font-medium transition-colors flex-shrink-0"
@@ -605,7 +605,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
       <header className="sticky top-0 z-50 w-full">
 
         {/* ── ROW 1 — 48px dark identity bar ── */}
-        <div className="bg-[#1e293b] h-[48px] flex items-center px-6 gap-3">
+        <div className="bg-[#1e3a5f] h-[48px] flex items-center px-6 gap-3">
 
           {/* Left: hotel identity */}
           <NavLink to="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0 group">
@@ -623,7 +623,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
               <p className="text-[15px] font-semibold text-white leading-tight truncate max-w-[160px] group-hover:opacity-80 transition-opacity">{hotelName}</p>
               <div className="flex items-center gap-1.5 mt-px">
                 {plan && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none bg-[#3b82f6] text-white">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none bg-white/20 text-white">
                     {plan.toUpperCase()}
                   </span>
                 )}

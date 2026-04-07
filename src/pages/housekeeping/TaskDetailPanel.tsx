@@ -117,7 +117,7 @@ export default function TaskDetailPanel({ task, staff, onClose, onUpdated }: Pro
           {nextLabel && (
             <button
               onClick={advanceStatus}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#172e4c] transition-colors"
             >
               <CheckCircle2 className="w-4 h-4" />
               Mark as {nextLabel}

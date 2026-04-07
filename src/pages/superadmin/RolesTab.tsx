@@ -132,7 +132,7 @@ function RoleCard({ role }: { role: StaffRole }) {
             <p className="text-[10px] text-gray-500 font-medium">Full Access</p>
           </div>
           <div className="text-center bg-white/70 rounded-lg py-1.5">
-            <p className="text-base font-bold text-blue-600">{viewCount}</p>
+            <p className="text-base font-bold text-[#1e3a5f]">{viewCount}</p>
             <p className="text-[10px] text-gray-500 font-medium">View Only</p>
           </div>
           <div className="text-center bg-white/70 rounded-lg py-1.5">
@@ -226,7 +226,7 @@ export default function RolesTab() {
             <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none">
               <div
                 onClick={() => setShowActions(a => !a)}
-                className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors cursor-pointer ${showActions ? 'bg-blue-600' : 'bg-gray-200'}`}
+                className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors cursor-pointer ${showActions ? 'bg-[#1e3a5f]' : 'bg-gray-200'}`}
               >
                 <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${showActions ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </div>

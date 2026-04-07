@@ -154,7 +154,7 @@ export default function RateCalendar({ hotelId, channels }: Props) {
             <select
               value={selectedChannel}
               onChange={e => setSelectedChannel(e.target.value)}
-              className="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
             >
               {connectedChannels.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -224,7 +224,7 @@ export default function RateCalendar({ hotelId, channels }: Props) {
                             type="number"
                             value={editValue}
                             onChange={e => setEditValue(e.target.value)}
-                            className="w-14 px-1 py-1 border border-blue-300 rounded text-center text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-14 px-1 py-1 border border-blue-300 rounded text-center text-xs focus:outline-none focus:ring-1 focus:ring-[#2d6b96]"
                             onKeyDown={e => {
                               if (e.key === 'Enter') saveRate(rt.id, d);
                               if (e.key === 'Escape') setEditingCell(null);

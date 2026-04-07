@@ -159,7 +159,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
               type="date"
               value={form.from_date}
               onChange={e => setForm(f => ({ ...f, from_date: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
             />
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
               type="date"
               value={form.to_date}
               onChange={e => setForm(f => ({ ...f, to_date: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
             />
           </div>
         </div>
@@ -182,7 +182,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
           <select
             value={form.channel_id}
             onChange={e => setForm(f => ({ ...f, channel_id: e.target.value }))}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
           >
             <option value="all">All connected channels</option>
             {connectedChannels.map(c => (
@@ -199,7 +199,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
             value={form.min_stay}
             onChange={e => setForm(f => ({ ...f, min_stay: e.target.value }))}
             placeholder="e.g. 2"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
           />
         </div>
 
@@ -211,7 +211,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
             value={form.max_stay}
             onChange={e => setForm(f => ({ ...f, max_stay: e.target.value }))}
             placeholder="e.g. 14"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
           />
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
               type="checkbox"
               checked={form[key as keyof RestrictionForm] as boolean}
               onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded text-[#1e3a5f] focus:ring-[#2d6b96]"
             />
             <span className="text-sm font-medium text-gray-700">{label}</span>
           </label>
@@ -241,7 +241,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
         <button
           onClick={applyRestrictions}
           disabled={saving || connectedChannels.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
         >
           <Save className="w-4 h-4" />
           {saving ? 'Applying...' : 'Apply Restrictions'}

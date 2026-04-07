@@ -222,7 +222,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
     `w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
       touched.has(field) && fieldErrors[field]
         ? 'border-red-300 focus:ring-red-400'
-        : 'border-gray-200 focus:ring-blue-500'
+        : 'border-gray-200 focus:ring-[#2d6b96]'
     }`;
 
   const isSubmitDisabled =
@@ -280,7 +280,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
                     ? 'border-red-300 focus:ring-red-400'
                     : subdomainStatus === 'available'
                     ? 'border-green-300 focus:ring-green-400'
-                    : 'border-gray-200 focus:ring-blue-500'
+                    : 'border-gray-200 focus:ring-[#2d6b96]'
                 }`}
                 placeholder="grand-metro"
                 disabled={mode === 'edit'}
@@ -299,7 +299,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
               <select
                 value={form.plan}
                 onChange={e => set('plan', e.target.value as TenantFormData['plan'])}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
               >
                 <option value="starter">Starter</option>
                 <option value="pro">Pro</option>
@@ -350,7 +350,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
                   className={`flex-1 border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 transition-colors ${
                     touched.has('primary_color') && fieldErrors.primary_color
                       ? 'border-red-300 focus:ring-red-400'
-                      : 'border-gray-200 focus:ring-blue-500'
+                      : 'border-gray-200 focus:ring-[#2d6b96]'
                   }`}
                 />
               </div>
@@ -374,7 +374,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
                   className={`flex-1 border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 transition-colors ${
                     touched.has('secondary_color') && fieldErrors.secondary_color
                       ? 'border-red-300 focus:ring-red-400'
-                      : 'border-gray-200 focus:ring-blue-500'
+                      : 'border-gray-200 focus:ring-[#2d6b96]'
                   }`}
                 />
               </div>
@@ -402,7 +402,7 @@ export default function TenantFormModal({ mode, tenant, onClose, onSave }: Tenan
             <button
               type="submit"
               disabled={isSubmitDisabled}
-              className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-60"
+              className="px-5 py-2 text-sm font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] rounded-lg transition-colors disabled:opacity-60"
             >
               {saving ? 'Saving...' : mode === 'add' ? 'Create Hotel' : 'Save Changes'}
             </button>

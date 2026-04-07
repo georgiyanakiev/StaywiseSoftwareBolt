@@ -101,7 +101,7 @@ export default function InactivityGuard() {
         <div className="flex flex-col gap-2">
           <button
             onClick={handleStaySignedIn}
-            className="w-full py-2.5 px-4 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full py-2.5 px-4 bg-[#1e3a5f] text-white text-sm font-medium rounded-lg hover:bg-[#172e4c] transition-colors"
           >
             Stay Signed In
           </button>
