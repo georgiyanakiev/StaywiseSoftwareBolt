@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
+import { useTenantId } from '../../hooks/useTenantQuery';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import PaymentRuleModal from './PaymentRuleModal';
@@ -26,18 +27,20 @@ interface PaymentRule {
   active: boolean;
 }
 
-interface Transaction {
+export interface Transaction {
   id: string;
+  invoice_id: string | null;
+  guest_id: string | null;
   guest_name: string;
   booking_source: string;
   amount: number;
   currency: string;
   type: string;
   status: string;
-  payment_method: string;
-  card_last4: string;
-  card_brand: string;
-  notes: string;
+  payment_method: string | null;
+  card_last4: string | null;
+  card_brand: string | null;
+  notes: string | null;
   scheduled_date: string | null;
   processed_at: string | null;
   created_at: string;
@@ -73,6 +76,7 @@ const TRIGGER_LABELS: Record<string, string> = {
 export default function PaymentAutomationPage() {
   const { currentHotel } = useHotel();
   const { showToast } = useToast();
+  const tenantId = useTenantId();
 
   const [tab, setTab] = useState<Tab>('transactions');
   const [rules, setRules] = useState<PaymentRule[]>([]);
@@ -93,12 +97,93 @@ export default function PaymentAutomationPage() {
   const loadData = useCallback(async () => {
     if (!currentHotel) return;
     setLoading(true);
-    const [{ data: r }, { data: t }] = await Promise.all([
-      supabase.from('payment_rules').select('*').eq('hotel_id', currentHotel.id).order('created_at'),
-      supabase.from('payment_transactions').select('*').eq('hotel_id', currentHotel.id).order('created_at', { ascending: false }),
+
+    const [{ data: r }, { data: paymentRows }, { data: invoiceRows }] = await Promise.all([
+      supabase
+        .from('payment_rules')
+        .select('*')
+        .eq('hotel_id', currentHotel.id)
+        .order('created_at'),
+
+      supabase
+        .from('payments')
+        .select(`
+          id, invoice_id, guest_id, amount, payment_method,
+          payment_date, notes, created_at,
+          invoice:invoices(invoice_number, guest_name, currency),
+          guest:guests(first_name, last_name)
+        `)
+        .eq('hotel_id', currentHotel.id)
+        .order('payment_date', { ascending: false }),
+
+      supabase
+        .from('invoices')
+        .select(`
+          id, invoice_number, guest_name, guest_id, currency,
+          due_date, created_at, total_amount, amount_paid, notes, status,
+          guest:guests(first_name, last_name)
+        `)
+        .eq('hotel_id', currentHotel.id)
+        .in('status', ['draft', 'sent', 'overdue']),
     ]);
+
+    const capturedTxs: Transaction[] = (paymentRows ?? []).map((p: any) => {
+      const guestName = p.guest?.first_name
+        ? `${p.guest.first_name} ${p.guest.last_name}`
+        : (p.invoice?.guest_name ?? '—');
+      const isRefund = (p.notes ?? '').toLowerCase().includes('refund');
+      return {
+        id: p.id,
+        invoice_id: p.invoice_id,
+        guest_id: p.guest_id,
+        guest_name: guestName,
+        booking_source: p.invoice?.invoice_number ?? '—',
+        amount: Math.abs(Number(p.amount)),
+        currency: p.invoice?.currency ?? currentHotel.currency,
+        type: isRefund ? 'refund' : 'charge',
+        status: isRefund ? 'refunded' : 'captured',
+        payment_method: p.payment_method,
+        card_last4: null,
+        card_brand: null,
+        notes: p.notes ?? null,
+        scheduled_date: null,
+        processed_at: p.payment_date,
+        created_at: p.created_at,
+      };
+    });
+
+    const pendingTxs: Transaction[] = (invoiceRows ?? [])
+      .filter((inv: any) => Number(inv.total_amount) - Number(inv.amount_paid) > 0.009)
+      .map((inv: any) => {
+        const guestName = inv.guest?.first_name
+          ? `${inv.guest.first_name} ${inv.guest.last_name}`
+          : (inv.guest_name ?? '—');
+        return {
+          id: `pending-${inv.id}`,
+          invoice_id: inv.id,
+          guest_id: inv.guest_id,
+          guest_name: guestName,
+          booking_source: inv.invoice_number,
+          amount: Number(inv.total_amount) - Number(inv.amount_paid),
+          currency: inv.currency ?? currentHotel.currency,
+          type: 'charge',
+          status: 'pending',
+          payment_method: null,
+          card_last4: null,
+          card_brand: null,
+          notes: inv.notes ?? null,
+          scheduled_date: inv.due_date,
+          processed_at: null,
+          created_at: inv.created_at,
+        };
+      });
+
+    const allTxs = [...capturedTxs, ...pendingTxs].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
     setRules((r ?? []) as PaymentRule[]);
-    setTransactions((t ?? []) as Transaction[]);
+    setTransactions(allTxs);
     setLoading(false);
   }, [currentHotel]);
 
@@ -118,17 +203,43 @@ export default function PaymentAutomationPage() {
   };
 
   const chargeNow = async (tx: Transaction) => {
+    if (!currentHotel || !tx.invoice_id) return;
     setChargingId(tx.id);
-    await new Promise(r => setTimeout(r, 1500));
-    await supabase.from('payment_transactions').update({
-      status: 'captured',
-      processed_at: new Date().toISOString(),
-    }).eq('id', tx.id);
-    setTransactions(prev => prev.map(t =>
-      t.id === tx.id ? { ...t, status: 'captured', processed_at: new Date().toISOString() } : t
-    ));
+
+    await new Promise(r => setTimeout(r, 1200));
+
+    const { data: invoice } = await supabase
+      .from('invoices')
+      .select('total_amount, amount_paid, guest_id')
+      .eq('id', tx.invoice_id)
+      .maybeSingle();
+
+    if (invoice) {
+      const newAmountPaid = Number(invoice.amount_paid) + tx.amount;
+      const isFullyPaid = newAmountPaid >= Number(invoice.total_amount) - 0.009;
+
+      await supabase.from('invoices').update({
+        amount_paid: newAmountPaid,
+        paid_amount: newAmountPaid,
+        status: isFullyPaid ? 'paid' : 'sent',
+      }).eq('id', tx.invoice_id);
+
+      await supabase.from('payments').insert({
+        hotel_id: currentHotel.id,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
+        invoice_id: tx.invoice_id,
+        guest_id: invoice.guest_id,
+        amount: tx.amount,
+        payment_method: 'card',
+        payment_date: new Date().toISOString(),
+        notes: 'Charged via payment automation',
+        processed_by: 'Payment Automation',
+      });
+    }
+
     setChargingId(null);
-    showToast(`${formatCurrency(tx.amount)} charged successfully`, 'success');
+    loadData();
+    showToast(`${formatCurrency(tx.amount, currentHotel.currency)} charged successfully`, 'success');
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -142,7 +253,7 @@ export default function PaymentAutomationPage() {
   const filtered = transactions.filter(t => {
     if (filterStatus && t.status !== filterStatus) return false;
     if (filterType && t.type !== filterType) return false;
-    const refDate = t.scheduled_date ?? t.created_at?.split('T')[0];
+    const refDate = t.scheduled_date ?? t.processed_at?.split('T')[0] ?? t.created_at?.split('T')[0];
     if (filterDateFrom && refDate && refDate < filterDateFrom) return false;
     if (filterDateTo && refDate && refDate > filterDateTo) return false;
     if (filterAmtMin && Number(t.amount) < Number(filterAmtMin)) return false;
@@ -150,21 +261,23 @@ export default function PaymentAutomationPage() {
     return true;
   });
 
+  const now = new Date();
   const collectedThisMonth = transactions.filter(t => {
-    const d = new Date(t.created_at);
-    const now = new Date();
-    return t.status === 'captured' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    if (t.status !== 'captured') return false;
+    const d = new Date(t.processed_at ?? t.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).reduce((s, t) => s + Number(t.amount), 0);
-  const pendingTotal = transactions.filter(t => t.status === 'pending').reduce((s, t) => s + Number(t.amount), 0);
-  const overdueTotal = overdue.reduce((s, t) => s + Number(t.amount), 0);
-  const preAuthHeld  = transactions.filter(t => t.type === 'pre_auth' && t.status === 'captured').reduce((s, t) => s + Number(t.amount), 0);
+
+  const pendingTotal  = transactions.filter(t => t.status === 'pending').reduce((s, t) => s + Number(t.amount), 0);
+  const overdueTotal  = overdue.reduce((s, t) => s + Number(t.amount), 0);
+  const refundedTotal = transactions.filter(t => t.status === 'refunded').reduce((s, t) => s + Number(t.amount), 0);
 
   const hasFilters = filterStatus || filterType || filterDateFrom || filterDateTo || filterAmtMin || filterAmtMax;
 
   const tabs: { id: Tab; label: string; badge?: number }[] = [
     { id: 'transactions', label: 'Transactions' },
     { id: 'rules',        label: 'Payment Rules' },
-    { id: 'scheduled',    label: 'Scheduled', badge: overdue.length + scheduled.length },
+    { id: 'scheduled',    label: 'Scheduled', badge: overdue.length + scheduled.length || undefined },
   ];
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
@@ -181,10 +294,10 @@ export default function PaymentAutomationPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Collected This Month', value: formatCurrency(collectedThisMonth), icon: Euro,   color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Pending',              value: formatCurrency(pendingTotal),       icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50' },
-          { label: 'Overdue',              value: formatCurrency(overdueTotal),       icon: ShieldAlert,  color: 'text-red-600',     bg: 'bg-red-50' },
-          { label: 'Pre-auths Held',       value: formatCurrency(preAuthHeld),        icon: TrendingDown, color: 'text-gray-700',    bg: 'bg-gray-100' },
+          { label: 'Collected This Month', value: formatCurrency(collectedThisMonth, currentHotel?.currency), icon: Euro,         color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Pending Collection',   value: formatCurrency(pendingTotal, currentHotel?.currency),       icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50' },
+          { label: 'Overdue',              value: formatCurrency(overdueTotal, currentHotel?.currency),       icon: ShieldAlert,  color: 'text-red-600',     bg: 'bg-red-50' },
+          { label: 'Refunded',             value: formatCurrency(refundedTotal, currentHotel?.currency),      icon: TrendingDown, color: 'text-gray-700',    bg: 'bg-gray-100' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -249,8 +362,8 @@ export default function PaymentAutomationPage() {
               </select>
               <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="input-field py-1.5 text-xs" title="Date from" />
               <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="input-field py-1.5 text-xs" title="Date to" />
-              <input type="number" value={filterAmtMin} onChange={e => setFilterAmtMin(e.target.value)} className="input-field py-1.5 text-xs" placeholder="Min €" />
-              <input type="number" value={filterAmtMax} onChange={e => setFilterAmtMax(e.target.value)} className="input-field py-1.5 text-xs" placeholder="Max €" />
+              <input type="number" value={filterAmtMin} onChange={e => setFilterAmtMin(e.target.value)} className="input-field py-1.5 text-xs" placeholder="Min amount" />
+              <input type="number" value={filterAmtMax} onChange={e => setFilterAmtMax(e.target.value)} className="input-field py-1.5 text-xs" placeholder="Max amount" />
             </div>
           </div>
           {hasFilters && (
@@ -262,6 +375,7 @@ export default function PaymentAutomationPage() {
             chargingId={chargingId}
             onChargeNow={chargeNow}
             onRefund={setRefundTarget}
+            currency={currentHotel?.currency}
           />
         </div>
       )}
@@ -294,7 +408,7 @@ export default function PaymentAutomationPage() {
                         {rule.amount_type === 'percentage'
                           ? `${rule.amount_value}%`
                           : rule.amount_type === 'fixed'
-                          ? formatCurrency(rule.amount_value)
+                          ? formatCurrency(rule.amount_value, currentHotel?.currency)
                           : rule.amount_type.replace(/_/g, ' ')}
                       </span>
                       <span className="text-xs text-gray-400">→ {rule.applies_to}</span>
@@ -356,11 +470,11 @@ export default function PaymentAutomationPage() {
                         <p className="text-xs text-red-600 mt-0.5">
                           {tx.type} · Due {formatDate(tx.scheduled_date!)} · {daysLate} day{daysLate !== 1 ? 's' : ''} overdue
                         </p>
-                        {tx.booking_source && <p className="text-xs text-gray-400 capitalize">{tx.booking_source}</p>}
+                        {tx.booking_source && <p className="text-xs text-gray-400">{tx.booking_source}</p>}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-red-600">{formatCurrency(Number(tx.amount))}</span>
+                      <span className="text-lg font-bold text-red-600">{formatCurrency(Number(tx.amount), currentHotel?.currency)}</span>
                       <button
                         onClick={() => chargeNow(tx)}
                         disabled={chargingId === tx.id}
@@ -396,11 +510,11 @@ export default function PaymentAutomationPage() {
                     <p className="text-xs text-gray-500 mt-0.5">
                       <span className={`inline-block mr-2 px-1.5 py-0.5 rounded text-xs ${TYPE_COLORS[tx.type] ?? 'bg-gray-100 text-gray-600'}`}>{tx.type}</span>
                       Due {formatDate(tx.scheduled_date!)}
-                      {tx.payment_method && ` · ${tx.payment_method}${tx.card_last4 ? ` ···${tx.card_last4}` : ''}`}
+                      {tx.booking_source && ` · ${tx.booking_source}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-gray-900">{formatCurrency(Number(tx.amount))}</span>
+                    <span className="text-lg font-bold text-gray-900">{formatCurrency(Number(tx.amount), currentHotel?.currency)}</span>
                     <button
                       onClick={() => chargeNow(tx)}
                       disabled={chargingId === tx.id}
@@ -436,12 +550,12 @@ export default function PaymentAutomationPage() {
         <RefundModal
           transaction={refundTarget}
           hotelId={currentHotel?.id ?? ''}
+          currency={currentHotel?.currency}
           onClose={() => setRefundTarget(null)}
           onRefunded={(id, amount) => {
-            setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: 'refunded' } : t));
             setRefundTarget(null);
             loadData();
-            showToast(`Refund of ${formatCurrency(amount)} issued`, 'success');
+            showToast(`Refund of ${formatCurrency(amount, currentHotel?.currency)} issued`, 'success');
           }}
         />
       )}
@@ -455,12 +569,14 @@ function TransactionTable({
   chargingId,
   onChargeNow,
   onRefund,
+  currency,
 }: {
   transactions: Transaction[];
   today: string;
   chargingId: string | null;
   onChargeNow: (tx: Transaction) => void;
   onRefund: (tx: Transaction) => void;
+  currency?: string;
 }) {
   if (transactions.length === 0) {
     return (
@@ -478,13 +594,12 @@ function TransactionTable({
           <thead className="border-b border-gray-100">
             <tr>
               <th className="table-header">Guest</th>
-              <th className="table-header">Source</th>
+              <th className="table-header">Invoice</th>
               <th className="table-header text-right">Amount</th>
               <th className="table-header">Type</th>
               <th className="table-header">Status</th>
               <th className="table-header">Method</th>
-              <th className="table-header">Scheduled</th>
-              <th className="table-header">Processed</th>
+              <th className="table-header">Due / Processed</th>
               <th className="table-header">Actions</th>
             </tr>
           </thead>
@@ -493,6 +608,11 @@ function TransactionTable({
               const statusCfg = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
               const StatusIcon = statusCfg.icon;
               const isOverdue = tx.status === 'pending' && tx.scheduled_date && tx.scheduled_date < today;
+              const dateLabel = tx.processed_at
+                ? formatDate(tx.processed_at)
+                : tx.scheduled_date
+                ? formatDate(tx.scheduled_date)
+                : '—';
               return (
                 <tr
                   key={tx.id}
@@ -504,11 +624,11 @@ function TransactionTable({
                     <p className="font-medium text-gray-900 text-sm">{tx.guest_name || '—'}</p>
                   </td>
                   <td className="table-cell">
-                    <span className="text-xs text-gray-500 capitalize">{tx.booking_source || '—'}</span>
+                    <span className="text-xs text-gray-500">{tx.booking_source || '—'}</span>
                   </td>
                   <td className="table-cell text-right">
-                    <span className={`font-semibold ${isOverdue ? 'text-red-600' : 'text-gray-900'}`}>
-                      {formatCurrency(Number(tx.amount))}
+                    <span className={`font-semibold ${isOverdue ? 'text-red-600' : tx.status === 'refunded' ? 'text-rose-600' : 'text-gray-900'}`}>
+                      {tx.status === 'refunded' ? '-' : ''}{formatCurrency(Number(tx.amount), currency)}
                     </span>
                   </td>
                   <td className="table-cell">
@@ -523,18 +643,12 @@ function TransactionTable({
                     </span>
                   </td>
                   <td className="table-cell text-gray-500 text-xs capitalize">
-                    {tx.payment_method ?? '—'}
-                    {tx.card_last4 && <span className="text-gray-400"> ···{tx.card_last4}</span>}
+                    {tx.payment_method ? tx.payment_method.replace('_', ' ') : '—'}
                   </td>
                   <td className="table-cell text-xs">
-                    {tx.scheduled_date ? (
-                      <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}>
-                        {formatDate(tx.scheduled_date)}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="table-cell text-gray-500 text-xs">
-                    {tx.processed_at ? formatDate(tx.processed_at) : '—'}
+                    <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}>
+                      {dateLabel}
+                    </span>
                   </td>
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
