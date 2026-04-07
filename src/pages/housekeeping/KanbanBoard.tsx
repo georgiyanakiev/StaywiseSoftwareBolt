@@ -112,8 +112,11 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
     }
 
     if (toInsert.length > 0) {
-      await supabase.from('housekeeping_tasks').insert(toInsert);
-      created = toInsert.length;
+      const { data: inserted } = await supabase
+        .from('housekeeping_tasks')
+        .upsert(toInsert, { onConflict: 'hotel_id,room_id,scheduled_date,task_type', ignoreDuplicates: true })
+        .select('id');
+      created = inserted?.length ?? 0;
     }
 
     setGenerating(false);

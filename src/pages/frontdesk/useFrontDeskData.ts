@@ -133,7 +133,7 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
       supabase.from('rooms').select('status').eq('hotel_id', currentHotel.id),
       supabase
         .from('reservations')
-        .select('id, confirmation_code, check_in, check_out, status, total_amount, adults, children, notes, source, guest:guests(first_name, last_name), room:rooms(number, room_type:room_types(name))')
+        .select('id, confirmation_code, check_in, check_out, status, total_amount, adults, children, notes, source, created_at, guest:guests(first_name, last_name), room:rooms(number, room_type:room_types(name))')
         .eq('hotel_id', currentHotel.id)
         .eq('check_in', today)
         .in('status', ['confirmed', 'checked_in', 'no_show'])
@@ -173,6 +173,10 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
     const arrivalsExpected = arrivalList.filter(r => r.status === 'confirmed').length;
     const arrivalsCheckedIn = arrivalList.filter(r => r.status === 'checked_in').length;
     const noShows = arrivalList.filter(r => r.status === 'no_show').length;
+    const walkins = arrivalList.filter(r =>
+      r.source === 'walk_in' ||
+      (r.created_at && r.created_at.split('T')[0] === today && r.source !== 'booking_com' && r.source !== 'expedia' && r.source !== 'airbnb')
+    ).length;
     const departuresExpected = departureList.filter(r => r.status === 'checked_in').length;
     const departuresCheckedOut = departureList.filter(r => r.status === 'checked_out').length;
 
@@ -195,7 +199,7 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
       departuresExpected, departuresCheckedOut,
       stayovers: stayoverList.length,
       todayRevenue, avgRoomRate,
-      noShows, walkins: 0,
+      noShows, walkins,
     });
 
     setArrivals(arrivalList.map((r: any) => ({
