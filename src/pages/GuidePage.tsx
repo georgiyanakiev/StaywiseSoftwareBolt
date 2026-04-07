@@ -536,13 +536,13 @@ export default function GuidePage() {
 
         /* Screen-only print button */
         .print-bar {
-          position: fixed; top: 0; left: 0; right: 0;
           background: #1e3a5f; color: #fff;
           display: flex; align-items: center; justify-content: center; gap: 16px;
           padding: 12px 24px;
           font-family: Arial, sans-serif; font-size: 14px;
           box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-          z-index: 9999;
+          border-radius: 10px;
+          margin-bottom: 24px;
         }
         .print-bar-text { color: #cbd5e0; }
         .print-btn {
@@ -553,7 +553,6 @@ export default function GuidePage() {
           box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
         .print-btn:hover { background: #edf2f7; }
-        .guide-root { padding-top: 60px; }
 
         @media print {
           .print-bar { display: none !important; }
