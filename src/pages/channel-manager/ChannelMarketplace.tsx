@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Search, Plus, CheckCircle, Circle, ExternalLink, Globe,
-  Settings, X, Zap, Users, Code2, Wrench, FileText,
+  Settings, X, Zap, Users, Code2, Wrench, FileText, Eye, EyeOff,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Channel } from './ChannelCard';
@@ -92,6 +92,7 @@ export default function ChannelCatalog({
   const [regionFilter, setRegionFilter] = useState('all');
   const [adding, setAdding] = useState<string | null>(null);
   const [locallyAdded, setLocallyAdded] = useState<Map<string, string>>(new Map());
+  const [pendingItem, setPendingItem] = useState<CatalogItem | null>(null);
 
   useEffect(() => {
     async function fetchCatalog() {
@@ -128,7 +129,13 @@ export default function ChannelCatalog({
   const remainingItems = filtered.filter(i => !FEATURED_SLUGS.includes(i.slug));
   const showFeatured   = !search && categoryFilter === 'all' && regionFilter === 'all';
 
-  const handleAdd = async (item: CatalogItem) => {
+  const handleAdd = (item: CatalogItem) => {
+    setPendingItem(item);
+  };
+
+  const handleConfirmAdd = async (credentials: { property_id: string; api_key: string; client_id: string; client_secret: string }) => {
+    if (!pendingItem) return;
+    const item = pendingItem;
     setAdding(item.slug);
     try {
       const { data, error } = await supabase.from('channels').insert({
@@ -138,10 +145,10 @@ export default function ChannelCatalog({
         status: 'disconnected',
         commission_pct: item.commission_typical ?? 0,
         sync_enabled: true,
-        api_key: '',
-        property_id: '',
-        client_id: '',
-        client_secret: '',
+        api_key: credentials.api_key,
+        property_id: credentials.property_id,
+        client_id: credentials.client_id,
+        client_secret: credentials.client_secret,
         ...(tenantId ? { tenant_id: tenantId } : {}),
       }).select('id').single();
 
@@ -150,8 +157,9 @@ export default function ChannelCatalog({
       if (data?.id) {
         setLocallyAdded(prev => new Map([...prev, [item.slug, data.id]]));
       }
+      setPendingItem(null);
       onChannelAdded();
-      showToast(`${item.name} added. Configure API credentials in My Channels.`, 'success');
+      showToast(`${item.name} added. You can configure credentials any time in My Channels.`, 'success');
     } catch {
       showToast('Failed to add channel', 'error');
     } finally {
@@ -300,6 +308,16 @@ export default function ChannelCatalog({
             ))}
           </div>
         </div>
+      )}
+
+      {/* Add Channel modal */}
+      {pendingItem && (
+        <AddChannelModal
+          item={pendingItem}
+          adding={adding === pendingItem.slug}
+          onClose={() => setPendingItem(null)}
+          onConfirm={handleConfirmAdd}
+        />
       )}
     </div>
   );
@@ -469,6 +487,164 @@ function ChannelCard({
             </p>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AddChannelModal({
+  item,
+  adding,
+  onClose,
+  onConfirm,
+}: {
+  item: CatalogItem;
+  adding: boolean;
+  onClose: () => void;
+  onConfirm: (credentials: { property_id: string; api_key: string; client_id: string; client_secret: string }) => void;
+}) {
+  const [propertyId, setPropertyId] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [showSecret, setShowSecret] = useState(false);
+
+  const fallback = getChannelIcon(item.slug ?? item.type);
+  const logoColor = item.logo_color ?? fallback.color;
+  const logoLetter = item.logo_letter ?? fallback.letter;
+  const catMeta = CATEGORY_META[item.category];
+  const connMeta = CONNECTION_META[item.connection_type] ?? CONNECTION_META.direct_api;
+  const ConnIcon = connMeta.icon;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onConfirm({ property_id: propertyId, api_key: apiKey, client_id: clientId, client_secret: clientSecret });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+        {/* Colour bar */}
+        <div className="h-1.5 w-full" style={{ backgroundColor: logoColor }} />
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-sm"
+              style={{ backgroundColor: logoColor }}
+            >
+              {logoLetter}
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Add {item.name}</h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${connMeta.color}`}>
+                  <ConnIcon className="w-2.5 h-2.5" />
+                  {connMeta.label}
+                </span>
+                {catMeta && (
+                  <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${catMeta.pill}`}>
+                    {catMeta.label}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {item.description && (
+            <p className="text-sm text-gray-500 leading-relaxed">{item.description}</p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Property ID</label>
+              <input
+                type="text"
+                value={propertyId}
+                onChange={e => setPropertyId(e.target.value)}
+                placeholder="e.g. 12345678"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Client ID</label>
+              <input
+                type="text"
+                value={clientId}
+                onChange={e => setClientId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">API Key</label>
+            <input
+              type="text"
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              placeholder="Your API key"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Client Secret</label>
+            <div className="relative">
+              <input
+                type={showSecret ? 'text' : 'password'}
+                value={clientSecret}
+                onChange={e => setClientSecret(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSecret(s => !s)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-gray-400 flex items-start gap-1.5">
+            <Wrench className="w-3 h-3 flex-shrink-0 mt-0.5" />
+            Credentials are optional — you can add or update them later in My Channels.
+          </p>
+
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={adding}
+              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-lg transition-all disabled:opacity-60 hover:opacity-90"
+              style={{ backgroundColor: logoColor }}
+            >
+              {adding ? (
+                <div className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              {adding ? 'Adding...' : 'Add Channel'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

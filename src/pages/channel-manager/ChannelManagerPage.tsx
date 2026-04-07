@@ -20,7 +20,8 @@ type SubTab = 'channels' | 'rates' | 'restrictions' | 'logs';
 
 export default function ChannelManagerPage() {
   const { currentHotel } = useHotel();
-  const { showToast } = useToast();
+  const { toast } = useToast();
+  const showToast = (msg: string, type: 'success' | 'error') => toast(type, msg);
   const tenantId = useTenantId();
 
   const [topTab, setTopTab] = useState<TopTab>('my_channels');
