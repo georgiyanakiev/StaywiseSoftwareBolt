@@ -2,14 +2,17 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Building2, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Building2, Eye, EyeOff, Loader2, CheckCircle2, ArrowLeft, Mail } from 'lucide-react';
 import LegalFooter from '../components/legal/LegalFooter';
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -17,6 +20,32 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setResetSent(true);
+    }
+    setLoading(false);
+  };
+
+  const enterForgotPassword = () => {
+    setIsForgotPassword(true);
+    setError('');
+    setResetSent(false);
+  };
+
+  const exitForgotPassword = () => {
+    setIsForgotPassword(false);
+    setError('');
+    setResetSent(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +112,71 @@ export default function LoginPage() {
             <span className="text-xl font-semibold text-gray-900">StayWise</span>
           </div>
 
-          {isSignUp && submitted ? (
+          {isForgotPassword ? (
+            <>
+              {resetSent ? (
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-5">
+                    <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center border-4 border-green-100">
+                      <Mail className="w-8 h-8 text-green-500" />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">{t.login.resetLinkSent}</h2>
+                  <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-sm mx-auto">
+                    {t.login.resetLinkSentDesc}
+                  </p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
+                    <p className="text-xs text-gray-400 font-medium mb-1">Sent to</p>
+                    <p className="text-sm font-semibold text-gray-800">{email}</p>
+                  </div>
+                  <button
+                    onClick={exitForgotPassword}
+                    className="text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1.5 mx-auto"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    {t.login.backToSignIn}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={exitForgotPassword}
+                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-6"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    {t.login.backToSignIn}
+                  </button>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">{t.login.forgotPasswordTitle}</h2>
+                    <p className="text-gray-500 text-sm">{t.login.forgotPasswordSubtitle}</p>
+                  </div>
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                      {error}
+                    </div>
+                  )}
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.email}</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        className="input-field"
+                        placeholder="you@example.com"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
+                      {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {t.login.sendResetLink}
+                    </button>
+                  </form>
+                </>
+              )}
+            </>
+          ) : isSignUp && submitted ? (
             <div className="text-center">
               <div className="flex items-center justify-center mb-5">
                 <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center border-4 border-green-100">
@@ -188,7 +281,18 @@ export default function LoginPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.password}</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700">{t.login.password}</label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={enterForgotPassword}
+                        className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
+                      >
+                        {t.login.forgotPassword}
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}

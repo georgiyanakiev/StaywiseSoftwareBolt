@@ -8,6 +8,7 @@ import SuperAdminPage from './pages/superadmin/SuperAdminPage';
 import AppLayout from './components/layout/AppLayout';
 import RequireHotel from './components/guards/RequireHotel';
 import LoginPage from './pages/LoginPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import PendingApprovalPage from './pages/PendingApprovalPage';
 import DashboardPage from './pages/DashboardPage';
 import ReservationsPage from './pages/ReservationsPage';
@@ -166,6 +167,7 @@ export default function App() {
     <ActiveHotelProvider>
       <Routes>
         <Route path="/superadmin" element={<SuperAdminPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/terms-of-service" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
