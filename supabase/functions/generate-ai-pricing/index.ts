@@ -7,27 +7,105 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-interface SuggestionInput {
-  hotel_id: string;
-  tenant_id?: string | null;
-  occupancy_data: Record<string, number>;
-  current_rates: Array<{ room_type_id: string; room_type_name: string; base_rate: number }>;
-  booking_pace: Record<string, number>;
-  dow_patterns: Record<string, number>;
+interface YieldFactors {
+  demand: "low" | "medium" | "high";
+  day_type: "weekday" | "weekend";
+  lead_time: "same_day" | "last_minute" | "short" | "medium" | "advance";
+  pickup: "accelerating" | "stable" | "decelerating";
+  competition: "low" | "medium" | "high";
+  occupancy_pct: number;
 }
 
-interface AISuggestion {
+interface ComputedSuggestion {
   date: string;
   room_type_id: string;
   room_type_name: string;
+  current_rate: number;
   suggested_rate: number;
   confidence_score: number;
   reasoning: string;
-  factors: {
-    demand: string;
-    competition: string;
-    day_type: string;
-  };
+  factors: YieldFactors;
+}
+
+function leadTimeBucket(days: number): YieldFactors["lead_time"] {
+  if (days === 0) return "same_day";
+  if (days <= 3) return "last_minute";
+  if (days <= 14) return "short";
+  if (days <= 45) return "medium";
+  return "advance";
+}
+
+function leadTimeMultiplier(days: number): number {
+  if (days === 0) return 1.25;
+  if (days <= 3) return 1.18;
+  if (days <= 7) return 1.12;
+  if (days <= 14) return 1.06;
+  if (days <= 30) return 1.02;
+  if (days <= 60) return 1.0;
+  return 0.96;
+}
+
+function occupancyMultiplier(pct: number): number {
+  if (pct >= 92) return 1.40;
+  if (pct >= 85) return 1.28;
+  if (pct >= 75) return 1.15;
+  if (pct >= 60) return 1.05;
+  if (pct >= 45) return 1.00;
+  if (pct >= 28) return 0.93;
+  return 0.85;
+}
+
+function pickupMultiplier(pickupVsAvg: number): number {
+  if (pickupVsAvg >= 2.5) return 1.12;
+  if (pickupVsAvg >= 1.5) return 1.06;
+  if (pickupVsAvg >= 0.6) return 1.0;
+  if (pickupVsAvg >= 0.2) return 0.95;
+  return 0.90;
+}
+
+function pickupBucket(pickupVsAvg: number): YieldFactors["pickup"] {
+  if (pickupVsAvg >= 1.5) return "accelerating";
+  if (pickupVsAvg >= 0.5) return "stable";
+  return "decelerating";
+}
+
+function demandBucket(pct: number): YieldFactors["demand"] {
+  if (pct >= 70) return "high";
+  if (pct >= 40) return "medium";
+  return "low";
+}
+
+function buildReasoning(factors: YieldFactors, changePct: number): string {
+  const signals: string[] = [];
+
+  if (factors.demand === "high") signals.push("high occupancy pressure");
+  else if (factors.demand === "low") signals.push("low demand");
+
+  if (factors.pickup === "accelerating") signals.push("accelerating booking pace");
+  else if (factors.pickup === "decelerating") signals.push("slow pickup");
+
+  if (factors.day_type === "weekend") signals.push("weekend premium");
+
+  if (factors.lead_time === "last_minute" || factors.lead_time === "same_day")
+    signals.push("last-minute scarcity");
+  else if (factors.lead_time === "advance") signals.push("advance-purchase discount");
+
+  if (signals.length === 0) {
+    return changePct > 0 ? "Moderate demand — slight increase recommended" : "Stable demand — base rate maintained";
+  }
+
+  const verb = changePct > 8 ? "Increase rate:" : changePct > 0 ? "Nudge rate up:" : changePct < -5 ? "Reduce rate:" : "Hold rate:";
+  return `${verb} ${signals.join(", ")}`;
+}
+
+function confidenceScore(occ: number, hasPickupData: boolean, hasHistorical: boolean): number {
+  let score = 50;
+  if (occ >= 75 || occ <= 25) score += 22;
+  else if (occ >= 60 || occ <= 35) score += 12;
+  else score += 6;
+  if (hasPickupData) score += 14;
+  if (hasHistorical) score += 9;
+  return Math.min(96, score);
 }
 
 Deno.serve(async (req: Request) => {
@@ -41,97 +119,217 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    const body = await req.json();
+    const { hotel_id, tenant_id } = body as { hotel_id: string; tenant_id?: string | null };
 
-    const body: SuggestionInput = await req.json();
-    const { hotel_id, tenant_id, occupancy_data, current_rates, booking_pace, dow_patterns } = body;
-
-    if (!hotel_id || !current_rates?.length) {
+    if (!hotel_id) {
       return new Response(
-        JSON.stringify({ error: "hotel_id and current_rates are required" }),
+        JSON.stringify({ error: "hotel_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    let suggestions: AISuggestion[] = [];
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    const horizon30 = new Date(today);
+    horizon30.setDate(today.getDate() + 30);
+    const horizon30Str = horizon30.toISOString().split("T")[0];
+    const lookback14 = new Date(today);
+    lookback14.setDate(today.getDate() - 14);
+    const lookback14Str = lookback14.toISOString().split("T")[0];
 
-    if (anthropicKey) {
-      const prompt = `You are a hotel revenue management expert. Given this hotel's data:
+    const [rtRes, roomsRes, resvRes, pickupRes, rulesRes] = await Promise.all([
+      supabase.from("room_types").select("id, name, base_rate").eq("hotel_id", hotel_id),
+      supabase.from("rooms").select("id, room_type_id").eq("hotel_id", hotel_id),
+      supabase.from("reservations")
+        .select("room_id, check_in, check_out, status")
+        .eq("hotel_id", hotel_id)
+        .in("status", ["confirmed", "checked_in"])
+        .gte("check_out", todayStr)
+        .lte("check_in", horizon30Str),
+      supabase.from("reservations")
+        .select("check_in, check_out, created_at")
+        .eq("hotel_id", hotel_id)
+        .in("status", ["confirmed", "checked_in"])
+        .gte("created_at", lookback14Str)
+        .gte("check_in", todayStr),
+      supabase.from("pricing_rules")
+        .select("room_type_id, min_rate, max_rate, active")
+        .eq("hotel_id", hotel_id)
+        .eq("active", true),
+    ]);
 
-Current occupancy for next 30 days: ${JSON.stringify(occupancy_data)}
-Current rates per room type: ${JSON.stringify(current_rates)}
-Historical booking pace: ${JSON.stringify(booking_pace)}
-Day of week patterns: ${JSON.stringify(dow_patterns)}
+    const roomTypes = (rtRes.data ?? []) as { id: string; name: string; base_rate: number }[];
+    const rooms = (roomsRes.data ?? []) as { id: string; room_type_id: string }[];
+    const reservations = (resvRes.data ?? []) as { room_id: string; check_in: string; check_out: string; status: string }[];
+    const recentBookings = (pickupRes.data ?? []) as { check_in: string; check_out: string; created_at: string }[];
+    const rules = (rulesRes.data ?? []) as { room_type_id: string | null; min_rate: number | null; max_rate: number | null; active: boolean }[];
 
-Generate rate suggestions for each room type for each of the next 30 days.
-Respond with a JSON array of objects: {date, room_type_id, room_type_name, suggested_rate, confidence_score (0-100), reasoning (max 20 words), factors: {demand: 'low/medium/high', competition: 'low/medium/high', day_type: 'weekday/weekend/holiday'}}.
-Respond with ONLY the JSON array, no other text.`;
+    if (!roomTypes.length) {
+      return new Response(
+        JSON.stringify({ error: "No room types found for this hotel" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-3-haiku-20240307",
-          max_tokens: 4096,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
+    const roomsByType: Record<string, string[]> = {};
+    const totalRooms = rooms.length;
+    for (const r of rooms) {
+      if (!roomsByType[r.room_type_id]) roomsByType[r.room_type_id] = [];
+      roomsByType[r.room_type_id].push(r.id);
+    }
 
-      if (response.ok) {
-        const aiResponse = await response.json();
-        const text = aiResponse.content?.[0]?.text ?? "[]";
-        try {
-          suggestions = JSON.parse(text);
-        } catch {
-          suggestions = [];
+    const roomIdToType: Record<string, string> = {};
+    for (const r of rooms) roomIdToType[r.id] = r.room_type_id;
+
+    const avgDailyPickup = recentBookings.length / 14 / Math.max(totalRooms, 1);
+
+    const suggestions: ComputedSuggestion[] = [];
+
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dateStr = d.toISOString().split("T")[0];
+      const leadDays = i;
+      const dow = d.getDay();
+      const isWeekend = dow === 0 || dow === 6;
+
+      const occupiedRoomIds = new Set(
+        reservations
+          .filter(r => r.check_in <= dateStr && r.check_out > dateStr)
+          .map(r => r.room_id)
+      );
+      const occupiedCount = occupiedRoomIds.size;
+      const occPct = totalRooms > 0 ? (occupiedCount / totalRooms) * 100 : 50;
+
+      const pickupForDate = recentBookings.filter(
+        r => r.check_in <= dateStr && r.check_out > dateStr
+      ).length;
+      const pickupVsAvg = avgDailyPickup > 0 ? pickupForDate / avgDailyPickup : 1;
+
+      const hasPickupData = recentBookings.length > 0;
+
+      for (const rt of roomTypes) {
+        const typeRooms = roomsByType[rt.id]?.length ?? 0;
+        const typeOccupied = typeRooms > 0
+          ? Array.from(occupiedRoomIds).filter(rid => roomIdToType[rid] === rt.id).length
+          : 0;
+        const typeOccPct = typeRooms > 0
+          ? (typeOccupied / typeRooms) * 100
+          : occPct;
+
+        const demandMult = occupancyMultiplier(typeOccPct);
+        const weekendMult = isWeekend ? 1.10 : 1.0;
+        const ltMult = leadTimeMultiplier(leadDays);
+        const paceMult = pickupMultiplier(pickupVsAvg);
+
+        let rate = rt.base_rate * demandMult * weekendMult * ltMult * paceMult;
+        rate = Math.round(rate / 5) * 5;
+
+        const rtRules = rules.filter(r => r.room_type_id === rt.id || r.room_type_id === null);
+        for (const rule of rtRules) {
+          if (rule.min_rate != null && rate < rule.min_rate) rate = rule.min_rate;
+          if (rule.max_rate != null && rate > rule.max_rate) rate = rule.max_rate;
         }
+
+        const factors: YieldFactors = {
+          demand: demandBucket(typeOccPct),
+          day_type: isWeekend ? "weekend" : "weekday",
+          lead_time: leadTimeBucket(leadDays),
+          pickup: pickupBucket(pickupVsAvg),
+          competition: "medium",
+          occupancy_pct: Math.round(typeOccPct),
+        };
+
+        const changePct = rt.base_rate > 0 ? ((rate - rt.base_rate) / rt.base_rate) * 100 : 0;
+        const reasoning = buildReasoning(factors, changePct);
+        const confidence = confidenceScore(typeOccPct, hasPickupData, false);
+
+        suggestions.push({
+          date: dateStr,
+          room_type_id: rt.id,
+          room_type_name: rt.name,
+          current_rate: rt.base_rate,
+          suggested_rate: rate,
+          confidence_score: confidence,
+          reasoning,
+          factors,
+        });
       }
     }
 
-    if (!suggestions.length) {
-      const today = new Date();
-      for (let i = 0; i < 30; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        const dateStr = d.toISOString().split("T")[0];
-        const dayOfWeek = d.getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const occupancy = occupancy_data[dateStr] ?? 50;
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    let finalSuggestions = suggestions;
 
-        for (const rt of current_rates) {
-          let multiplier = 1.0;
-          if (isWeekend) multiplier += 0.1;
-          if (occupancy > 80) multiplier += 0.15;
-          else if (occupancy > 60) multiplier += 0.05;
-          else if (occupancy < 30) multiplier -= 0.1;
+    if (anthropicKey) {
+      try {
+        const summaryForAI = suggestions.slice(0, 60).map(s => ({
+          date: s.date,
+          room: s.room_type_name,
+          base: s.current_rate,
+          computed: s.suggested_rate,
+          occ: s.factors.occupancy_pct,
+          pickup: s.factors.pickup,
+          lead: s.factors.lead_time,
+          dow: s.factors.day_type,
+        }));
 
-          const suggestedRate = Math.round(rt.base_rate * multiplier);
-          const changePct = ((suggestedRate - rt.base_rate) / rt.base_rate) * 100;
+        const prompt = `You are a hotel revenue management expert. A yield management algorithm has computed the following rate suggestions. Your job is to review them and return refined suggestions with improved reasoning text (max 18 words each). You may also adjust suggested_rate by ±10% if you identify factors the algorithm may have missed (e.g. local events, school holidays, market context).
 
-          let reasoning = "Base rate maintained";
-          if (changePct > 5) reasoning = isWeekend ? "Weekend demand premium" : "High occupancy — increase rate";
-          else if (changePct < -5) reasoning = "Low demand — reduce to stimulate bookings";
+Algorithm output (sample of ${summaryForAI.length} suggestions):
+${JSON.stringify(summaryForAI)}
 
-          const demand = occupancy > 70 ? "high" : occupancy > 40 ? "medium" : "low";
+Return a JSON array where each element has: { date, room_type_name, suggested_rate, reasoning }
+ONLY return the JSON array, no other text.`;
 
-          suggestions.push({
-            date: dateStr,
-            room_type_id: rt.room_type_id,
-            room_type_name: rt.room_type_name,
-            suggested_rate: suggestedRate,
-            confidence_score: Math.min(95, 50 + Math.round(occupancy * 0.4)),
-            reasoning,
-            factors: {
-              demand,
-              competition: "medium",
-              day_type: isWeekend ? "weekend" : "weekday",
-            },
+        const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": anthropicKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-3-haiku-20240307",
+            max_tokens: 4096,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        if (aiResp.ok) {
+          const aiJson = await aiResp.json();
+          const rawText: string = aiJson.content?.[0]?.text ?? "[]";
+          const refined: { date: string; room_type_name: string; suggested_rate: number; reasoning: string }[] = JSON.parse(rawText);
+
+          const refinedMap = new Map(refined.map(r => [`${r.date}__${r.room_type_name}`, r]));
+
+          finalSuggestions = suggestions.map(s => {
+            const key = `${s.date}__${s.room_type_name}`;
+            const r = refinedMap.get(key);
+            if (!r) return s;
+
+            let aiRate = Math.round((r.suggested_rate ?? s.suggested_rate) / 5) * 5;
+            const cap = s.suggested_rate * 1.10;
+            const floor = s.suggested_rate * 0.90;
+            if (aiRate > cap) aiRate = Math.round(cap / 5) * 5;
+            if (aiRate < floor) aiRate = Math.round(floor / 5) * 5;
+
+            const rtRules = rules.filter(rule => rule.room_type_id === s.room_type_id || rule.room_type_id === null);
+            for (const rule of rtRules) {
+              if (rule.min_rate != null && aiRate < rule.min_rate) aiRate = rule.min_rate;
+              if (rule.max_rate != null && aiRate > rule.max_rate) aiRate = rule.max_rate;
+            }
+
+            return {
+              ...s,
+              suggested_rate: aiRate,
+              reasoning: (r.reasoning ?? s.reasoning).slice(0, 100),
+              confidence_score: Math.min(96, s.confidence_score + 4),
+            };
           });
         }
+      } catch {
+        finalSuggestions = suggestions;
       }
     }
 
@@ -141,21 +339,18 @@ Respond with ONLY the JSON array, no other text.`;
       .eq("hotel_id", hotel_id)
       .eq("applied", false);
 
-    const rows = suggestions.map((s) => {
-      const rt = current_rates.find((r) => r.room_type_id === s.room_type_id);
-      return {
-        hotel_id,
-        ...(tenant_id ? { tenant_id } : {}),
-        room_type_id: s.room_type_id,
-        date: s.date,
-        current_rate: rt?.base_rate ?? 0,
-        suggested_rate: s.suggested_rate,
-        confidence_score: s.confidence_score,
-        reasoning: s.reasoning,
-        factors: s.factors,
-        applied: false,
-      };
-    });
+    const rows = finalSuggestions.map(s => ({
+      hotel_id,
+      ...(tenant_id ? { tenant_id } : {}),
+      room_type_id: s.room_type_id,
+      date: s.date,
+      current_rate: s.current_rate,
+      suggested_rate: s.suggested_rate,
+      confidence_score: s.confidence_score,
+      reasoning: s.reasoning,
+      factors: s.factors,
+      applied: false,
+    }));
 
     const { error: insertError } = await supabase.from("ai_price_suggestions").insert(rows);
 
@@ -167,7 +362,7 @@ Respond with ONLY the JSON array, no other text.`;
     }
 
     return new Response(
-      JSON.stringify({ success: true, count: rows.length }),
+      JSON.stringify({ success: true, count: rows.length, powered_by: anthropicKey ? "ai_refined" : "yield_algorithm" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

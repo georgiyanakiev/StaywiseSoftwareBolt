@@ -31,9 +31,12 @@ export interface AIPriceSuggestion {
   confidence_score: number;
   reasoning: string;
   factors: {
-    demand?: string;
-    competition?: string;
-    day_type?: string;
+    demand?: 'low' | 'medium' | 'high';
+    competition?: 'low' | 'medium' | 'high';
+    day_type?: 'weekday' | 'weekend';
+    lead_time?: 'same_day' | 'last_minute' | 'short' | 'medium' | 'advance';
+    pickup?: 'accelerating' | 'stable' | 'decelerating';
+    occupancy_pct?: number;
   };
   applied: boolean;
   applied_at: string | null;
