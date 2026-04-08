@@ -252,9 +252,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         for (const result of results) {
           if (result.status === 'rejected') {
-            console.error('[AuthContext] Post-signup notification failed:', result.reason);
+            if (process.env.NODE_ENV === 'development') console.error('[AuthContext] Post-signup notification failed:', result.reason);
           } else if (!result.value.ok) {
-            console.error('[AuthContext] Post-signup notification returned', result.value.status, result.value.url);
+            if (process.env.NODE_ENV === 'development') console.error('[AuthContext] Post-signup notification returned', result.value.status, result.value.url);
           }
         }
       }

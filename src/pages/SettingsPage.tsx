@@ -21,11 +21,34 @@ type TabKey = 'hotel' | 'rooms' | 'tax' | 'users' | 'emails' | 'payment' | 'noti
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR'];
 
-const TIMEZONES = [
-  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
-  'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Tokyo', 'Asia/Singapore',
-  'Australia/Sydney', 'Pacific/Auckland',
-];
+function getTimezones(): string[] {
+  try {
+    const allTz = Intl.supportedValuesOf('timeZone');
+    const grouped: Record<string, string[]> = {};
+    allTz.forEach(tz => {
+      const region = tz.split('/')[0] || 'Other';
+      if (!grouped[region]) grouped[region] = [];
+      grouped[region].push(tz);
+    });
+    const ordered = ['America', 'Europe', 'Asia', 'Pacific', 'Africa', 'Australia', 'Other'];
+    const result: string[] = [];
+    ordered.forEach(region => {
+      if (grouped[region]) result.push(...grouped[region].sort());
+    });
+    Object.keys(grouped).forEach(region => {
+      if (!ordered.includes(region)) result.push(...grouped[region].sort());
+    });
+    return result;
+  } catch {
+    return [
+      'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+      'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Tokyo', 'Asia/Singapore',
+      'Australia/Sydney', 'Pacific/Auckland',
+    ];
+  }
+}
+
+const TIMEZONES = getTimezones();
 
 const STAFF_ROLES = ['admin', 'manager', 'receptionist', 'housekeeping'] as const;
 

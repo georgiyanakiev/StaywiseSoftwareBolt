@@ -20,6 +20,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [cooldownEnd, setCooldownEnd] = useState<number | null>(null);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +52,13 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (cooldownEnd && Date.now() < cooldownEnd) {
+      const secsLeft = Math.ceil((cooldownEnd - Date.now()) / 1000);
+      setError(`Too many failed attempts. Please wait ${secsLeft} second${secsLeft !== 1 ? 's' : ''} before trying again.`);
+      return;
+    }
+
     setLoading(true);
 
     if (isSignUp) {
@@ -63,10 +72,24 @@ export default function LoginPage() {
         setError(result.error);
       } else {
         setSubmitted(true);
+        setFailedAttempts(0);
+        setCooldownEnd(null);
       }
     } else {
       const result = await signIn(email, password);
-      if (result.error) setError(result.error);
+      if (result.error) {
+        const newAttempts = failedAttempts + 1;
+        setFailedAttempts(newAttempts);
+        if (newAttempts >= 5) {
+          setCooldownEnd(Date.now() + 30000);
+          setError('Too many failed attempts. Please wait 30 seconds before trying again.');
+        } else {
+          setError(result.error);
+        }
+      } else {
+        setFailedAttempts(0);
+        setCooldownEnd(null);
+      }
     }
     setLoading(false);
   };
@@ -304,7 +327,7 @@ export default function LoginPage() {
                       className="input-field pr-10"
                       placeholder={t.login.enterPassword}
                       required
-                      minLength={6}
+                      minLength={8}
                     />
                     <button
                       type="button"

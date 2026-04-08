@@ -14,6 +14,12 @@ import type { ArrivalItem, DepartureItem, StayoverItem } from './frontdesk/useFr
 
 type Tab = 'arrivals' | 'departures' | 'stayovers';
 
+const TAB_COLORS: Record<string, { active: string; badge: string }> = {
+  emerald: { active: 'border-emerald-600 text-emerald-700 bg-emerald-50', badge: 'bg-emerald-100 text-emerald-700' },
+  amber: { active: 'border-amber-600 text-amber-700 bg-amber-50', badge: 'bg-amber-100 text-amber-700' },
+  blue: { active: 'border-blue-600 text-blue-700 bg-blue-50', badge: 'bg-blue-100 text-blue-700' },
+};
+
 export default function FrontDeskPage() {
   const { currentHotel } = useHotel();
   const { loading, error, kpis, arrivals, departures, stayovers, lastUpdated, refresh } = useFrontDeskData(currentHotel);
@@ -183,7 +189,7 @@ export default function FrontDeskPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === tab.key
-                    ? `border-${tab.color}-600 text-${tab.color}-700 bg-${tab.color}-50`
+                    ? TAB_COLORS[tab.color]?.active || 'border-blue-600 text-blue-700 bg-blue-50'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -191,7 +197,7 @@ export default function FrontDeskPage() {
                 {tab.label}
                 <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
                   activeTab === tab.key
-                    ? `bg-${tab.color}-100 text-${tab.color}-700`
+                    ? TAB_COLORS[tab.color]?.badge || 'bg-blue-100 text-blue-700'
                     : 'bg-gray-100 text-gray-500'
                 }`}>
                   {tab.count}
