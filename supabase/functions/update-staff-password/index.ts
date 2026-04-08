@@ -56,8 +56,8 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", caller.id)
       .maybeSingle();
 
-    if (callerStaffError || !callerStaff || callerStaff.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Only admins can update staff passwords." }), {
+    if (callerStaffError || !callerStaff || !["admin", "owner", "manager"].includes(callerStaff.role)) {
+      return new Response(JSON.stringify({ error: "Only owners, managers, or admins can reset staff passwords." }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

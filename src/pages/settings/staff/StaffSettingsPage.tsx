@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, UserPlus, Pencil, UserX, UserCheck, Search, Shield, BookOpen,
-  Clock, CheckCircle2, XCircle, AlertTriangle,
+  Clock, CheckCircle2, XCircle, AlertTriangle, KeyRound, Eye, EyeOff, Loader2, Info,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useHotel } from '../../../contexts/HotelContext';
@@ -48,6 +48,10 @@ export default function StaffSettingsPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<StaffMember | null>(null);
+  const [resetTarget, setResetTarget] = useState<StaffMember | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const isOwnerOrManager = currentStaff?.role === 'owner' || currentStaff?.role === 'manager';
 
@@ -108,6 +112,37 @@ export default function StaffSettingsPage() {
     } else {
       toast('success', `${member.first_name} ${member.last_name} access rejected`);
       loadStaff();
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetTarget || resetPassword.length < 8) return;
+    setResetting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-staff-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ staff_member_id: resetTarget.id, password: resetPassword }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        toast('error', json.error ?? 'Failed to reset password');
+      } else {
+        toast('success', `Password updated for ${resetTarget.first_name} ${resetTarget.last_name}`);
+        setResetTarget(null);
+        setResetPassword('');
+      }
+    } catch {
+      toast('error', 'Failed to connect to password reset service');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -176,6 +211,16 @@ export default function StaffSettingsPage() {
 
       {tab === 'staff' && (
         <div className="space-y-4">
+          {isOwnerOrManager && (
+            <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+              <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+              <p className="text-blue-700">
+                <span className="font-semibold">Automated password reset emails may not be available.</span>
+                {' '}If a staff member is locked out, use the <KeyRound className="w-3.5 h-3.5 inline mx-0.5" /> Reset Password button on their row to set a new password directly.
+              </p>
+            </div>
+          )}
+
           {isOwnerOrManager && pendingApprovals.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
               <div className="flex items-center gap-2.5 px-4 py-3 border-b border-amber-200 bg-amber-100/60">
@@ -326,6 +371,15 @@ export default function StaffSettingsPage() {
                               </button>
                               {!isMe && (
                                 <button
+                                  onClick={() => { setResetTarget(member); setResetPassword(''); setShowResetPw(false); }}
+                                  className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                  title="Reset Password"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {!isMe && (
+                                <button
                                   onClick={() => setDeactivateTarget(member)}
                                   className={`p-1.5 rounded-lg transition-colors ${
                                     member.is_active
@@ -390,6 +444,69 @@ export default function StaffSettingsPage() {
         onConfirm={() => deactivateTarget && toggleActive(deactivateTarget)}
         onClose={() => setDeactivateTarget(null)}
       />
+
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <KeyRound className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Reset Password</h3>
+                <p className="text-sm text-gray-500">{resetTarget.first_name} {resetTarget.last_name}</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+              This sets a new password immediately. The staff member will need to use it at their next login. Share it securely.
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+              <div className="relative">
+                <input
+                  type={showResetPw ? 'text' : 'password'}
+                  value={resetPassword}
+                  onChange={e => setResetPassword(e.target.value)}
+                  className="input-field pr-10"
+                  placeholder="Minimum 8 characters"
+                  minLength={8}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowResetPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showResetPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {resetPassword.length > 0 && resetPassword.length < 8 && (
+                <p className="text-xs text-red-500 mt-1">Password must be at least 8 characters</p>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => { setResetTarget(null); setResetPassword(''); }}
+                className="flex-1 btn-secondary"
+                disabled={resetting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={resetting || resetPassword.length < 8}
+                className="flex-1 btn-primary flex items-center justify-center gap-2"
+              >
+                {resetting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Set Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

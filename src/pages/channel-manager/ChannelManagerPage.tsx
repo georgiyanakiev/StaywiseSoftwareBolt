@@ -86,27 +86,39 @@ export default function ChannelManagerPage() {
     const roomsAffected = roomCount ?? 0;
     const datesAffected = pendingRates ?? 0;
     const isSimulated = !hasCredentials;
-    const logMessage = isSimulated ? 'Simulated — no API credentials configured' : '';
 
-    await Promise.all([
-      supabase.from('channels').update({ last_sync: now, status: 'connected' }).eq('id', id),
-      supabase.from('channel_rates').update({ status: 'synced', synced_at: now })
-        .eq('channel_id', id).eq('status', 'pending'),
-      supabase.from('channel_sync_logs').insert({
+    if (isSimulated) {
+      await supabase.from('channel_sync_logs').insert({
         hotel_id: currentHotel.id,
         channel_id: id,
         channel_name: name,
-        rooms_affected: roomsAffected,
-        dates_affected: datesAffected,
-        status: 'success',
-        error_message: logMessage,
+        rooms_affected: 0,
+        dates_affected: 0,
+        status: 'simulated',
+        error_message: 'Demo mode — no API credentials configured. No real OTA calls were made.',
         ...(tenantId ? { tenant_id: tenantId } : {}),
-      }),
-    ]);
+      });
+    } else {
+      await Promise.all([
+        supabase.from('channels').update({ last_sync: now, status: 'connected' }).eq('id', id),
+        supabase.from('channel_rates').update({ status: 'synced', synced_at: now })
+          .eq('channel_id', id).eq('status', 'pending'),
+        supabase.from('channel_sync_logs').insert({
+          hotel_id: currentHotel.id,
+          channel_id: id,
+          channel_name: name,
+          rooms_affected: roomsAffected,
+          dates_affected: datesAffected,
+          status: 'success',
+          error_message: '',
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+        }),
+      ]);
+    }
 
     setSyncingChannel(null);
     if (isSimulated) {
-      showToast(`${name} simulated sync — add API credentials for live sync`, 'success');
+      showToast(`${name} is in demo mode — no real sync occurred. Add API credentials to enable live sync.`, 'error');
     } else {
       showToast(`${name} synced — ${roomsAffected} rooms, ${datesAffected} pending rates updated`, 'success');
     }
@@ -120,7 +132,6 @@ export default function ChannelManagerPage() {
     setSyncingAll(true);
     for (const ch of connected) await syncChannel(ch.id, ch.name);
     setSyncingAll(false);
-    showToast('All channels synced successfully', 'success');
   };
 
   const handleSaveChannel = async (

@@ -225,14 +225,14 @@ export default function InvoiceEditorModal({ hotelId, invoice, onClose, onSaved 
     let invoiceId = invoice?.id;
     if (invoiceId) {
       await supabase.from('invoices').update(payload).eq('id', invoiceId);
-      await supabase.from('invoice_line_items').delete().eq('invoice_id', invoiceId);
+      await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
     } else {
       const { data } = await supabase.from('invoices').insert({ ...payload, guest_id: null }).select('id').single();
       invoiceId = data?.id;
     }
 
     if (invoiceId && lines.length) {
-      await supabase.from('invoice_line_items').insert(
+      await supabase.from('invoice_items').insert(
         lines.map((l, i) => ({
           hotel_id: hotelId,
           invoice_id: invoiceId,
@@ -241,6 +241,7 @@ export default function InvoiceEditorModal({ hotelId, invoice, onClose, onSaved 
           quantity: l.quantity,
           unit: l.unit,
           unit_price: l.unit_price,
+          total_price: l.line_total,
           tax_rate: l.tax_rate,
           discount_pct: l.discount_pct,
           line_total: l.line_total,

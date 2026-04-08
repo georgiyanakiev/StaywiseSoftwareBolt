@@ -108,7 +108,7 @@ export default function InvoicingPage() {
     setLoading(true);
     let q = supabase
       .from('invoices')
-      .select('*, lines:invoice_line_items(*)', { count: 'exact' })
+      .select('*, lines:invoice_items(*)', { count: 'exact' })
       .eq('hotel_id', currentHotel.id)
       .order('created_at', { ascending: false });
     if (statusFilter) q = q.eq('status', statusFilter);
@@ -179,7 +179,7 @@ export default function InvoicingPage() {
     }).select('id').single();
 
     if (newInv && inv.lines?.length) {
-      await supabase.from('invoice_line_items').insert(
+      await supabase.from('invoice_items').insert(
         inv.lines.map(l => ({
           hotel_id: currentHotel!.id,
           invoice_id: newInv.id,
@@ -188,6 +188,7 @@ export default function InvoicingPage() {
           quantity: l.quantity,
           unit: l.unit,
           unit_price: l.unit_price,
+          total_price: l.line_total,
           tax_rate: l.tax_rate,
           discount_pct: l.discount_pct,
           line_total: l.line_total,

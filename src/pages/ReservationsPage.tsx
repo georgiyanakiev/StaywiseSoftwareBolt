@@ -36,6 +36,7 @@ const STATUS_OPTIONS = [
   { value: 'checked_in', label: 'Checked In' },
   { value: 'checked_out', label: 'Checked Out' },
   { value: 'cancelled', label: 'Cancelled' },
+  { value: 'unassigned', label: 'Unassigned Room' },
 ];
 
 interface ReservationForm {
@@ -130,7 +131,9 @@ export default function ReservationsPage() {
         .order('created_at', { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-      if (statusFilter) {
+      if (statusFilter === 'unassigned') {
+        query = query.is('room_id', null);
+      } else if (statusFilter) {
         query = query.eq('status', statusFilter);
       }
 
@@ -326,8 +329,9 @@ export default function ReservationsPage() {
       return;
     }
 
-    if (nightsBetween(form.check_in, form.check_out) < 1) {
-      toast('error', 'Check-out must be after check-in');
+    const n = nightsBetween(form.check_in, form.check_out);
+    if (n < 1) {
+      toast('error', n === 0 ? 'Same-day check-in and check-out is not allowed. Minimum stay is 1 night.' : 'Check-out date must be after check-in date.');
       return;
     }
 
@@ -770,8 +774,15 @@ export default function ReservationsPage() {
                           {guestName(reservation)}
                         </div>
                       </td>
-                      <td className="table-cell text-gray-600">
-                        {roomLabel(reservation)}
+                      <td className="table-cell">
+                        {reservation.room_id ? (
+                          <span className="text-gray-600">{roomLabel(reservation)}</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Unassigned
+                          </span>
+                        )}
                       </td>
                       <td className="table-cell text-gray-600">
                         {formatDate(reservation.check_in)}
@@ -1012,7 +1023,7 @@ export default function ReservationsPage() {
                 type="date"
                 value={form.check_in}
                 onChange={e => updateForm({ check_in: e.target.value })}
-                className="input-field w-full"
+                className={`input-field w-full ${form.check_in && form.check_out && nights < 1 ? 'border-red-300 focus:ring-red-500' : ''}`}
               />
             </div>
             <div>
@@ -1022,11 +1033,18 @@ export default function ReservationsPage() {
               <input
                 type="date"
                 value={form.check_out}
+                min={form.check_in ? new Date(new Date(form.check_in).getTime() + 86400000).toISOString().split('T')[0] : undefined}
                 onChange={e => updateForm({ check_out: e.target.value })}
-                className="input-field w-full"
+                className={`input-field w-full ${form.check_in && form.check_out && nights < 1 ? 'border-red-300 focus:ring-red-500' : ''}`}
               />
             </div>
           </div>
+          {form.check_in && form.check_out && nights < 1 && (
+            <p className="text-sm text-red-600 flex items-center gap-1.5 -mt-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+              Check-out must be at least 1 night after check-in. Please select a later date.
+            </p>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>

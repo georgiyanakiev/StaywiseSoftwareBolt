@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wifi, WifiOff, AlertCircle, RefreshCw, Plug, PlugZap, Settings, Percent } from 'lucide-react';
+import { Wifi, WifiOff, AlertCircle, RefreshCw, Plug, PlugZap, Settings, Percent, FlaskConical } from 'lucide-react';
 import { formatDateTime } from '../../lib/utils';
 import { getChannelIcon } from '../../utils/channelCatalog';
 
@@ -30,6 +30,7 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
   const icon = getChannelIcon(channel.type);
   const isConnected = channel.status === 'connected';
   const isError = channel.status === 'error';
+  const isDemo = !channel.api_key_vault_id && !(channel.client_id && channel.client_secret_vault_id && channel.property_id);
 
   const handleToggle = async () => {
     setToggling(true);
@@ -70,6 +71,13 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
           </button>
         </div>
       </div>
+
+      {isDemo && (
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+          <FlaskConical className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+          <span className="text-xs font-medium text-amber-700">Demo — no API credentials</span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between text-xs text-gray-500">
         <div className="flex items-center gap-1">

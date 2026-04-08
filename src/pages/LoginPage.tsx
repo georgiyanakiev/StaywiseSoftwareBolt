@@ -117,17 +117,20 @@ export default function LoginPage() {
               {resetSent ? (
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-5">
-                    <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center border-4 border-green-100">
-                      <Mail className="w-8 h-8 text-green-500" />
+                    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center border-4 border-blue-100">
+                      <Mail className="w-8 h-8 text-blue-500" />
                     </div>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">{t.login.resetLinkSent}</h2>
-                  <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-sm mx-auto">
-                    {t.login.resetLinkSentDesc}
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Reset requested</h2>
+                  <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-sm mx-auto">
+                    If <span className="font-medium text-gray-700">{email}</span> is registered in this system, a password reset link will be sent to that address.
                   </p>
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
-                    <p className="text-xs text-gray-400 font-medium mb-1">Sent to</p>
-                    <p className="text-sm font-semibold text-gray-800">{email}</p>
+                  <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-sm mx-auto">
+                    If you don't receive an email within a few minutes, please ask your hotel administrator to reset your password directly from Staff Settings.
+                  </p>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-left">
+                    <p className="text-xs font-semibold text-amber-700 mb-1">Can't access your email?</p>
+                    <p className="text-xs text-amber-600 leading-relaxed">Contact your hotel manager or system administrator and ask them to set a new password for your account from Settings → Staff & Roles.</p>
                   </div>
                   <button
                     onClick={exitForgotPassword}
