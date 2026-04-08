@@ -253,6 +253,7 @@ export interface StaffMember {
   last_login: string | null;
   is_active: boolean;
   approval_status: 'pending' | 'approved' | 'rejected';
+  onboarding_sent: boolean;
   avatar_url: string;
   created_at: string;
   updated_at: string;

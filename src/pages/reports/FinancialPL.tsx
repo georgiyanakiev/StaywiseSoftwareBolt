@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react';
+import { Download, FlaskConical } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '../../lib/utils';
 import type { PLRow } from './types';
@@ -31,6 +31,8 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
     { label: 'Gross Margin', value: `${grossMargin.toFixed(1)}%`, color: 'text-teal-600', bg: 'bg-teal-50' },
   ];
 
+  const hasEstimatedRows = rows.some(r => r.isEstimated);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -39,6 +41,16 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
           <Download className="w-4 h-4" /> Export CSV
         </button>
       </div>
+
+      {hasEstimatedRows && (
+        <div className="flex items-start gap-2.5 px-3.5 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+          <FlaskConical className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-amber-800">
+            <span className="font-semibold">Estimated P&L — Demo Mode.</span>
+            <span className="ml-1">Rows marked <span className="font-semibold">(est.)</span> are calculated from industry-standard benchmarks, not actual recorded costs. Connect your accounting system or enter real cost data for accurate figures.</span>
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiCards.map(card => (
@@ -78,6 +90,9 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
                     >
                       <td className={`py-3 text-sm ${row.isTotal || row.isProfit ? 'font-semibold text-gray-900' : 'text-gray-700'} ${!row.isTotal && !row.isProfit ? 'pl-4' : ''}`}>
                         {row.label}
+                        {row.isEstimated && (
+                          <span className="ml-1.5 text-xs font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">(est.)</span>
+                        )}
                       </td>
                       <td className={`py-3 text-sm text-right font-${row.isTotal || row.isProfit ? 'semibold' : 'normal'} ${row.isNegative && !row.isTotal ? 'text-red-600' : row.isProfit ? 'text-emerald-700 font-bold' : 'text-gray-900'}`}>
                         {row.isNegative && !row.isTotal ? `(${formatCurrency(row.current, currency)})` : formatCurrency(row.current, currency)}

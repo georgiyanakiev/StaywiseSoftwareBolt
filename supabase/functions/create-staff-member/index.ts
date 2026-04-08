@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { first_name, last_name, email, phone, role, is_active, password, hotel_id: bodyHotelId } = await req.json();
+    const { first_name, last_name, email, phone, department, role, is_active, password, hotel_id: bodyHotelId } = await req.json();
 
     if (!first_name || !last_name || !email || !password || password.length < 6) {
       return new Response(JSON.stringify({ error: "Missing required fields. Password must be at least 6 characters." }), {
@@ -139,13 +139,19 @@ Deno.serve(async (req: Request) => {
       last_name,
       email,
       phone: phone || "",
+      department: department || "",
       role,
       is_active: is_active !== undefined ? is_active : true,
       approval_status: "approved",
+      onboarding_sent: false,
     };
     if (resolvedTenantId) insertPayload.tenant_id = resolvedTenantId;
 
-    const { error: insertError } = await supabaseAdmin.from("staff_members").insert(insertPayload);
+    const { data: insertedStaff, error: insertError } = await supabaseAdmin
+      .from("staff_members")
+      .insert(insertPayload)
+      .select("id")
+      .single();
 
     if (insertError) {
       return new Response(JSON.stringify({ error: insertError.message }), {
@@ -154,7 +160,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, staffId: insertedStaff?.id, userId: targetUserId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

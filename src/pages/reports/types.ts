@@ -92,4 +92,5 @@ export interface PLRow {
   isTotal?: boolean;
   isNegative?: boolean;
   isProfit?: boolean;
+  isEstimated?: boolean;
 }

@@ -220,14 +220,14 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
     const prevMultiplier = 0.92;
     const rows: PLRow[] = [
       { label: 'Accommodation Revenue', current: accommodation, prev: accommodation * prevMultiplier },
-      { label: 'F&B Revenue', current: fb, prev: fb * prevMultiplier },
+      { label: 'F&B Revenue', current: fb, prev: fb * prevMultiplier, isEstimated: true },
       { label: 'Extras & Upsells', current: extras, prev: extras * prevMultiplier },
       { label: 'Total Revenue', current: totalRevenue, prev: totalRevenue * prevMultiplier, isTotal: true },
-      { label: 'Channel Commissions', current: channelCommissions, prev: channelCommissions * prevMultiplier, isNegative: true },
-      { label: 'Payment Processing Fees', current: paymentFees, prev: paymentFees * prevMultiplier, isNegative: true },
-      { label: 'Staff Costs', current: staffCosts, prev: staffCosts * prevMultiplier, isNegative: true },
-      { label: 'Total Costs', current: totalCosts, prev: totalCosts * prevMultiplier, isTotal: true, isNegative: true },
-      { label: 'Gross Profit', current: grossProfit, prev: grossProfit * prevMultiplier, isProfit: true },
+      { label: 'Channel Commissions', current: channelCommissions, prev: channelCommissions * prevMultiplier, isNegative: true, isEstimated: true },
+      { label: 'Payment Processing Fees', current: paymentFees, prev: paymentFees * prevMultiplier, isNegative: true, isEstimated: true },
+      { label: 'Staff Costs', current: staffCosts, prev: staffCosts * prevMultiplier, isNegative: true, isEstimated: true },
+      { label: 'Total Costs', current: totalCosts, prev: totalCosts * prevMultiplier, isTotal: true, isNegative: true, isEstimated: true },
+      { label: 'Gross Profit', current: grossProfit, prev: grossProfit * prevMultiplier, isProfit: true, isEstimated: true },
     ];
 
     const monthlyBreakdown = MONTH_LABELS.map((month, i) => {

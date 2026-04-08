@@ -112,6 +112,7 @@ export default function BillingPage() {
 
   const [aggregateStats, setAggregateStats] = useState({
     totalRevenue: 0,
+    collectedRevenue: 0,
     outstandingBalance: 0,
     paidCount: 0,
     overdueCount: 0,
@@ -124,9 +125,11 @@ export default function BillingPage() {
       .select('total_amount, amount_paid, status')
       .eq('hotel_id', currentHotel.id);
     if (!data) return;
+    const active = data.filter(i => i.status !== 'cancelled' && i.status !== 'void');
     setAggregateStats({
-      totalRevenue: data.reduce((s, i) => s + (i.amount_paid || 0), 0),
-      outstandingBalance: data.reduce((s, i) => s + Math.max(0, (i.total_amount || 0) - (i.amount_paid || 0)), 0),
+      totalRevenue: active.reduce((s, i) => s + (i.total_amount || 0), 0),
+      collectedRevenue: active.reduce((s, i) => s + (i.amount_paid || 0), 0),
+      outstandingBalance: active.reduce((s, i) => s + Math.max(0, (i.total_amount || 0) - (i.amount_paid || 0)), 0),
       paidCount: data.filter(i => i.status === 'paid').length,
       overdueCount: data.filter(i => i.status === 'overdue').length,
     });
@@ -844,13 +847,16 @@ export default function BillingPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
               <Euro className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500">Total Revenue</p>
               <p className="text-xl font-semibold text-gray-900">
                 {formatCurrency(stats.totalRevenue, currentHotel.currency)}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Collected: {formatCurrency(stats.collectedRevenue, currentHotel.currency)}
               </p>
             </div>
           </div>

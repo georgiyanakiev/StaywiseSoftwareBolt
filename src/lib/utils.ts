@@ -9,6 +9,16 @@ export function formatCurrency(amount: number, currency = 'EUR'): string {
   }).format(amount);
 }
 
+export function getCurrencySymbol(currency = 'EUR'): string {
+  try {
+    const parts = new Intl.NumberFormat('en', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      .formatToParts(0);
+    return parts.find(p => p.type === 'currency')?.value ?? currency;
+  } catch {
+    return currency;
+  }
+}
+
 export function formatDate(date: string | Date, fmt = 'MMM d, yyyy'): string {
   const d = typeof date === 'string' ? parseISO(date) : date;
   return isValid(d) ? format(d, fmt) : '';

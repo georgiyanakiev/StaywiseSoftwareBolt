@@ -46,7 +46,7 @@ export interface Transaction {
   created_at: string;
 }
 
-type Tab = 'transactions' | 'rules' | 'scheduled';
+type Tab = 'all' | 'pending' | 'captured' | 'failed' | 'refunded' | 'rules' | 'scheduled';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending:    { label: 'Pending',    color: 'bg-amber-50 text-amber-700',     icon: Clock },
@@ -78,7 +78,7 @@ export default function PaymentAutomationPage() {
   const { showToast } = useToast();
   const tenantId = useTenantId();
 
-  const [tab, setTab] = useState<Tab>('transactions');
+  const [tab, setTab] = useState<Tab>('all');
   const [rules, setRules] = useState<PaymentRule[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,10 +272,43 @@ export default function PaymentAutomationPage() {
 
   const hasFilters = filterStatus || filterType || filterDateFrom || filterDateTo || filterAmtMin || filterAmtMax;
 
+  const pendingTxs   = transactions.filter(t => t.status === 'pending');
+  const capturedTxs  = transactions.filter(t => t.status === 'captured');
+  const failedTxs    = transactions.filter(t => t.status === 'failed');
+  const refundedTxs  = transactions.filter(t => t.status === 'refunded');
+
+  const statusTabMap: Record<string, Transaction[]> = {
+    all:      filtered,
+    pending:  pendingTxs.filter(t => {
+      if (filterType && t.type !== filterType) return false;
+      const refDate = t.scheduled_date ?? t.created_at?.split('T')[0];
+      if (filterDateFrom && refDate && refDate < filterDateFrom) return false;
+      if (filterDateTo && refDate && refDate > filterDateTo) return false;
+      if (filterAmtMin && Number(t.amount) < Number(filterAmtMin)) return false;
+      if (filterAmtMax && Number(t.amount) > Number(filterAmtMax)) return false;
+      return true;
+    }),
+    captured: capturedTxs.filter(t => {
+      if (filterType && t.type !== filterType) return false;
+      const refDate = t.processed_at?.split('T')[0] ?? t.created_at?.split('T')[0];
+      if (filterDateFrom && refDate && refDate < filterDateFrom) return false;
+      if (filterDateTo && refDate && refDate > filterDateTo) return false;
+      if (filterAmtMin && Number(t.amount) < Number(filterAmtMin)) return false;
+      if (filterAmtMax && Number(t.amount) > Number(filterAmtMax)) return false;
+      return true;
+    }),
+    failed:   failedTxs,
+    refunded: refundedTxs,
+  };
+
   const tabs: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'transactions', label: 'Transactions' },
-    { id: 'rules',        label: 'Payment Rules' },
-    { id: 'scheduled',    label: 'Scheduled', badge: overdue.length + scheduled.length || undefined },
+    { id: 'all',      label: 'All Transactions', badge: transactions.length || undefined },
+    { id: 'pending',  label: 'Pending',   badge: pendingTxs.length || undefined },
+    { id: 'captured', label: 'Completed', badge: capturedTxs.length || undefined },
+    { id: 'failed',   label: 'Failed',    badge: failedTxs.length || undefined },
+    { id: 'refunded', label: 'Refunded',  badge: refundedTxs.length || undefined },
+    { id: 'rules',    label: 'Payment Rules' },
+    { id: 'scheduled', label: 'Scheduled', badge: overdue.length + scheduled.length || undefined },
   ];
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
@@ -318,23 +351,34 @@ export default function PaymentAutomationPage() {
       </div>
 
       <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
-              tab === t.id ? 'border-[#1e3a5f] text-[#1e3a5f]' : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {t.label}
-            {t.badge ? (
-              <span className="bg-red-100 text-red-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>
-            ) : null}
-          </button>
-        ))}
+        {tabs.map(t => {
+          const badgeColor = t.id === 'failed' || t.id === 'scheduled'
+            ? 'bg-red-100 text-red-600'
+            : t.id === 'pending'
+            ? 'bg-amber-100 text-amber-700'
+            : t.id === 'captured'
+            ? 'bg-emerald-100 text-emerald-700'
+            : t.id === 'refunded'
+            ? 'bg-rose-100 text-rose-700'
+            : 'bg-gray-100 text-gray-600';
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
+                tab === t.id ? 'border-[#1e3a5f] text-[#1e3a5f]' : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t.label}
+              {t.badge ? (
+                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${badgeColor}`}>{t.badge}</span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
-      {tab === 'transactions' && (
+      {(['all', 'pending', 'captured', 'failed', 'refunded'] as Tab[]).includes(tab) && (
         <div className="space-y-3">
           <div className="bg-white rounded-xl border border-gray-100 p-3">
             <div className="flex items-center gap-2 mb-2.5">
@@ -353,11 +397,13 @@ export default function PaymentAutomationPage() {
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field py-1.5 text-xs">
-                <option value="">All Statuses</option>
-                {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+            <div className={`grid gap-2 ${tab === 'all' ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-5'}`}>
+              {tab === 'all' && (
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field py-1.5 text-xs">
+                  <option value="">All Statuses</option>
+                  {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              )}
               <select value={filterType} onChange={e => setFilterType(e.target.value)} className="input-field py-1.5 text-xs">
                 <option value="">All Types</option>
                 <option value="deposit">Deposit</option>
@@ -372,11 +418,12 @@ export default function PaymentAutomationPage() {
               <input type="number" value={filterAmtMax} onChange={e => setFilterAmtMax(e.target.value)} className="input-field py-1.5 text-xs" placeholder="Max amount" />
             </div>
           </div>
-          {hasFilters && (
-            <p className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
-          )}
+          {hasFilters && (() => {
+            const displayed = statusTabMap[tab] ?? filtered;
+            return <p className="text-xs text-gray-400">{displayed.length} result{displayed.length !== 1 ? 's' : ''}</p>;
+          })()}
           <TransactionTable
-            transactions={filtered}
+            transactions={statusTabMap[tab] ?? filtered}
             today={today}
             chargingId={chargingId}
             onChargeNow={chargeNow}

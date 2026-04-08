@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Modal from '../../components/ui/Modal';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, getCurrencySymbol } from '../../lib/utils';
 import { useTenantId } from '../../hooks/useTenantQuery';
 import type { Transaction } from './PaymentAutomationPage';
 
@@ -116,7 +116,7 @@ export default function RefundModal({ transaction, hotelId, currency, onClose, o
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-              {currency === 'GBP' ? '£' : '€'}
+              {getCurrencySymbol(currency)}
             </span>
             <input
               type="number"

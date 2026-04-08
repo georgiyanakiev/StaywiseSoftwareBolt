@@ -477,6 +477,13 @@ export default function ReservationsPage() {
       return;
     }
 
+    if (newStatus === 'confirmed' && reservation.room_id) {
+      await supabase
+        .from('rooms')
+        .update({ status: 'reserved' })
+        .eq('id', reservation.room_id);
+    }
+
     if (newStatus === 'checked_in' && reservation.room_id) {
       await supabase
         .from('rooms')

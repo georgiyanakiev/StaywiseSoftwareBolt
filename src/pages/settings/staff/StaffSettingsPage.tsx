@@ -343,21 +343,29 @@ export default function StaffSettingsPage() {
                           {formatLastLogin(member.last_login)}
                         </td>
                         <td className="table-cell">
-                          {member.approval_status === 'rejected' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                              <XCircle className="w-3 h-3" />
-                              Rejected
-                            </span>
-                          ) : (
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              member.is_active
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-gray-100 text-gray-500'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                              {member.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          )}
+                          <div className="flex flex-col gap-1 items-start">
+                            {member.approval_status === 'rejected' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                <XCircle className="w-3 h-3" />
+                                Rejected
+                              </span>
+                            ) : (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                member.is_active
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-gray-100 text-gray-500'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${member.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                                {member.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            )}
+                            {!member.onboarding_sent && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                                <Clock className="w-3 h-3" />
+                                Pending Onboarding
+                              </span>
+                            )}
+                          </div>
                         </td>
                         {isOwnerOrManager && (
                           <td className="table-cell text-right">
