@@ -68,35 +68,36 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
     setInviting(true);
     setError(null);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+    try {
+      const { data: result, error: fnError } = await supabase.functions.invoke('invite-user', {
+        body: { email: email.trim(), tenant_id: tenantId },
+      });
 
-    const res = await fetch(`${supabaseUrl}/functions/v1/invite-user`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token}`,
-        'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-      },
-      body: JSON.stringify({ email, tenant_id: tenantId }),
-    });
+      if (fnError) {
+        setError(fnError.message || 'Failed to create user');
+        setInviting(false);
+        return;
+      }
 
-    const result = await res.json();
-    if (!res.ok || result.error) {
-      setError(result.error || 'Failed to create user');
+      if (result?.error) {
+        setError(result.error);
+        setInviting(false);
+        return;
+      }
+
+      if (result?.already_exists) {
+        setError('This user already has an account. You can find and assign them in the user list.');
+        setInviting(false);
+        return;
+      }
+
+      onInvited();
+      setTempPassword(result?.temp_password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create user');
+    } finally {
       setInviting(false);
-      return;
     }
-
-    if (result.already_exists) {
-      setError('This user already has an account. You can find and assign them in the user list.');
-      setInviting(false);
-      return;
-    }
-
-    onInvited();
-    setTempPassword(result.temp_password);
-    setInviting(false);
   };
 
   const handleCopy = () => {
