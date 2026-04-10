@@ -50,11 +50,19 @@ export default function GuestFormModal({ open, onClose, onSaved, guest, hotelId 
     e.preventDefault();
     if (!form.full_name?.trim()) { toast('error', 'Full name is required'); return; }
     setSaving(true);
-    const payload = { ...form, hotel_id: hotelId };
+
+    const { id: _id, created_at: _ca, updated_at: _ua, total_stays: _ts, total_spent: _sp, last_stay_at: _ls, guest_id: _gi, ...rest } = form as Record<string, unknown>;
+    const payload: Record<string, unknown> = { ...rest, hotel_id: hotelId };
+
+    if (!payload.date_of_birth) payload.date_of_birth = null;
+    if (!payload.anniversary_date) payload.anniversary_date = null;
+    if (!payload.birthday_month) payload.birthday_month = null;
+    if (!payload.birthday_day) payload.birthday_day = null;
+
     const { error } = guest
       ? await supabase.from('guest_profiles').update(payload).eq('id', guest.id)
       : await supabase.from('guest_profiles').insert(payload);
-    if (error) toast('error', 'Failed to save guest');
+    if (error) { console.error('guest save error:', error); toast('error', 'Failed to save guest'); }
     else { toast('success', guest ? 'Guest updated' : 'Guest added'); onSaved(); onClose(); }
     setSaving(false);
   };
