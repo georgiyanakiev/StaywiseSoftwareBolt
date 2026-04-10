@@ -328,7 +328,8 @@ export default function RoomsPage() {
     } else {
       const { error } = await supabase.from('room_types').insert(payload);
       if (error) {
-        toast('error', 'Failed to create room type');
+        console.error('room_types insert error:', error);
+        toast('error', `Failed to create room type: ${error.message}`);
         setSavingRoomType(false);
         return;
       }
