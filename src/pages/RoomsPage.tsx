@@ -3,7 +3,6 @@ import { BedDouble, Plus, Search, Filter, CreditCard as Edit, Trash2, Wifi, Tv, 
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
-import { useTenantId } from '../hooks/useTenantQuery';
 import { formatCurrency, getStatusColor, getStatusLabel } from '../lib/utils';
 import type { Room, RoomType } from '../types';
 import Modal from '../components/ui/Modal';
@@ -83,8 +82,6 @@ export default function RoomsPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
   const { t } = useLanguage();
-  const tenantId = useTenantId();
-
   const [activeTab, setActiveTab] = useState<TabView>('rooms');
   const [roomView, setRoomView] = useState<RoomView>('grid');
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -259,7 +256,7 @@ export default function RoomsPage() {
       }
       toast('success', `Room ${payload.number} updated`);
     } else {
-      const { error } = await supabase.from('rooms').insert({ ...payload, status: 'available' as const, ...(tenantId ? { tenant_id: tenantId } : {}) });
+      const { error } = await supabase.from('rooms').insert({ ...payload, status: 'available' as const });
       if (error) {
         toast('error', 'Failed to create room');
         setSavingRoom(false);
@@ -318,7 +315,6 @@ export default function RoomsPage() {
       bed_type: roomTypeForm.bed_type,
       amenities: roomTypeForm.amenities,
       image_url: roomTypeForm.image_url.trim(),
-      ...(tenantId ? { tenant_id: tenantId } : {}),
     };
 
     if (editingRoomType) {
