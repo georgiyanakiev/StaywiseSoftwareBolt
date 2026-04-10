@@ -44,6 +44,8 @@ const ExpediaPage = lazy(() => import('./pages/ExpediaPage'));
 const CloudbedsPage = lazy(() => import('./pages/CloudbedsPage'));
 const SiteMinderPage = lazy(() => import('./pages/SiteMinderPage'));
 const LodgifyPage = lazy(() => import('./pages/LodgifyPage'));
+const InvoicingPage = lazy(() => import('./pages/invoicing/InvoicingPage'));
+const InvoiceSettingsPage = lazy(() => import('./pages/invoicing/InvoiceSettingsPage'));
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
 const DpaPage = lazy(() => import('./pages/legal/DpaPage'));
@@ -86,8 +88,8 @@ function AuthenticatedApp() {
             <Route path="/channel-manager" element={<ChannelManagerPage />} />
             <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
             <Route path="/payment-automation" element={<PaymentAutomationPage />} />
-            <Route path="/invoicing" element={<Navigate to="/billing" replace />} />
-            <Route path="/invoicing/settings" element={<Navigate to="/billing" replace />} />
+            <Route path="/invoicing" element={<InvoicingPage />} />
+            <Route path="/invoicing/settings" element={<InvoiceSettingsPage />} />
             <Route path="/guest-portal" element={<GuestPortalPage />} />
             <Route path="/owner-portal" element={<OwnerPortalPage />} />
             <Route path="/owner-portal/my-portal" element={<MyOwnerPortal />} />
