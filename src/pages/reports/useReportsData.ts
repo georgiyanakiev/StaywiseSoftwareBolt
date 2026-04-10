@@ -31,11 +31,11 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
       const yearEnd = format(endOfYear(new Date()), 'yyyy-MM-dd');
 
       const [resResult, yearlyResult, roomsResult, rtResult, upsellResult] = await Promise.all([
-        supabase.from('reservations').select('*, guest:guests(name, nationality), room:rooms(room_number, room_type_id), room_type:room_types(name, base_price)').eq('hotel_id', hotelId).gte('check_in', dateRange.start).lte('check_in', dateRange.end + 'T23:59:59'),
+        supabase.from('reservations').select('*, guest:guests(first_name, last_name, nationality), room:rooms(room_number, room_type_id), room_type:room_types(name, base_rate)').eq('hotel_id', hotelId).gte('check_in', dateRange.start).lte('check_in', dateRange.end + 'T23:59:59'),
         supabase.from('reservations').select('id, status, check_in, check_out, total_amount, created_at, room_id').eq('hotel_id', hotelId).gte('check_in', yearStart).lte('check_in', yearEnd + 'T23:59:59'),
-        supabase.from('rooms').select('*, room_type:room_types(name, base_price)').eq('hotel_id', hotelId),
+        supabase.from('rooms').select('*, room_type:room_types(name, base_rate)').eq('hotel_id', hotelId),
         supabase.from('room_types').select('*').eq('hotel_id', hotelId),
-        supabase.from('upsell_orders').select('*, item:upsell_items(name, price, category)').eq('hotel_id', hotelId).gte('created_at', dateRange.start).lte('created_at', dateRange.end + 'T23:59:59'),
+        supabase.from('upsell_orders').select('*, item:upsell_items(name, price, category)').eq('hotel_id', hotelId).gte('ordered_at', dateRange.start).lte('ordered_at', dateRange.end + 'T23:59:59'),
       ]);
       setReservations(resResult.data || []);
       setYearlyReservations(yearlyResult.data || []);
