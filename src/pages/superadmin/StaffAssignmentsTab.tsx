@@ -89,10 +89,18 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
         }
       );
 
-      const result = await res.json();
+      const responseText = await res.text();
+      let result: Record<string, unknown>;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        setError(responseText || `Server error (${res.status})`);
+        setInviting(false);
+        return;
+      }
 
       if (!res.ok || result.error) {
-        setError(result.error || result.msg || 'Failed to create user');
+        setError((result.error as string) || `Server error (${res.status})`);
         setInviting(false);
         return;
       }
