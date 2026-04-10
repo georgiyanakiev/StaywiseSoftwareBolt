@@ -7,6 +7,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+function json(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -15,10 +22,7 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Missing authorization" }, 401);
     }
 
     const supabaseAdmin = createClient(
@@ -35,70 +39,100 @@ Deno.serve(async (req: Request) => {
 
     const { data: { user: caller }, error: callerError } = await supabaseUser.auth.getUser();
     if (callerError || !caller) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const { first_name, last_name, email, phone, department, role, is_active, password, hotel_id: bodyHotelId } = await req.json();
 
     if (!first_name || !last_name || !email || !password || password.length < 6) {
-      return new Response(JSON.stringify({ error: "Missing required fields. Password must be at least 6 characters." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Missing required fields. Password must be at least 6 characters." }, 400);
     }
+
+    let resolvedHotelId: string | null = null;
+    let resolvedTenantId: string | null = null;
 
     const { data: callerStaff } = await supabaseAdmin
       .from("staff_members")
       .select("role, hotel_id, tenant_id")
       .eq("user_id", caller.id)
-      .maybeSingle();
+      .eq("is_active", true);
 
     const allowedRoles = ["admin", "owner", "manager"];
-    let resolvedHotelId: string | null = null;
-    let resolvedTenantId: string | null = null;
+    const staffMatch = callerStaff?.find((s) => {
+      if (bodyHotelId) return s.hotel_id === bodyHotelId && allowedRoles.includes(s.role);
+      return allowedRoles.includes(s.role);
+    });
 
-    if (callerStaff && allowedRoles.includes(callerStaff.role)) {
-      resolvedHotelId = callerStaff.hotel_id;
-      resolvedTenantId = callerStaff.tenant_id;
-    } else {
-      const { data: ownedTenant } = await supabaseAdmin
-        .from("tenants")
-        .select("id")
-        .eq("owner_email", caller.email)
-        .maybeSingle();
+    if (staffMatch) {
+      resolvedHotelId = staffMatch.hotel_id;
+      resolvedTenantId = staffMatch.tenant_id;
+    }
 
-      if (ownedTenant) {
-        resolvedTenantId = ownedTenant.id;
-        if (bodyHotelId) {
+    if (!resolvedHotelId) {
+      const { data: assignments } = await supabaseAdmin
+        .from("user_hotel_assignments")
+        .select("role, tenant_id")
+        .eq("user_id", caller.id)
+        .eq("active", true);
+
+      const isSuperAdmin = assignments?.some((a) => a.role === "super_admin");
+
+      if (bodyHotelId) {
+        const isTenantOwnerForHotel = async () => {
+          const { data: hotel } = await supabaseAdmin
+            .from("hotels")
+            .select("id, tenant_id")
+            .eq("id", bodyHotelId)
+            .maybeSingle();
+          if (!hotel) return false;
+          resolvedTenantId = hotel.tenant_id;
+          return assignments?.some(
+            (a) => (a.role === "owner" && a.tenant_id === hotel.tenant_id) || a.role === "super_admin"
+          );
+        };
+
+        if (isSuperAdmin || await isTenantOwnerForHotel()) {
           resolvedHotelId = bodyHotelId;
-        } else {
+        }
+      } else if (isSuperAdmin) {
+        const { data: firstHotel } = await supabaseAdmin
+          .from("hotels")
+          .select("id, tenant_id")
+          .limit(1)
+          .maybeSingle();
+        if (firstHotel) {
+          resolvedHotelId = firstHotel.id;
+          resolvedTenantId = firstHotel.tenant_id;
+        }
+      } else {
+        const ownerTenantIds = assignments
+          ?.filter((a) => a.role === "owner" && a.tenant_id)
+          .map((a) => a.tenant_id) ?? [];
+
+        if (ownerTenantIds.length > 0) {
           const { data: tenantHotel } = await supabaseAdmin
             .from("hotels")
-            .select("id")
-            .eq("tenant_id", ownedTenant.id)
+            .select("id, tenant_id")
+            .in("tenant_id", ownerTenantIds)
+            .limit(1)
             .maybeSingle();
-          resolvedHotelId = tenantHotel?.id ?? null;
+          if (tenantHotel) {
+            resolvedHotelId = tenantHotel.id;
+            resolvedTenantId = tenantHotel.tenant_id;
+          }
         }
       }
     }
 
     if (!resolvedHotelId) {
-      return new Response(JSON.stringify({ error: "You do not have permission to add staff members." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "You do not have permission to add staff members." }, 403);
     }
 
-    // Try to find an existing auth user with this email first
     let targetUserId: string | null = null;
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find((u) => u.email === email);
 
     if (existingUser) {
-      // User already exists in auth — use their ID and optionally update password
       targetUserId = existingUser.id;
       await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
     } else {
@@ -109,15 +143,11 @@ Deno.serve(async (req: Request) => {
       });
 
       if (createError) {
-        return new Response(JSON.stringify({ error: createError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ error: createError.message }, 400);
       }
       targetUserId = newUser.user.id;
     }
 
-    // Check if a staff_member record already exists for this user+hotel combination
     const { data: existingStaff } = await supabaseAdmin
       .from("staff_members")
       .select("id")
@@ -126,10 +156,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (existingStaff) {
-      return new Response(JSON.stringify({ error: "This user is already a staff member at this hotel." }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "This user is already a staff member at this hotel." }, 409);
     }
 
     const insertPayload: Record<string, unknown> = {
@@ -154,19 +181,11 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (insertError) {
-      return new Response(JSON.stringify({ error: insertError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: insertError.message }, 500);
     }
 
-    return new Response(JSON.stringify({ success: true, staffId: insertedStaff?.id, userId: targetUserId }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ success: true, staffId: insertedStaff?.id, userId: targetUserId });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: String(err) }, 500);
   }
 });
