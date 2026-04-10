@@ -609,7 +609,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
 
           {/* Left: logo + hotel identity */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            <img src="/STAYWISESOFTWARE_LOGO_JPG.jpg" alt="StayWise Software" className="h-8 w-auto flex-shrink-0" />
+            <img src="/staywisesoftware_logo_v8.png" alt="StayWise Software" className="h-8 w-auto flex-shrink-0" />
           </div>
           <NavLink to="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0 group">
             {hotelLogo ? (
