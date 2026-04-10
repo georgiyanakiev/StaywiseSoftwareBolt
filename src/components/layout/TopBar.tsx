@@ -331,10 +331,10 @@ function R3Link({ item, brandColor }: { item: NavItem; brandColor: string }) {
       to={item.to}
       style={active ? { color: brandColor } : undefined}
       className={`flex items-center gap-1 px-2.5 py-1 rounded-[5px] text-[12px] whitespace-nowrap flex-shrink-0 transition-colors ${
-        active ? 'font-medium' : 'text-[#94a3b8] hover:text-[#64748b] hover:bg-[#f1f5f9]'
+        active ? 'font-medium' : 'text-[#1f2937] hover:text-[#111827] hover:bg-[#f1f5f9]'
       }`}
     >
-      <item.icon className="w-3 h-3 flex-shrink-0 text-[#cbd5e1]" />
+      <item.icon className="w-3 h-3 flex-shrink-0 text-[#374151]" />
       <span>{item.label}</span>
     </NavLink>
   );
@@ -730,14 +730,14 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
                           borderRadius: 6,
                           fontSize: 12,
                           fontWeight: isActive ? 500 : 400,
-                          color: isActive ? '#172e4c' : '#1e3a5f',
+                          color: isActive ? '#172e4c' : '#1f2937',
                           background: isActive ? '#dbeafe' : 'transparent',
                           textDecoration: 'none',
                           whiteSpace: 'nowrap',
                           flexShrink: 0,
                         })}
                       >
-                        <Shield style={{ width: 13, height: 13, flexShrink: 0, color: '#1e3a5f' }} />
+                        <Shield style={{ width: 13, height: 13, flexShrink: 0, color: '#374151' }} />
                         Super Admin
                       </NavLink>
                     </>
