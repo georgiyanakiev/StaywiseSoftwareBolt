@@ -51,18 +51,39 @@ export default function GuestFormModal({ open, onClose, onSaved, guest, hotelId 
     if (!form.full_name?.trim()) { toast('error', 'Full name is required'); return; }
     setSaving(true);
 
-    const { id: _id, created_at: _ca, updated_at: _ua, total_stays: _ts, total_spent: _sp, last_stay_at: _ls, guest_id: _gi, ...rest } = form as Record<string, unknown>;
-    const payload: Record<string, unknown> = { ...rest, hotel_id: hotelId };
+    const toNull = (v: unknown) => (v === '' || v === undefined || v === null) ? null : v;
 
-    if (!payload.date_of_birth) payload.date_of_birth = null;
-    if (!payload.anniversary_date) payload.anniversary_date = null;
-    if (!payload.birthday_month) payload.birthday_month = null;
-    if (!payload.birthday_day) payload.birthday_day = null;
+    const payload: Record<string, unknown> = {
+      hotel_id: hotelId,
+      full_name: form.full_name?.trim(),
+      email: toNull(form.email),
+      phone: toNull(form.phone),
+      date_of_birth: toNull(form.date_of_birth),
+      nationality: toNull(form.nationality),
+      country: toNull(form.country),
+      city: toNull(form.city),
+      address: toNull(form.address),
+      company: toNull(form.company),
+      vat_number: toNull(form.vat_number),
+      loyalty_tier: form.loyalty_tier || 'standard',
+      loyalty_points: form.loyalty_points || 0,
+      marketing_opt_in: form.marketing_opt_in ?? false,
+      tags: form.tags || [],
+      notes: toNull(form.notes),
+      blacklisted: form.blacklisted ?? false,
+      dietary_requirements: toNull(form.dietary_requirements),
+      room_preferences: toNull(form.room_preferences),
+      language_preference: toNull(form.language_preference),
+      birthday_month: toNull(form.birthday_month),
+      birthday_day: toNull(form.birthday_day),
+      anniversary_date: toNull(form.anniversary_date),
+      special_occasions: toNull(form.special_occasions),
+    };
 
     const { error } = guest
       ? await supabase.from('guest_profiles').update(payload).eq('id', guest.id)
       : await supabase.from('guest_profiles').insert(payload);
-    if (error) { console.error('guest save error:', error); toast('error', 'Failed to save guest'); }
+    if (error) { console.error('guest save error:', error); toast('error', error.message || 'Failed to save guest'); }
     else { toast('success', guest ? 'Guest updated' : 'Guest added'); onSaved(); onClose(); }
     setSaving(false);
   };
