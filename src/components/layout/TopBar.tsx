@@ -312,10 +312,10 @@ function R2Link({ item, brandColor }: { item: NavItem; brandColor: string }) {
       to={item.to}
       style={active ? { color: brandColor, backgroundColor: `${brandColor}14` } : undefined}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] whitespace-nowrap flex-shrink-0 transition-colors ${
-        active ? 'font-medium' : 'text-[#64748b] hover:text-[#1e3a5f] hover:bg-[#f8fafc]'
+        active ? 'font-medium' : 'text-[#1f2937] hover:text-[#111827] hover:bg-[#f8fafc]'
       }`}
     >
-      <item.icon className="w-[14px] h-[14px] flex-shrink-0 text-[#94a3b8]" />
+      <item.icon className="w-[14px] h-[14px] flex-shrink-0 text-[#374151]" />
       <span>{item.label}</span>
     </NavLink>
   );
