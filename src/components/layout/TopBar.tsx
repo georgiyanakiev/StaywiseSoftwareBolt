@@ -607,7 +607,10 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
         {/* ── ROW 1 — 48px dark identity bar ── */}
         <div className="bg-[#1e3a5f] h-[48px] flex items-center px-6 gap-3">
 
-          {/* Left: hotel identity */}
+          {/* Left: logo + hotel identity */}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <img src="/STAYWISESOFTWARE_LOGO_JPG.jpg" alt="StayWise Software" className="h-8 w-auto flex-shrink-0" />
+          </div>
           <NavLink to="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0 group">
             {hotelLogo ? (
               <img src={hotelLogo} alt={hotelName} className="w-9 h-9 rounded-lg object-contain flex-shrink-0 group-hover:opacity-80 transition-opacity" />
