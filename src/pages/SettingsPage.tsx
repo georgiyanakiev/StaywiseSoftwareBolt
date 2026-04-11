@@ -1338,8 +1338,9 @@ export default function SettingsPage() {
 
   const TABS = TABS_STATIC.map(tab => ({ ...tab, label: TAB_LABELS[tab.key] }));
 
+  const isAdminOrOwner = staff?.role === 'admin' || staff?.role === 'owner' || staff?.role === 'manager';
   const visibleTabs = TABS.filter(tab => {
-    if (tab.adminOnly && staff?.role !== 'admin') return false;
+    if (tab.adminOnly && !isAdminOrOwner) return false;
     return true;
   });
 
