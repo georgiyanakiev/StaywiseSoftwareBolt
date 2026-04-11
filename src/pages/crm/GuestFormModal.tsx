@@ -80,9 +80,10 @@ export default function GuestFormModal({ open, onClose, onSaved, guest, hotelId 
       special_occasions: toNull(form.special_occasions),
     };
 
-    const { error } = guest
-      ? await supabase.from('guest_profiles').update(payload).eq('id', guest.id)
-      : await supabase.from('guest_profiles').insert(payload);
+    const { error } = await supabase.rpc('upsert_guest_profile', {
+      p_payload: payload,
+      p_guest_id: guest?.id ?? null,
+    });
     if (error) { console.error('guest save error:', error); toast('error', error.message || 'Failed to save guest'); }
     else { toast('success', guest ? 'Guest updated' : 'Guest added'); onSaved(); onClose(); }
     setSaving(false);
