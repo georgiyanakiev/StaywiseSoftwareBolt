@@ -87,6 +87,7 @@ export default function ReservationsPage() {
   const { t } = useLanguage();
   const tenantId = useTenantId();
 
+  const [bookings, setBookings] = useState([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -200,6 +201,15 @@ export default function ReservationsPage() {
     }
   }, [currentHotel]);
 
+  useEffect(() => {
+  supabase
+    .from("bookings")          // ← must be "bookings" not "reservations"
+    .select("*")
+    .order("arrival", { ascending: true })
+    .then(({ data, error }) => {
+      if (!error && data) setBookings(data);
+    });
+}, []);
   useEffect(() => {
     fetchReservations();
   }, [fetchReservations]);
