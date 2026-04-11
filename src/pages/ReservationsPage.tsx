@@ -87,7 +87,7 @@ export default function ReservationsPage() {
   const { t } = useLanguage();
   const tenantId = useTenantId();
 
-  const [bookings, setBookings] = useState([]);
+  const [smoobuBookings, setSmoobuBookings] = useState<any[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -207,7 +207,7 @@ export default function ReservationsPage() {
     .select("*")
     .order("arrival", { ascending: true })
     .then(({ data, error }) => {
-      if (!error && data) setBookings(data);
+      if (!error && data) setSmoobuBookings(data);
     });
 }, []);
   useEffect(() => {
@@ -748,7 +748,7 @@ export default function ReservationsPage() {
 
         {loading ? (
           <LoadingSpinner />
-        ) : reservations.length === 0 ? (
+        ) : reservations.length === 0 && smoobuBookings.length === 0 ? (
           <EmptyState
             icon={<CalendarCheck className="w-6 h-6" />}
             title={t.reservations.noReservations}
@@ -909,6 +909,44 @@ export default function ReservationsPage() {
                             </div>
                           )}
                         </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {smoobuBookings.map(b => (
+                    <tr key={`smoobu-${b.id}`} className="hover:bg-gray-50 transition-colors">
+                      <td className="table-cell font-mono text-sm font-medium text-brand-600">
+                        SB-{b.smoobu_id}
+                      </td>
+                      <td className="table-cell">
+                        <div className="font-medium text-gray-900">{b.guest_name}</div>
+                        <div className="text-xs text-gray-400">{b.guest_email}</div>
+                      </td>
+                      <td className="table-cell">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          {b.channel_name}
+                        </span>
+                      </td>
+                      <td className="table-cell text-gray-600">{b.arrival}</td>
+                      <td className="table-cell text-gray-600">{b.departure}</td>
+                      <td className="table-cell">
+                        <span className={`badge ${
+                          b.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                          b.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="table-cell font-medium text-gray-900">
+                        {currentHotel.currency === 'GBP' ? '\u00a3' : '\u20ac'}{b.total_price}
+                      </td>
+                      <td className="table-cell">
+                        <span className={`badge ${b.price_paid ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {b.price_paid ? 'paid' : 'pending'}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className="text-xs text-gray-400">Smoobu</span>
                       </td>
                     </tr>
                   ))}
