@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Search, Download, Filter, Tag, AlertTriangle, ChevronLeft, ChevronRight, X, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
+import { supabase } from '../../lib/supabase';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import EmptyState from '../../components/ui/EmptyState';
 import { useToast } from '../../components/ui/Toast';

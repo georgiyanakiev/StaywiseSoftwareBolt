@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { useActiveHotel } from './ActiveHotelContext';
 import type { Hotel } from '../types';
 
 interface HotelContextValue {
@@ -15,6 +16,7 @@ const HotelContext = createContext<HotelContextValue | null>(null);
 
 export function HotelProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { activeHotel } = useActiveHotel();
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [currentHotel, setCurrentHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,11 +29,10 @@ export function HotelProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const sessionRaw = sessionStorage.getItem('sw_active_hotel');
-    const activeHotelId = sessionRaw ? JSON.parse(sessionRaw).hotelId : null;
+    const targetHotelId = activeHotel?.hotel_id || null;
 
-    if (activeHotelId) {
-      const { data } = await supabase.from('hotels').select('*').eq('id', activeHotelId).maybeSingle();
+    if (targetHotelId) {
+      const { data } = await supabase.from('hotels').select('*').eq('id', targetHotelId).maybeSingle();
       if (data) {
         const hotel = data as Hotel;
         setHotels([hotel]);
@@ -47,7 +48,7 @@ export function HotelProvider({ children }: { children: ReactNode }) {
     if (hotelList.length > 0) {
       const savedId = localStorage.getItem('staywise_current_hotel');
       const found = savedId ? hotelList.find(h => h.id === savedId) : null;
-      setCurrentHotel(prev => prev ?? (found || hotelList[0]));
+      setCurrentHotel(found || hotelList[0]);
     }
     setLoading(false);
   };
@@ -60,15 +61,7 @@ export function HotelProvider({ children }: { children: ReactNode }) {
       setCurrentHotel(null);
       setLoading(false);
     }
-  }, [user]);
-
-  useEffect(() => {
-    const handleHotelEntered = () => {
-      if (user) refreshHotels();
-    };
-    window.addEventListener('sw:hotel:entered', handleHotelEntered);
-    return () => window.removeEventListener('sw:hotel:entered', handleHotelEntered);
-  }, [user]);
+  }, [user, activeHotel?.hotel_id]);
 
   const handleSetHotel = (hotel: Hotel) => {
     setCurrentHotel(hotel);
