@@ -138,19 +138,39 @@ export default function ChannelCatalog({
     const item = pendingItem;
     setAdding(item.slug);
     try {
-      const { data, error } = await supabase.from('channels').insert({
+      const insertPayload: Record<string, unknown> = {
         hotel_id: hotelId,
         name: item.name,
         type: item.slug,
         status: 'disconnected',
         commission_pct: item.commission_typical ?? 0,
         sync_enabled: true,
-        api_key: credentials.api_key,
-        property_id: credentials.property_id,
-        client_id: credentials.client_id,
-        client_secret: credentials.client_secret,
+        property_id: credentials.property_id || null,
+        client_id: credentials.client_id || null,
         ...(tenantId ? { tenant_id: tenantId } : {}),
-      }).select('id').single();
+      };
+
+      if (credentials.api_key) {
+        insertPayload.api_key = credentials.api_key;
+      }
+
+      const { data, error } = await supabase.from('channels')
+        .insert(insertPayload)
+        .select('id')
+        .single();
+
+      if (!error && data?.id && credentials.client_secret) {
+        const { data: vaultId } = await supabase.rpc('store_channel_secret', {
+          p_vault_id: null,
+          p_name: `channel_client_secret_${data.id}_${hotelId}`,
+          p_value: credentials.client_secret,
+        });
+        if (vaultId) {
+          await supabase.from('channels')
+            .update({ client_secret_vault_id: vaultId })
+            .eq('id', data.id);
+        }
+      }
 
       if (error) throw error;
 
