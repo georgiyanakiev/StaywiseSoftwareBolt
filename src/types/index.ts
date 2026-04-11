@@ -162,6 +162,8 @@ export interface Reservation {
   special_requests: string;
   cancellation_reason: string;
   confirmation_code: string;
+  smoobu_id: string | null;
+  source: string;
   created_at: string;
   updated_at: string;
   guest?: Guest;
