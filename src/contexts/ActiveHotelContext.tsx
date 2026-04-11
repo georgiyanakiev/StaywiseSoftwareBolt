@@ -6,6 +6,7 @@ const SESSION_KEY = 'sw_active_hotel';
 
 export interface ActiveHotel {
   tenant_id: string;
+  hotel_id: string;
   hotel_name: string;
   subdomain: string;
   logo_url: string | null;
@@ -51,6 +52,7 @@ const ActiveHotelContext = createContext<ActiveHotelContextValue | null>(null);
 function toActiveHotel(s: ActiveHotelSession): ActiveHotel {
   return {
     tenant_id: s.tenantId,
+    hotel_id: s.hotelId,
     hotel_name: s.hotelName,
     subdomain: s.subdomain,
     logo_url: s.hotelLogo,
@@ -64,7 +66,7 @@ function toActiveHotel(s: ActiveHotelSession): ActiveHotel {
 function toSession(h: ActiveHotel): ActiveHotelSession {
   return {
     tenantId: h.tenant_id,
-    hotelId: '',
+    hotelId: h.hotel_id,
     role: h.user_role,
     hotelName: h.hotel_name,
     hotelLogo: h.logo_url,
