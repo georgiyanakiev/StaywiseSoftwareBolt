@@ -70,9 +70,6 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
-            <LogIn className="w-3.5 h-3.5" /> {t.dashboard.quickCheckIn}
-          </Link>
-          <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
             <CalendarDays className="w-3.5 h-3.5" /> {t.dashboard.newBooking}
           </Link>
           <button onClick={refresh} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Refresh">
@@ -278,7 +275,6 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-gray-900 mb-4">{t.dashboard.quickActions}</h2>
           <div className="space-y-2">
             {[
-              { label: t.dashboard.newReservation, to: '/reservations', icon: CalendarDays, color: 'bg-[#1e3a5f] hover:bg-[#172e4c] text-white' },
               { label: t.dashboard.quickCheckIn, to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
               { label: t.nav.frontDesk, to: '/front-desk', icon: ClipboardList, color: 'bg-cyan-600 hover:bg-cyan-700 text-white' },
               { label: t.nav.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
