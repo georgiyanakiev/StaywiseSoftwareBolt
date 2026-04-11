@@ -16,7 +16,7 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
-import { CalendarCheck, Plus, Search, Filter, MoreVertical, Eye, CreditCard as Edit, XCircle, LogIn, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarCheck, Plus, Search, Filter, MoreVertical, Eye, CreditCard as Edit, XCircle, LogIn, LogOut, ChevronLeft, ChevronRight, Mail, Send, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -113,6 +113,33 @@ export default function ReservationsPage() {
   const [cancelReason, setCancelReason] = useState('');
 
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+
+  const [emailLogs, setEmailLogs] = useState<Record<string, { email_type: string; status: string; sent_at: string | null }[]>>({});
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+
+  const fetchEmailLogs = useCallback(async (reservationId: string) => {
+    const { data } = await supabase
+      .from('guest_emails')
+      .select('email_type, status, sent_at')
+      .eq('reservation_id', reservationId);
+    if (data) {
+      setEmailLogs(prev => ({ ...prev, [reservationId]: data }));
+    }
+  }, []);
+
+  const handleSendEmail = async (reservationId: string, emailType: string) => {
+    setSendingEmail(emailType);
+    const { error: fnErr } = await supabase.functions.invoke('send-guest-email', {
+      body: { reservation_id: reservationId, email_type: emailType },
+    });
+    if (fnErr) {
+      toast('error', `Failed to send ${emailType.replace('_', ' ')} email`);
+    } else {
+      toast('success', `${emailType === 'confirmation' ? 'Confirmation' : emailType === 'checkin_reminder' ? 'Check-in reminder' : 'Thank-you'} email sent`);
+    }
+    setSendingEmail(null);
+    fetchEmailLogs(reservationId);
+  };
 
   const fetchReservations = useCallback(async () => {
     if (!currentHotel) {
@@ -303,6 +330,7 @@ export default function ReservationsPage() {
   const openViewModal = (reservation: Reservation) => {
     setViewingReservation(reservation);
     setActionMenuId(null);
+    fetchEmailLogs(reservation.id);
   };
 
   const closeModal = () => {
@@ -446,7 +474,11 @@ export default function ReservationsPage() {
 
       toast('success', 'Reservation updated');
     } else {
-      const { error } = await supabase.from('reservations').insert(payload);
+      const { data: newRes, error } = await supabase
+        .from('reservations')
+        .insert(payload)
+        .select('id')
+        .single();
 
       if (error) {
         toast('error', 'Failed to create reservation');
@@ -455,6 +487,16 @@ export default function ReservationsPage() {
       }
 
       toast('success', 'Reservation created');
+
+      if (newRes?.id) {
+        supabase.functions.invoke('send-guest-email', {
+          body: { reservation_id: newRes.id, email_type: 'confirmation' },
+        }).then(({ error: emailErr }) => {
+          if (emailErr) {
+            console.error('Confirmation email failed:', emailErr);
+          }
+        });
+      }
     }
 
     setSaving(false);
@@ -496,6 +538,12 @@ export default function ReservationsPage() {
         .from('rooms')
         .update({ status: 'dirty' })
         .eq('id', reservation.room_id);
+
+      supabase.functions.invoke('send-guest-email', {
+        body: { reservation_id: reservation.id, email_type: 'checkout_thankyou' },
+      }).then(({ error: emailErr }) => {
+        if (emailErr) console.error('Checkout thank-you email failed:', emailErr);
+      });
 
       const { data: existingInvoice } = await supabase
         .from('invoices')
@@ -1479,6 +1527,68 @@ export default function ReservationsPage() {
                 </p>
               </div>
             )}
+
+            <div>
+              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" />
+                Guest Communications
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { type: 'confirmation', label: 'Booking Confirmation', icon: CheckCircle },
+                  { type: 'checkin_reminder', label: 'Check-in Reminder (24h)', icon: Clock },
+                  { type: 'checkout_thankyou', label: 'Checkout Thank-you', icon: Send },
+                ].map(({ type, label, icon: Icon }) => {
+                  const logs = emailLogs[viewingReservation.id] || [];
+                  const log = logs.find(l => l.email_type === type);
+                  const isSending = sendingEmail === type;
+                  return (
+                    <div
+                      key={type}
+                      className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">{label}</p>
+                          {log && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {log.status === 'sent' && log.sent_at
+                                ? `Sent ${formatDate(log.sent_at)}`
+                                : log.status === 'failed'
+                                  ? 'Delivery failed'
+                                  : log.status === 'skipped'
+                                    ? 'Skipped (no email)'
+                                    : 'Pending'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {log?.status === 'sent' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            <CheckCircle className="w-3 h-3" /> Sent
+                          </span>
+                        )}
+                        {log?.status === 'failed' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                            <AlertCircle className="w-3 h-3" /> Failed
+                          </span>
+                        )}
+                        <button
+                          onClick={() => handleSendEmail(viewingReservation.id, type)}
+                          disabled={isSending}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-colors disabled:opacity-50"
+                        >
+                          <Send className="w-3 h-3" />
+                          {isSending ? 'Sending...' : log?.status === 'sent' ? 'Resend' : 'Send'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="flex justify-end pt-4 border-t border-gray-100">
               <button
