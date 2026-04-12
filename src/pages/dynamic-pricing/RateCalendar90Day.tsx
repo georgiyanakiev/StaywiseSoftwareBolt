@@ -50,7 +50,7 @@ export default function RateCalendar90Day() {
     setLoading(true);
     try {
       const dates = getDates();
-      const [rtRes, suggRes, resvRes, roomsRes] = await Promise.all([
+      const [rtRes, suggRes, resvRes, directRes, roomsRes] = await Promise.all([
         supabase.from('room_types').select('id, name, base_rate').eq('hotel_id', currentHotel.id).order('name'),
         supabase.from('ai_price_suggestions')
           .select('*')
@@ -64,18 +64,32 @@ export default function RateCalendar90Day() {
           .in('status', ['confirmed', 'checked_in'])
           .gte('check_in', dates[0])
           .lte('check_out', dates[dates.length - 1]),
+        supabase.from('direct_bookings')
+          .select('room_type_id, check_in, check_out, status')
+          .eq('hotel_id', currentHotel.id)
+          .in('status', ['confirmed', 'checked_in'])
+          .gte('check_in', dates[0])
+          .lte('check_out', dates[dates.length - 1]),
         supabase.from('rooms').select('id').eq('hotel_id', currentHotel.id),
       ]);
 
-      setRoomTypes((rtRes.data ?? []) as RoomTypeRate[]);
-      setSuggestions((suggRes.data ?? []) as AIPriceSuggestion[]);
+      setRoomTypes((rtRes.data ?? []).map(rt => ({ ...rt, base_rate: Number(rt.base_rate) })) as RoomTypeRate[]);
+      setSuggestions((suggRes.data ?? []).map(s => ({
+        ...s,
+        current_rate: Number(s.current_rate),
+        suggested_rate: Number(s.suggested_rate),
+        confidence_score: Number(s.confidence_score),
+      })) as AIPriceSuggestion[]);
 
       const totalRooms = (roomsRes.data ?? []).length;
       const occMap: Record<string, OccupancyCell> = {};
+      const resvData = resvRes.data ?? [];
+      const directData = directRes.data ?? [];
 
       for (const date of dates) {
-        const occupied = (resvRes.data ?? []).filter(r => r.check_in <= date && r.check_out > date).length;
-        occMap[date] = { occupied, total: totalRooms };
+        const resvOcc = resvData.filter(r => r.check_in <= date && r.check_out > date).length;
+        const directOcc = directData.filter(r => r.check_in <= date && r.check_out > date).length;
+        occMap[date] = { occupied: resvOcc + directOcc, total: totalRooms };
       }
       setOccupancy(occMap);
     } finally {

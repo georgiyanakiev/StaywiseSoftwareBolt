@@ -65,9 +65,14 @@ export default function OccupancyHeatmap() {
       const startDate = format(startOfMonth(addMonths(new Date(), 0)), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(addMonths(new Date(), 2)), 'yyyy-MM-dd');
 
-      const [resvRes, roomsRes] = await Promise.all([
+      const [resvRes, directRes, roomsRes] = await Promise.all([
         supabase.from('reservations')
           .select('room_id, check_in, check_out, status')
+          .eq('hotel_id', currentHotel.id)
+          .in('status', ['confirmed', 'checked_in', 'checked_out'])
+          .or(`check_in.lte.${endDate},check_out.gte.${startDate}`),
+        supabase.from('direct_bookings')
+          .select('room_type_id, check_in, check_out, status')
           .eq('hotel_id', currentHotel.id)
           .in('status', ['confirmed', 'checked_in', 'checked_out'])
           .or(`check_in.lte.${endDate},check_out.gte.${startDate}`),
@@ -76,13 +81,16 @@ export default function OccupancyHeatmap() {
 
       const total = (roomsRes.data ?? []).length;
       const reservations = resvRes.data ?? [];
+      const directBookings = directRes.data ?? [];
       const map: Record<string, OccupancyData> = {};
 
       const cur = new Date(startDate);
       const end = new Date(endDate);
       while (cur <= end) {
         const dateStr = cur.toISOString().split('T')[0];
-        const occupied = reservations.filter(r => r.check_in <= dateStr && r.check_out > dateStr).length;
+        const resvOcc = reservations.filter(r => r.check_in <= dateStr && r.check_out > dateStr).length;
+        const directOcc = directBookings.filter(r => r.check_in <= dateStr && r.check_out > dateStr).length;
+        const occupied = resvOcc + directOcc;
         map[dateStr] = { date: dateStr, occupied, total, pct: total > 0 ? Math.round((occupied / total) * 100) : 0 };
         cur.setDate(cur.getDate() + 1);
       }

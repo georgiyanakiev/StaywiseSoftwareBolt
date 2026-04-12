@@ -159,11 +159,11 @@ Deno.serve(async (req: Request) => {
         .eq("active", true),
     ]);
 
-    const roomTypes = (rtRes.data ?? []) as { id: string; name: string; base_rate: number }[];
+    const roomTypes = (rtRes.data ?? []).map(rt => ({ ...rt, base_rate: Number(rt.base_rate) })) as { id: string; name: string; base_rate: number }[];
     const rooms = (roomsRes.data ?? []) as { id: string; room_type_id: string }[];
     const reservations = (resvRes.data ?? []) as { room_id: string; check_in: string; check_out: string; status: string }[];
     const recentBookings = (pickupRes.data ?? []) as { check_in: string; check_out: string; created_at: string }[];
-    const rules = (rulesRes.data ?? []) as { room_type_id: string | null; min_rate: number | null; max_rate: number | null; active: boolean }[];
+    const rules = (rulesRes.data ?? []).map(r => ({ ...r, min_rate: r.min_rate != null ? Number(r.min_rate) : null, max_rate: r.max_rate != null ? Number(r.max_rate) : null })) as { room_type_id: string | null; min_rate: number | null; max_rate: number | null; active: boolean }[];
 
     if (!roomTypes.length) {
       return new Response(

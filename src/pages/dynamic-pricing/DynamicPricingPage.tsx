@@ -29,14 +29,19 @@ export default function DynamicPricingPage() {
       .eq('applied', false)
       .gte('date', today)
       .order('date');
-    setSuggestions((data ?? []) as AIPriceSuggestion[]);
+    setSuggestions((data ?? []).map(s => ({
+      ...s,
+      current_rate: Number(s.current_rate),
+      suggested_rate: Number(s.suggested_rate),
+      confidence_score: Number(s.confidence_score),
+    })) as AIPriceSuggestion[]);
     setLoadingSuggestions(false);
   }, [currentHotel]);
 
   useEffect(() => {
     if (!currentHotel) return;
     supabase.from('room_types').select('id, name, base_rate').eq('hotel_id', currentHotel.id).order('name')
-      .then(({ data }) => setRoomTypes((data ?? []) as RoomTypeRate[]));
+      .then(({ data }) => setRoomTypes((data ?? []).map(rt => ({ ...rt, base_rate: Number(rt.base_rate) })) as RoomTypeRate[]));
     loadSuggestions();
   }, [currentHotel, loadSuggestions]);
 
