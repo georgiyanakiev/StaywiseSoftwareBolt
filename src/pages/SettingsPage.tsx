@@ -301,9 +301,15 @@ function HotelSettingsTab() {
   );
 }
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$', EUR: '€', GBP: '£', JPY: '¥', CAD: 'CA$', AUD: 'A$',
+  CHF: 'CHF', CNY: '¥', INR: '₹',
+};
+
 function RoomTypesTab() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const currencySymbol = CURRENCY_SYMBOLS[currentHotel?.currency || 'GBP'] || currentHotel?.currency || '£';
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -402,7 +408,7 @@ function RoomTypesTab() {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Base Rate ($)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Base Rate ({currencySymbol})</label>
           <input type="number" name="base_rate" value={formData.base_rate} onChange={handleFormChange} min={0} step={0.01} className="input-field" />
         </div>
         <div>
@@ -444,7 +450,7 @@ function RoomTypesTab() {
                 <tr key={type.id} className="hover:bg-gray-50">
                   <td className="table-cell font-medium">{type.name}</td>
                   <td className="table-cell text-gray-600 max-w-xs truncate">{type.description || '-'}</td>
-                  <td className="table-cell">€{type.base_rate.toFixed(2)}</td>
+                  <td className="table-cell">{currencySymbol}{type.base_rate.toFixed(2)}</td>
                   <td className="table-cell">{type.max_occupancy} guests</td>
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
