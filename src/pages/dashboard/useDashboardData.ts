@@ -75,7 +75,9 @@ function isoDate(d: Date) {
 
 function startOfWeek() {
   const d = new Date();
-  d.setDate(d.getDate() - d.getDay());
+  const day = d.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - diff);
   return isoDate(d);
 }
 
@@ -98,7 +100,7 @@ function tomorrow() {
 }
 
 function paymentDateStr(ts: string): string {
-  return ts.split('T')[0];
+  return ts.slice(0, 10);
 }
 
 export function useDashboardData(currentHotel: Hotel | null) {
