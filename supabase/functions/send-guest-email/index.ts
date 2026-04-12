@@ -345,7 +345,7 @@ async function sendViaResend(to: string, subject: string, html: string, fromName
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `${fromName} <noreply@staywise.app>`,
+      from: `${fromName} <onboarding@resend.dev>`,
       to: [to],
       subject,
       html,
