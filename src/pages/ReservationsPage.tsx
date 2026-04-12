@@ -16,8 +16,9 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
-import { CalendarCheck, Plus, Search, Filter, MoreVertical, Eye, CreditCard as Edit, XCircle, LogIn, LogOut, ChevronLeft, ChevronRight, Mail, Send, CheckCircle, AlertCircle, Clock, CreditCard, RotateCcw } from 'lucide-react';
-import { useStripePayments, PaymentBadge } from '../hooks/useStripePayments';
+import { CalendarCheck, Plus, Search, Filter, MoreVertical, Eye, CreditCard as Edit, XCircle, LogIn, LogOut, ChevronLeft, ChevronRight, Mail, Send, CheckCircle, AlertCircle, Clock, CreditCard, RotateCcw, Receipt, Loader2 } from 'lucide-react';
+import { PaymentBadge } from '../hooks/useStripePayments';
+import { useStripeCheckin } from '../hooks/useStripeCheckin';
 import { useSearchParams } from 'react-router-dom';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 
@@ -120,7 +121,7 @@ export default function ReservationsPage() {
   const [emailLogs, setEmailLogs] = useState<Record<string, { email_type: string; status: string; sent_at: string | null }[]>>({});
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
-  const { openCheckout, issueRefund, loading: stripeLoading } = useStripePayments();
+  const { chargeOnCheckIn, chargeOnCheckOut, sendReceipt, issueRefund, loading: stripeLoading } = useStripeCheckin();
   const [searchParams, setSearchParams] = useSearchParams();
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [refundTarget, setRefundTarget] = useState<Reservation | null>(null);
@@ -134,7 +135,7 @@ export default function ReservationsPage() {
       setSearchParams(searchParams, { replace: true });
       fetchReservations();
     } else if (paymentStatus === 'cancelled') {
-      toast('info', 'Payment was cancelled');
+      toast('info', 'Payment was not completed');
       searchParams.delete('payment');
       searchParams.delete('reservation');
       setSearchParams(searchParams, { replace: true });
@@ -143,7 +144,17 @@ export default function ReservationsPage() {
 
   const handleCollectPayment = async (reservation: Reservation) => {
     setActionMenuId(null);
-    await openCheckout(reservation);
+    await chargeOnCheckIn(reservation.id);
+  };
+
+  const handleChargeRemaining = async (reservation: Reservation) => {
+    setActionMenuId(null);
+    await chargeOnCheckOut(reservation.id);
+  };
+
+  const handleSendReceipt = async (reservation: Reservation) => {
+    setActionMenuId(null);
+    await sendReceipt(reservation.id);
   };
 
   const handleRefund = async () => {
@@ -576,9 +587,14 @@ export default function ReservationsPage() {
         .from('rooms')
         .update({ status: 'occupied' })
         .eq('id', reservation.room_id);
+
+      if (reservation.payment_status !== 'paid') {
+        chargeOnCheckIn(reservation.id);
+      }
     }
 
     if (newStatus === 'checked_out' && reservation.room_id) {
+      chargeOnCheckOut(reservation.id);
       await supabase
         .from('rooms')
         .update({ status: 'dirty' })
@@ -905,10 +921,14 @@ export default function ReservationsPage() {
                           {getStatusLabel(reservation.status)}
                         </span>
                       </td>
-                      <td className="table-cell font-medium text-gray-900">
-                        {formatCurrency(
-                          reservation.total_amount,
-                          currentHotel.currency
+                      <td className="table-cell">
+                        <div className="font-medium text-gray-900">
+                          {formatCurrency(reservation.total_amount, currentHotel.currency)}
+                        </div>
+                        {reservation.amount_paid > 0 && reservation.amount_paid < reservation.total_amount && (
+                          <div className="text-[11px] text-emerald-600 font-medium">
+                            {formatCurrency(reservation.amount_paid, currentHotel.currency)} paid
+                          </div>
                         )}
                       </td>
                       <td className="table-cell">
@@ -916,21 +936,21 @@ export default function ReservationsPage() {
                       </td>
                       <td className="table-cell">
                         <div className="flex items-center gap-1.5">
-                          {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                          {(reservation.payment_status === 'pending' || reservation.payment_status === 'failed') && reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
                             <button
                               onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
-                              disabled={stripeLoading}
+                              disabled={!!stripeLoading}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] transition-colors disabled:opacity-50"
                               title="Collect payment via Stripe"
                             >
-                              <CreditCard className="w-3 h-3" />
+                              {stripeLoading === 'charge_checkin' ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
                               Pay
                             </button>
                           )}
                           {reservation.status === 'cancelled' && reservation.payment_status === 'paid' && (
                             <button
                               onClick={e => { e.stopPropagation(); openRefundDialog(reservation); }}
-                              disabled={stripeLoading}
+                              disabled={!!stripeLoading}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 transition-colors disabled:opacity-50"
                               title="Issue refund"
                             >
@@ -1001,23 +1021,43 @@ export default function ReservationsPage() {
                                   Check Out
                                 </button>
                               )}
-                              {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                              {(reservation.payment_status === 'pending' || reservation.payment_status === 'failed') && reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
                                 <button
                                   onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
-                                  disabled={stripeLoading}
+                                  disabled={!!stripeLoading}
                                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[#1e3a5f] hover:bg-blue-50"
                                 >
-                                  <CreditCard className="w-4 h-4" />
+                                  {stripeLoading === 'charge_checkin' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                                   Collect Payment
+                                </button>
+                              )}
+                              {reservation.status === 'checked_in' && reservation.payment_status === 'partial' && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); handleChargeRemaining(reservation); }}
+                                  disabled={!!stripeLoading}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50"
+                                >
+                                  {stripeLoading === 'charge_checkout' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                                  Charge Remaining
+                                </button>
+                              )}
+                              {reservation.payment_status === 'paid' && reservation.guest?.email && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); handleSendReceipt(reservation); }}
+                                  disabled={!!stripeLoading}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                                >
+                                  {stripeLoading === 'send_receipt' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
+                                  Send Receipt
                                 </button>
                               )}
                               {reservation.status === 'cancelled' && reservation.payment_status === 'paid' && (
                                 <button
                                   onClick={e => { e.stopPropagation(); openRefundDialog(reservation); }}
-                                  disabled={stripeLoading}
+                                  disabled={!!stripeLoading}
                                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-sky-600 hover:bg-sky-50"
                                 >
-                                  <RotateCcw className="w-4 h-4" />
+                                  {stripeLoading === 'refund' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                                   Issue Refund
                                 </button>
                               )}
@@ -1105,19 +1145,26 @@ export default function ReservationsPage() {
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
                     <div className="flex items-center gap-2">
                       <PaymentBadge status={reservation.payment_status} />
-                      {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                      {(reservation.payment_status === 'pending' || reservation.payment_status === 'failed') && reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
                         <button
                           onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
-                          disabled={stripeLoading}
+                          disabled={!!stripeLoading}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] transition-colors disabled:opacity-50"
                         >
-                          <CreditCard className="w-3 h-3" /> Pay
+                          {stripeLoading === 'charge_checkin' ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />} Pay
                         </button>
                       )}
                     </div>
-                    <span className="font-semibold text-gray-900 text-sm">
-                      {formatCurrency(reservation.total_amount, currentHotel.currency)}
-                    </span>
+                    <div className="text-right">
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {formatCurrency(reservation.total_amount, currentHotel.currency)}
+                      </span>
+                      {reservation.amount_paid > 0 && reservation.amount_paid < reservation.total_amount && (
+                        <div className="text-[10px] text-emerald-600 font-medium">
+                          {formatCurrency(reservation.amount_paid, currentHotel.currency)} paid
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {actionMenuId === reservation.id && (
@@ -1163,22 +1210,40 @@ export default function ReservationsPage() {
                           <LogOut className="w-4 h-4" /> Check Out
                         </button>
                       )}
-                      {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                      {(reservation.payment_status === 'pending' || reservation.payment_status === 'failed') && reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
                         <button
                           onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
-                          disabled={stripeLoading}
+                          disabled={!!stripeLoading}
                           className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[#1e3a5f] hover:bg-blue-50"
                         >
-                          <CreditCard className="w-4 h-4" /> Collect Payment
+                          {stripeLoading === 'charge_checkin' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />} Collect Payment
+                        </button>
+                      )}
+                      {reservation.status === 'checked_in' && reservation.payment_status === 'partial' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); handleChargeRemaining(reservation); }}
+                          disabled={!!stripeLoading}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50"
+                        >
+                          {stripeLoading === 'charge_checkout' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />} Charge Remaining
+                        </button>
+                      )}
+                      {reservation.payment_status === 'paid' && reservation.guest?.email && (
+                        <button
+                          onClick={e => { e.stopPropagation(); handleSendReceipt(reservation); }}
+                          disabled={!!stripeLoading}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
+                        >
+                          {stripeLoading === 'send_receipt' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />} Send Receipt
                         </button>
                       )}
                       {reservation.status === 'cancelled' && reservation.payment_status === 'paid' && (
                         <button
                           onClick={e => { e.stopPropagation(); openRefundDialog(reservation); }}
-                          disabled={stripeLoading}
+                          disabled={!!stripeLoading}
                           className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-sky-600 hover:bg-sky-50"
                         >
-                          <RotateCcw className="w-4 h-4" /> Issue Refund
+                          {stripeLoading === 'refund' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Issue Refund
                         </button>
                       )}
                       {reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
@@ -1892,7 +1957,7 @@ export default function ReservationsPage() {
         onConfirm={handleRefund}
         title="Issue Stripe Refund"
         message={`Are you sure you want to refund reservation ${refundTarget?.confirmation_code}? The full amount of ${refundTarget ? formatCurrency(refundTarget.total_amount, currentHotel?.currency) : ''} will be returned to the guest's payment method.`}
-        confirmLabel={stripeLoading ? 'Processing...' : 'Issue Refund'}
+        confirmLabel={stripeLoading === 'refund' ? 'Processing...' : 'Issue Refund'}
         variant="danger"
       />
     </div>

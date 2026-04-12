@@ -111,6 +111,7 @@ export interface Guest {
   complaint_history: string;
   total_stays: number;
   total_spent: number;
+  stripe_customer_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -166,6 +167,8 @@ export interface Reservation {
   source: string;
   stripe_payment_intent_id: string | null;
   stripe_checkout_session_id: string | null;
+  charged_at_checkin: string | null;
+  charged_at_checkout: string | null;
   created_at: string;
   updated_at: string;
   guest?: Guest;
