@@ -155,7 +155,7 @@ export interface Reservation {
   total_amount: number;
   tax_amount: number;
   discount_amount: number;
-  payment_status: 'paid' | 'partial' | 'pending';
+  payment_status: 'paid' | 'partial' | 'pending' | 'refunded' | 'failed';
   amount_paid: number;
   payment_method: string;
   booking_source: string;
@@ -164,6 +164,8 @@ export interface Reservation {
   confirmation_code: string;
   smoobu_id: string | null;
   source: string;
+  stripe_payment_intent_id: string | null;
+  stripe_checkout_session_id: string | null;
   created_at: string;
   updated_at: string;
   guest?: Guest;

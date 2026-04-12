@@ -68,6 +68,8 @@ export function getStatusColor(status: string): string {
     dirty: 'badge-danger',
     cancelled: 'badge-danger',
     overdue: 'badge-danger',
+    failed: 'badge-danger',
+    refunded: 'badge-info',
     maintenance: 'badge-neutral',
     out_of_service: 'badge-neutral',
     checked_out: 'badge-neutral',

@@ -16,7 +16,10 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
-import { CalendarCheck, Plus, Search, Filter, MoreVertical, Eye, CreditCard as Edit, XCircle, LogIn, LogOut, ChevronLeft, ChevronRight, Mail, Send, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { CalendarCheck, Plus, Search, Filter, MoreVertical, Eye, CreditCard as Edit, XCircle, LogIn, LogOut, ChevronLeft, ChevronRight, Mail, Send, CheckCircle, AlertCircle, Clock, CreditCard, RotateCcw } from 'lucide-react';
+import { useStripePayments, PaymentBadge } from '../hooks/useStripePayments';
+import { useSearchParams } from 'react-router-dom';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 
 const PAGE_SIZE = 10;
 
@@ -116,6 +119,48 @@ export default function ReservationsPage() {
 
   const [emailLogs, setEmailLogs] = useState<Record<string, { email_type: string; status: string; sent_at: string | null }[]>>({});
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+
+  const { openCheckout, issueRefund, loading: stripeLoading } = useStripePayments();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [refundTarget, setRefundTarget] = useState<Reservation | null>(null);
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast('success', 'Payment received successfully');
+      searchParams.delete('payment');
+      searchParams.delete('reservation');
+      setSearchParams(searchParams, { replace: true });
+      fetchReservations();
+    } else if (paymentStatus === 'cancelled') {
+      toast('info', 'Payment was cancelled');
+      searchParams.delete('payment');
+      searchParams.delete('reservation');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
+
+  const handleCollectPayment = async (reservation: Reservation) => {
+    setActionMenuId(null);
+    await openCheckout(reservation);
+  };
+
+  const handleRefund = async () => {
+    if (!refundTarget) return;
+    const result = await issueRefund(refundTarget.id);
+    if (result) {
+      setRefundDialogOpen(false);
+      setRefundTarget(null);
+      fetchReservations();
+    }
+  };
+
+  const openRefundDialog = (reservation: Reservation) => {
+    setRefundTarget(reservation);
+    setRefundDialogOpen(true);
+    setActionMenuId(null);
+  };
 
   const fetchEmailLogs = useCallback(async (reservationId: string) => {
     const { data } = await supabase
@@ -867,27 +912,46 @@ export default function ReservationsPage() {
                         )}
                       </td>
                       <td className="table-cell">
-                        <span
-                          className={`badge ${getStatusColor(reservation.payment_status)}`}
-                        >
-                          {getStatusLabel(reservation.payment_status)}
-                        </span>
+                        <PaymentBadge status={reservation.payment_status} />
                       </td>
                       <td className="table-cell">
-                        <div className="relative">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setActionMenuId(
-                                actionMenuId === reservation.id
-                                  ? null
-                                  : reservation.id
-                              );
-                            }}
-                            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
+                        <div className="flex items-center gap-1.5">
+                          {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                            <button
+                              onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
+                              disabled={stripeLoading}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] transition-colors disabled:opacity-50"
+                              title="Collect payment via Stripe"
+                            >
+                              <CreditCard className="w-3 h-3" />
+                              Pay
+                            </button>
+                          )}
+                          {reservation.status === 'cancelled' && reservation.payment_status === 'paid' && (
+                            <button
+                              onClick={e => { e.stopPropagation(); openRefundDialog(reservation); }}
+                              disabled={stripeLoading}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-white bg-sky-600 hover:bg-sky-700 transition-colors disabled:opacity-50"
+                              title="Issue refund"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              Refund
+                            </button>
+                          )}
+                          <div className="relative">
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                setActionMenuId(
+                                  actionMenuId === reservation.id
+                                    ? null
+                                    : reservation.id
+                                );
+                              }}
+                              className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
                           {actionMenuId === reservation.id && (
                             <div
                               className="absolute right-0 top-8 z-[200] w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
@@ -937,6 +1001,26 @@ export default function ReservationsPage() {
                                   Check Out
                                 </button>
                               )}
+                              {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
+                                  disabled={stripeLoading}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[#1e3a5f] hover:bg-blue-50"
+                                >
+                                  <CreditCard className="w-4 h-4" />
+                                  Collect Payment
+                                </button>
+                              )}
+                              {reservation.status === 'cancelled' && reservation.payment_status === 'paid' && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); openRefundDialog(reservation); }}
+                                  disabled={stripeLoading}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-sky-600 hover:bg-sky-50"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                  Issue Refund
+                                </button>
+                              )}
                               {reservation.status !== 'cancelled' &&
                                 reservation.status !== 'checked_out' && (
                                   <button
@@ -954,6 +1038,7 @@ export default function ReservationsPage() {
                                 )}
                             </div>
                           )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -1018,9 +1103,18 @@ export default function ReservationsPage() {
                   </div>
 
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
-                    <span className={`badge text-[10px] ${getStatusColor(reservation.payment_status)}`}>
-                      {getStatusLabel(reservation.payment_status)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <PaymentBadge status={reservation.payment_status} />
+                      {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
+                          disabled={stripeLoading}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-white bg-[#1e3a5f] hover:bg-[#172e4c] transition-colors disabled:opacity-50"
+                        >
+                          <CreditCard className="w-3 h-3" /> Pay
+                        </button>
+                      )}
+                    </div>
                     <span className="font-semibold text-gray-900 text-sm">
                       {formatCurrency(reservation.total_amount, currentHotel.currency)}
                     </span>
@@ -1067,6 +1161,24 @@ export default function ReservationsPage() {
                           className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
                         >
                           <LogOut className="w-4 h-4" /> Check Out
+                        </button>
+                      )}
+                      {reservation.payment_status === 'pending' && reservation.status !== 'cancelled' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); handleCollectPayment(reservation); }}
+                          disabled={stripeLoading}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[#1e3a5f] hover:bg-blue-50"
+                        >
+                          <CreditCard className="w-4 h-4" /> Collect Payment
+                        </button>
+                      )}
+                      {reservation.status === 'cancelled' && reservation.payment_status === 'paid' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); openRefundDialog(reservation); }}
+                          disabled={stripeLoading}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-sky-600 hover:bg-sky-50"
+                        >
+                          <RotateCcw className="w-4 h-4" /> Issue Refund
                         </button>
                       )}
                       {reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
@@ -1605,11 +1717,7 @@ export default function ReservationsPage() {
                 <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
                   Payment Status
                 </h4>
-                <span
-                  className={`badge ${getStatusColor(viewingReservation.payment_status)}`}
-                >
-                  {getStatusLabel(viewingReservation.payment_status)}
-                </span>
+                <PaymentBadge status={viewingReservation.payment_status} />
               </div>
               <div>
                 <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
@@ -1777,6 +1885,16 @@ export default function ReservationsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={refundDialogOpen}
+        onClose={() => { setRefundDialogOpen(false); setRefundTarget(null); }}
+        onConfirm={handleRefund}
+        title="Issue Stripe Refund"
+        message={`Are you sure you want to refund reservation ${refundTarget?.confirmation_code}? The full amount of ${refundTarget ? formatCurrency(refundTarget.total_amount, currentHotel?.currency) : ''} will be returned to the guest's payment method.`}
+        confirmLabel={stripeLoading ? 'Processing...' : 'Issue Refund'}
+        variant="danger"
+      />
     </div>
   );
 }

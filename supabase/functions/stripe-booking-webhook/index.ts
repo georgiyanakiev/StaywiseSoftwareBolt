@@ -9,6 +9,13 @@ const corsHeaders = {
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -19,13 +26,7 @@ Deno.serve(async (req: Request) => {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
     if (!stripeKey || !webhookSecret) {
-      return new Response(
-        JSON.stringify({ error: "Stripe not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return jsonResponse({ error: "Stripe not configured" }, 500);
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" });
@@ -33,25 +34,16 @@ Deno.serve(async (req: Request) => {
     const signature = req.headers.get("stripe-signature");
 
     if (!signature) {
-      return new Response(
-        JSON.stringify({ error: "Missing stripe-signature header" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return jsonResponse({ error: "Missing stripe-signature header" }, 400);
     }
 
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
-      return new Response(
-        JSON.stringify({ error: `Webhook verification failed: ${err}` }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+      return jsonResponse(
+        { error: `Webhook verification failed: ${err}` },
+        400
       );
     }
 
@@ -62,17 +54,87 @@ Deno.serve(async (req: Request) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
+      const reservationId = session.metadata?.reservation_id;
       const bookingId = session.metadata?.booking_id;
+
+      const paymentIntentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id ?? null;
+
+      const amountTotal = session.amount_total
+        ? session.amount_total / 100
+        : 0;
+
+      if (reservationId) {
+        await supabase
+          .from("reservations")
+          .update({
+            payment_status: "paid",
+            amount_paid: amountTotal,
+            stripe_payment_intent_id: paymentIntentId,
+            payment_method: "credit_card",
+          })
+          .eq("id", reservationId);
+
+        const { data: existingInvoice } = await supabase
+          .from("invoices")
+          .select("id")
+          .eq("reservation_id", reservationId)
+          .maybeSingle();
+
+        if (!existingInvoice) {
+          const { data: res } = await supabase
+            .from("reservations")
+            .select("hotel_id, guest_id, confirmation_code, check_in, check_out, total_amount, tax_amount, discount_amount, tenant_id")
+            .eq("id", reservationId)
+            .maybeSingle();
+
+          if (res) {
+            const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+            const subtotal = (res.total_amount || 0) - (res.tax_amount || 0);
+
+            const { data: newInvoice } = await supabase
+              .from("invoices")
+              .insert({
+                hotel_id: res.hotel_id,
+                reservation_id: reservationId,
+                guest_id: res.guest_id,
+                invoice_number: invoiceNumber,
+                issue_date: new Date().toISOString().split("T")[0],
+                due_date: res.check_out,
+                subtotal,
+                tax_amount: res.tax_amount || 0,
+                discount_amount: res.discount_amount || 0,
+                total_amount: res.total_amount || 0,
+                amount_paid: amountTotal,
+                status: "paid",
+                ...(res.tenant_id ? { tenant_id: res.tenant_id } : {}),
+              })
+              .select("id")
+              .maybeSingle();
+
+            if (newInvoice) {
+              await supabase.from("invoice_items").insert({
+                invoice_id: newInvoice.id,
+                description: `Reservation ${res.confirmation_code}: ${res.check_in} to ${res.check_out}`,
+                category: "room",
+                quantity: 1,
+                unit_price: subtotal,
+                total_price: subtotal,
+                ...(res.tenant_id ? { tenant_id: res.tenant_id } : {}),
+              });
+            }
+          }
+        }
+      }
 
       if (bookingId) {
         await supabase
           .from("direct_bookings")
           .update({
             payment_status: "paid",
-            stripe_payment_intent_id:
-              typeof session.payment_intent === "string"
-                ? session.payment_intent
-                : session.payment_intent?.id ?? null,
+            stripe_payment_intent_id: paymentIntentId,
             paid_at: new Date().toISOString(),
             status: "confirmed",
           })
@@ -80,19 +142,34 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    if (event.type === "checkout.session.expired") {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const bookingId = session.metadata?.booking_id;
+    if (event.type === "payment_intent.succeeded") {
+      const pi = event.data.object as Stripe.PaymentIntent;
+      const amountReceived = pi.amount_received / 100;
 
-      if (bookingId) {
+      const { data: res } = await supabase
+        .from("reservations")
+        .select("id")
+        .eq("stripe_payment_intent_id", pi.id)
+        .maybeSingle();
+
+      if (res) {
         await supabase
-          .from("direct_bookings")
+          .from("reservations")
           .update({
-            payment_status: "failed",
-            status: "cancelled",
+            payment_status: "paid",
+            amount_paid: amountReceived,
           })
-          .eq("id", bookingId);
+          .eq("id", res.id);
       }
+    }
+
+    if (event.type === "payment_intent.payment_failed") {
+      const pi = event.data.object as Stripe.PaymentIntent;
+
+      await supabase
+        .from("reservations")
+        .update({ payment_status: "failed" })
+        .eq("stripe_payment_intent_id", pi.id);
     }
 
     if (event.type === "charge.refunded") {
@@ -103,6 +180,24 @@ Deno.serve(async (req: Request) => {
           : charge.payment_intent?.id;
 
       if (paymentIntentId) {
+        const { data: res } = await supabase
+          .from("reservations")
+          .select("id")
+          .eq("stripe_payment_intent_id", paymentIntentId)
+          .maybeSingle();
+
+        if (res) {
+          await supabase
+            .from("reservations")
+            .update({ payment_status: "refunded", amount_paid: 0 })
+            .eq("id", res.id);
+
+          await supabase
+            .from("invoices")
+            .update({ status: "cancelled" })
+            .eq("reservation_id", res.id);
+        }
+
         await supabase
           .from("direct_bookings")
           .update({ payment_status: "refunded" })
@@ -110,13 +205,28 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (event.type === "checkout.session.expired") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const bookingId = session.metadata?.booking_id;
+      const reservationId = session.metadata?.reservation_id;
+
+      if (bookingId) {
+        await supabase
+          .from("direct_bookings")
+          .update({ payment_status: "failed", status: "cancelled" })
+          .eq("id", bookingId);
+      }
+
+      if (reservationId) {
+        await supabase
+          .from("reservations")
+          .update({ payment_status: "failed" })
+          .eq("id", reservationId);
+      }
+    }
+
+    return jsonResponse({ received: true });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: String(err) }, 500);
   }
 });
