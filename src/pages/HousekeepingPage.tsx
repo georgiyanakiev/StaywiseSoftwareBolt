@@ -145,17 +145,18 @@ export default function HousekeepingPage() {
         ))}
       </div>
 
-      <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
+      <div className="flex gap-1 border-b border-gray-200 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
               tab === t.id ? 'border-[#1e3a5f] text-[#1e3a5f]' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            <t.icon className="w-4 h-4" />
-            {t.label}
+            <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">{t.label}</span>
+            <span className="sm:hidden">{t.label.split(' ')[0]}</span>
             {t.badge ? (
               <span className="bg-red-100 text-red-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>
             ) : null}

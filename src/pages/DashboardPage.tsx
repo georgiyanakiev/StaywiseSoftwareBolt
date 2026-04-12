@@ -79,7 +79,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <OperaTile
           title={t.dashboard.roomStatus}
           accentColor="bg-slate-700"
@@ -198,12 +198,12 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {revenueCards.map(card => (
-          <div key={card.label} className={`bg-white rounded-xl border ${card.border} p-4 hover:shadow-md transition-shadow`}>
-            <div className={`${card.bg} ${card.color} w-8 h-8 rounded-lg flex items-center justify-center mb-3`}>
-              <card.icon className="w-4 h-4" />
+          <div key={card.label} className={`bg-white rounded-xl border ${card.border} p-3 sm:p-4 hover:shadow-md transition-shadow`}>
+            <div className={`${card.bg} ${card.color} w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center mb-2 sm:mb-3`}>
+              <card.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div className="text-xl font-bold text-gray-900">{formatCurrency(card.value)}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{card.label}</div>
+            <div className="text-base sm:text-xl font-bold text-gray-900 truncate">{formatCurrency(card.value)}</div>
+            <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{card.label}</div>
           </div>
         ))}
       </div>

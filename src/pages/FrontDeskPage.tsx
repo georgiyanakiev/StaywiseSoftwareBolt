@@ -101,27 +101,27 @@ export default function FrontDeskPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3">
         <KpiCard
           label="Occupancy"
           value={`${kpis.occupancyRate}%`}
-          sub={`${kpis.occupiedRooms}/${kpis.totalRooms} rooms`}
+          sub={`${kpis.occupiedRooms}/${kpis.totalRooms}`}
           icon={<BedDouble className="w-4 h-4" />}
           colorClass={kpis.occupancyRate >= 90 ? 'bg-red-50 text-red-700 border-red-100' : kpis.occupancyRate >= 70 ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-blue-50 text-blue-700 border-blue-100'}
           iconBg={kpis.occupancyRate >= 90 ? 'bg-red-100' : kpis.occupancyRate >= 70 ? 'bg-amber-100' : 'bg-blue-100'}
         />
         <KpiCard
-          label="Arrivals Today"
+          label="Arrivals"
           value={String(kpis.arrivalsExpected + kpis.arrivalsCheckedIn)}
-          sub={`${kpis.arrivalsCheckedIn} checked in`}
+          sub={`${kpis.arrivalsCheckedIn} in`}
           icon={<LogIn className="w-4 h-4" />}
           colorClass="bg-emerald-50 text-emerald-700 border-emerald-100"
           iconBg="bg-emerald-100"
         />
         <KpiCard
-          label="Departures Today"
+          label="Departures"
           value={String(kpis.departuresExpected + kpis.departuresCheckedOut)}
-          sub={`${kpis.departuresCheckedOut} checked out`}
+          sub={`${kpis.departuresCheckedOut} out`}
           icon={<LogOut className="w-4 h-4" />}
           colorClass="bg-amber-50 text-amber-700 border-amber-100"
           iconBg="bg-amber-100"
@@ -129,7 +129,7 @@ export default function FrontDeskPage() {
         <KpiCard
           label="Stayovers"
           value={String(kpis.stayovers)}
-          sub="in-house guests"
+          sub="in-house"
           icon={<Users className="w-4 h-4" />}
           colorClass="bg-blue-50 text-blue-700 border-blue-100"
           iconBg="bg-blue-100"
@@ -137,13 +137,13 @@ export default function FrontDeskPage() {
         <KpiCard
           label="Available"
           value={String(kpis.availableRooms)}
-          sub="rooms free"
+          sub="free"
           icon={<CheckCircle2 className="w-4 h-4" />}
           colorClass="bg-emerald-50 text-emerald-700 border-emerald-100"
           iconBg="bg-emerald-100"
         />
         <KpiCard
-          label="Needs Cleaning"
+          label="Dirty"
           value={String(kpis.dirtyRooms)}
           sub={`${kpis.cleanRooms} clean`}
           icon={<SprayCan className="w-4 h-4" />}
@@ -151,15 +151,15 @@ export default function FrontDeskPage() {
           iconBg="bg-orange-100"
         />
         <KpiCard
-          label="Maintenance"
+          label="Maint."
           value={String(kpis.maintenanceRooms)}
-          sub="out of service"
+          sub="OOS"
           icon={<Wrench className="w-4 h-4" />}
           colorClass="bg-gray-50 text-gray-700 border-gray-200"
           iconBg="bg-gray-100"
         />
         <KpiCard
-          label="Today's Revenue"
+          label="Revenue"
           value={formatCurrency(kpis.todayRevenue)}
           sub={`ADR ${formatCurrency(kpis.avgRoomRate)}`}
           icon={<Euro className="w-4 h-4" />}
@@ -175,15 +175,15 @@ export default function FrontDeskPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors border-b-2 ${
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-medium transition-colors border-b-2 ${
                   activeTab === tab.key
                     ? TAB_COLORS[tab.color]?.active || 'border-blue-600 text-blue-700 bg-blue-50'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 {tab.icon}
-                {tab.label}
-                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className={`ml-0.5 sm:ml-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${
                   activeTab === tab.key
                     ? TAB_COLORS[tab.color]?.badge || 'bg-blue-100 text-blue-700'
                     : 'bg-gray-100 text-gray-500'
@@ -265,13 +265,13 @@ function KpiCard({ label, value, sub, icon, colorClass, iconBg }: {
   iconBg: string;
 }) {
   return (
-    <div className={`bg-white rounded-xl border p-3.5 hover:shadow-md transition-shadow ${colorClass}`}>
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${iconBg}`}>
+    <div className={`bg-white rounded-xl border p-2.5 sm:p-3.5 hover:shadow-md transition-shadow ${colorClass}`}>
+      <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center mb-1.5 sm:mb-2 ${iconBg}`}>
         {icon}
       </div>
-      <div className="text-xl font-bold">{value}</div>
-      <div className="text-xs font-medium mt-0.5 opacity-80">{label}</div>
-      <div className="text-xs opacity-60 mt-0.5">{sub}</div>
+      <div className="text-base sm:text-xl font-bold truncate">{value}</div>
+      <div className="text-[10px] sm:text-xs font-medium mt-0.5 opacity-80 truncate">{label}</div>
+      <div className="text-[10px] sm:text-xs opacity-60 mt-0.5 truncate">{sub}</div>
     </div>
   );
 }
@@ -332,61 +332,95 @@ function ArrivalsTable({ items }: { items: ArrivalItem[] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-100">
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guests</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-out</th>
-            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-            <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {items.map(item => (
-            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3">
-                <div className="font-medium text-gray-900">{item.guestName}</div>
-                <div className="text-xs text-gray-400 flex items-center gap-1">
-                  <Tag className="w-3 h-3" /> {item.confirmationCode}
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="font-semibold text-gray-800">{item.roomNumber}</div>
-                <div className="text-xs text-gray-400">{item.roomType}</div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-1 text-gray-700">
-                  <Moon className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="font-medium">{item.nights}</span>
-                </div>
-              </td>
-              <td className="px-4 py-3 text-gray-600 text-xs">
-                {item.adults}A {item.children > 0 ? `${item.children}C` : ''}
-              </td>
-              <td className="px-4 py-3 text-xs text-gray-500">
-                {formatDate(item.checkOut, 'MMM d')}
-              </td>
-              <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                {formatCurrency(item.totalAmount)}
-              </td>
-              <td className="px-4 py-3 text-center">
-                <StatusBadge status={item.status} />
-              </td>
-              <td className="px-4 py-3">
-                <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
-                  View
-                </Link>
-              </td>
+    <>
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guests</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-out</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {items.map(item => (
+              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="font-medium text-gray-900">{item.guestName}</div>
+                  <div className="text-xs text-gray-400 flex items-center gap-1">
+                    <Tag className="w-3 h-3" /> {item.confirmationCode}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="font-semibold text-gray-800">{item.roomNumber}</div>
+                  <div className="text-xs text-gray-400">{item.roomType}</div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1 text-gray-700">
+                    <Moon className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="font-medium">{item.nights}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-gray-600 text-xs">
+                  {item.adults}A {item.children > 0 ? `${item.children}C` : ''}
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {formatDate(item.checkOut, 'MMM d')}
+                </td>
+                <td className="px-4 py-3 text-right font-semibold text-gray-800">
+                  {formatCurrency(item.totalAmount)}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <StatusBadge status={item.status} />
+                </td>
+                <td className="px-4 py-3">
+                  <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
+                    View
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="md:hidden divide-y divide-gray-100">
+        {items.map(item => (
+          <Link key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode}</p>
+              </div>
+              <StatusBadge status={item.status} />
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div>
+                <span className="text-gray-400">Room</span>
+                <p className="font-semibold text-gray-800">{item.roomNumber}</p>
+              </div>
+              <div>
+                <span className="text-gray-400">Nights</span>
+                <p className="font-medium text-gray-700">{item.nights}</p>
+              </div>
+              <div>
+                <span className="text-gray-400">Out</span>
+                <p className="font-medium text-gray-700">{formatDate(item.checkOut, 'MMM d')}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-gray-400">Amount</span>
+                <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -401,65 +435,103 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-100">
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Checked In</th>
-            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Balance Due</th>
-            <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {items.map(item => (
-            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3">
-                <div className="font-medium text-gray-900">{item.guestName}</div>
-                <div className="text-xs text-gray-400 flex items-center gap-1">
-                  <Tag className="w-3 h-3" /> {item.confirmationCode}
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="font-semibold text-gray-800">{item.roomNumber}</div>
-                <div className="text-xs text-gray-400">{item.roomType}</div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-1 text-gray-700">
-                  <Moon className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="font-medium">{item.nights}</span>
-                </div>
-              </td>
-              <td className="px-4 py-3 text-xs text-gray-500">
-                {formatDate(item.checkIn, 'MMM d')}
-              </td>
-              <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                {formatCurrency(item.totalAmount)}
-              </td>
-              <td className="px-4 py-3 text-right">
-                {item.balance > 0 ? (
-                  <span className="font-semibold text-red-600">{formatCurrency(item.balance)}</span>
-                ) : (
-                  <span className="text-emerald-600 font-medium text-xs">Paid</span>
-                )}
-              </td>
-              <td className="px-4 py-3 text-center">
-                <StatusBadge status={item.status} />
-              </td>
-              <td className="px-4 py-3">
-                <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
-                  View
-                </Link>
-              </td>
+    <>
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Checked In</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Balance Due</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {items.map(item => (
+              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="font-medium text-gray-900">{item.guestName}</div>
+                  <div className="text-xs text-gray-400 flex items-center gap-1">
+                    <Tag className="w-3 h-3" /> {item.confirmationCode}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="font-semibold text-gray-800">{item.roomNumber}</div>
+                  <div className="text-xs text-gray-400">{item.roomType}</div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1 text-gray-700">
+                    <Moon className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="font-medium">{item.nights}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {formatDate(item.checkIn, 'MMM d')}
+                </td>
+                <td className="px-4 py-3 text-right font-semibold text-gray-800">
+                  {formatCurrency(item.totalAmount)}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {item.balance > 0 ? (
+                    <span className="font-semibold text-red-600">{formatCurrency(item.balance)}</span>
+                  ) : (
+                    <span className="text-emerald-600 font-medium text-xs">Paid</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <StatusBadge status={item.status} />
+                </td>
+                <td className="px-4 py-3">
+                  <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
+                    View
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="md:hidden divide-y divide-gray-100">
+        {items.map(item => (
+          <Link key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode}</p>
+              </div>
+              <StatusBadge status={item.status} />
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div>
+                <span className="text-gray-400">Room</span>
+                <p className="font-semibold text-gray-800">{item.roomNumber}</p>
+              </div>
+              <div>
+                <span className="text-gray-400">Nights</span>
+                <p className="font-medium text-gray-700">{item.nights}</p>
+              </div>
+              <div>
+                <span className="text-gray-400">Amount</span>
+                <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-gray-400">Balance</span>
+                {item.balance > 0 ? (
+                  <p className="font-semibold text-red-600">{formatCurrency(item.balance)}</p>
+                ) : (
+                  <p className="font-medium text-emerald-600">Paid</p>
+                )}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -474,55 +546,91 @@ function StayoversTable({ items }: { items: StayoverItem[] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-100">
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-in</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-out</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights Left</th>
-            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-            <th className="px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {items.map(item => (
-            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3">
-                <div className="font-medium text-gray-900">{item.guestName}</div>
-                <div className="text-xs text-gray-400 flex items-center gap-1">
-                  <Tag className="w-3 h-3" /> {item.confirmationCode}
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="font-semibold text-gray-800">{item.roomNumber}</div>
-                <div className="text-xs text-gray-400">{item.roomType}</div>
-              </td>
-              <td className="px-4 py-3 text-xs text-gray-500">
-                {formatDate(item.checkIn, 'MMM d')}
-              </td>
-              <td className="px-4 py-3 text-xs text-gray-500">
-                {formatDate(item.checkOut, 'MMM d')}
-              </td>
-              <td className="px-4 py-3">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
-                  <Moon className="w-3 h-3" /> {item.nightsRemaining}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-right font-semibold text-gray-800">
-                {formatCurrency(item.totalAmount)}
-              </td>
-              <td className="px-4 py-3">
-                <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
-                  View
-                </Link>
-              </td>
+    <>
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-in</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-out</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights Left</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+              <th className="px-4 py-3"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {items.map(item => (
+              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="font-medium text-gray-900">{item.guestName}</div>
+                  <div className="text-xs text-gray-400 flex items-center gap-1">
+                    <Tag className="w-3 h-3" /> {item.confirmationCode}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="font-semibold text-gray-800">{item.roomNumber}</div>
+                  <div className="text-xs text-gray-400">{item.roomType}</div>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {formatDate(item.checkIn, 'MMM d')}
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {formatDate(item.checkOut, 'MMM d')}
+                </td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                    <Moon className="w-3 h-3" /> {item.nightsRemaining}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right font-semibold text-gray-800">
+                  {formatCurrency(item.totalAmount)}
+                </td>
+                <td className="px-4 py-3">
+                  <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
+                    View
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="md:hidden divide-y divide-gray-100">
+        {items.map(item => (
+          <Link key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode}</p>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium flex-shrink-0">
+                <Moon className="w-3 h-3" /> {item.nightsRemaining} left
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div>
+                <span className="text-gray-400">Room</span>
+                <p className="font-semibold text-gray-800">{item.roomNumber}</p>
+              </div>
+              <div>
+                <span className="text-gray-400">In</span>
+                <p className="font-medium text-gray-700">{formatDate(item.checkIn, 'MMM d')}</p>
+              </div>
+              <div>
+                <span className="text-gray-400">Out</span>
+                <p className="font-medium text-gray-700">{formatDate(item.checkOut, 'MMM d')}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-gray-400">Total</span>
+                <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }

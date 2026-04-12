@@ -800,7 +800,8 @@ export default function ReservationsPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr>
@@ -961,12 +962,137 @@ export default function ReservationsPage() {
               </table>
             </div>
 
+            {/* Mobile card view */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {reservations.map(reservation => (
+                <div
+                  key={reservation.id}
+                  className="p-4 hover:bg-gray-50 transition-colors"
+                  onClick={() => openViewModal(reservation)}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{guestName(reservation)}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="font-mono text-xs text-brand-600">{reservation.confirmation_code}</span>
+                        {reservation.smoobu_id && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 uppercase">
+                            {reservation.booking_source || 'Smoobu'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className={`badge ${getStatusColor(reservation.status)}`}>
+                        {getStatusLabel(reservation.status)}
+                      </span>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setActionMenuId(actionMenuId === reservation.id ? null : reservation.id);
+                        }}
+                        className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-400">Room</span>
+                      <p className="font-medium text-gray-700 mt-0.5">
+                        {reservation.room_id ? roomLabel(reservation) : (
+                          <span className="text-amber-600">Unassigned</span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Check-in</span>
+                      <p className="font-medium text-gray-700 mt-0.5">{formatDate(reservation.check_in, 'MMM d')}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Check-out</span>
+                      <p className="font-medium text-gray-700 mt-0.5">{formatDate(reservation.check_out, 'MMM d')}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+                    <span className={`badge text-[10px] ${getStatusColor(reservation.payment_status)}`}>
+                      {getStatusLabel(reservation.payment_status)}
+                    </span>
+                    <span className="font-semibold text-gray-900 text-sm">
+                      {formatCurrency(reservation.total_amount, currentHotel.currency)}
+                    </span>
+                  </div>
+
+                  {actionMenuId === reservation.id && (
+                    <div
+                      className="mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={e => { e.stopPropagation(); openViewModal(reservation); }}
+                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Eye className="w-4 h-4" /> View Details
+                      </button>
+                      {reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); openEditModal(reservation); }}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <Edit className="w-4 h-4" /> Edit
+                        </button>
+                      )}
+                      {reservation.status === 'pending' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); updateStatus(reservation, 'confirmed'); }}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-50"
+                        >
+                          <CalendarCheck className="w-4 h-4" /> Confirm
+                        </button>
+                      )}
+                      {reservation.status === 'confirmed' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); updateStatus(reservation, 'checked_in'); }}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50"
+                        >
+                          <LogIn className="w-4 h-4" /> Check In
+                        </button>
+                      )}
+                      {reservation.status === 'checked_in' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); updateStatus(reservation, 'checked_out'); }}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
+                        >
+                          <LogOut className="w-4 h-4" /> Check Out
+                        </button>
+                      )}
+                      {reservation.status !== 'cancelled' && reservation.status !== 'checked_out' && (
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setCancelTarget(reservation);
+                            setCancelDialogOpen(true);
+                            setActionMenuId(null);
+                          }}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <XCircle className="w-4 h-4" /> Cancel
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                <p className="text-sm text-gray-500">
-                  Showing {page * PAGE_SIZE + 1} to{' '}
-                  {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}{' '}
-                  reservations
+                <p className="text-xs sm:text-sm text-gray-500">
+                  <span className="hidden sm:inline">Showing {page * PAGE_SIZE + 1} to{' '}{Math.min((page + 1) * PAGE_SIZE, totalCount)} of </span>
+                  {totalCount} reservations
                 </p>
                 <div className="flex items-center gap-2">
                   <button
@@ -977,7 +1103,7 @@ export default function ReservationsPage() {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <span className="text-sm text-gray-600">
-                    Page {page + 1} of {totalPages}
+                    {page + 1}/{totalPages}
                   </span>
                   <button
                     onClick={() =>

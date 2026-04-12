@@ -252,26 +252,29 @@ export default function InvoicingPage() {
         ))}
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2" placeholder="Search by guest name..." />
         </div>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }} className="input-field py-2 w-36">
-          <option value="">All Statuses</option>
-          {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input-field py-2 w-36">
-          <option value="">All Types</option>
-          {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
+        <div className="flex gap-2">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }} className="input-field py-2 flex-1 sm:flex-none sm:w-36">
+            <option value="">All Statuses</option>
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+          <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input-field py-2 flex-1 sm:flex-none sm:w-36">
+            <option value="">All Types</option>
+            {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+        </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-gray-100">
                 <tr>
@@ -303,12 +306,12 @@ export default function InvoicingPage() {
                         <p className="font-medium text-gray-900 text-sm">{inv.guest_name}</p>
                         {inv.guest_email && <p className="text-xs text-gray-400">{inv.guest_email}</p>}
                       </td>
-                      <td className="table-cell text-gray-600 text-sm">{inv.issue_date ? formatDate(inv.issue_date) : '—'}</td>
-                      <td className="table-cell text-gray-600 text-sm">{inv.due_date ? formatDate(inv.due_date) : '—'}</td>
+                      <td className="table-cell text-gray-600 text-sm">{inv.issue_date ? formatDate(inv.issue_date) : '---'}</td>
+                      <td className="table-cell text-gray-600 text-sm">{inv.due_date ? formatDate(inv.due_date) : '---'}</td>
                       <td className="table-cell text-right font-semibold text-gray-900">{formatCurrency(Number(inv.total_amount))}</td>
-                      <td className="table-cell text-right text-gray-600">{Number(inv.paid_amount) > 0 ? formatCurrency(Number(inv.paid_amount)) : '—'}</td>
+                      <td className="table-cell text-right text-gray-600">{Number(inv.paid_amount) > 0 ? formatCurrency(Number(inv.paid_amount)) : '---'}</td>
                       <td className={`table-cell text-right font-medium ${balance > 0 && inv.status !== 'paid' ? 'text-red-600' : 'text-gray-400'}`}>
-                        {balance > 0 && inv.status !== 'paid' ? formatCurrency(balance) : '—'}
+                        {balance > 0 && inv.status !== 'paid' ? formatCurrency(balance) : '---'}
                       </td>
                       <td className="table-cell">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${sCfg.color}`}>
@@ -348,9 +351,83 @@ export default function InvoicingPage() {
             </table>
           </div>
 
+          {/* Mobile card view */}
+          <div className="lg:hidden divide-y divide-gray-100">
+            {invoices.map(inv => {
+              const sCfg = STATUS_CONFIG[inv.status] ?? STATUS_CONFIG.draft;
+              const tCfg = TYPE_CONFIG[inv.type] ?? TYPE_CONFIG.invoice;
+              const balance = Number(inv.total_amount) - Number(inv.paid_amount);
+              const isActioning = actioning === inv.id;
+              return (
+                <div key={inv.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">{inv.guest_name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="font-mono text-xs font-semibold text-blue-700">{inv.invoice_number}</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${tCfg.color}`}>{tCfg.label}</span>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${sCfg.color}`}>
+                      <sCfg.icon className="w-3 h-3" />
+                      {sCfg.label}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+                    <div>
+                      <span className="text-gray-400">Issued</span>
+                      <p className="font-medium text-gray-700 mt-0.5">{inv.issue_date ? formatDate(inv.issue_date, 'MMM d') : '---'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Due</span>
+                      <p className="font-medium text-gray-700 mt-0.5">{inv.due_date ? formatDate(inv.due_date, 'MMM d') : '---'}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-gray-400">Total</span>
+                      <p className="font-semibold text-gray-900 mt-0.5">{formatCurrency(Number(inv.total_amount))}</p>
+                    </div>
+                  </div>
+
+                  {balance > 0 && inv.status !== 'paid' && (
+                    <div className="flex items-center justify-between text-xs mb-2 bg-red-50 rounded-lg px-2.5 py-1.5">
+                      <span className="text-red-600 font-medium">Balance due</span>
+                      <span className="text-red-700 font-bold">{formatCurrency(balance)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1 pt-2 border-t border-gray-50">
+                    {isActioning ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    ) : (
+                      <>
+                        <Btn icon={Eye} title="View" onClick={() => { setEditingInvoice(inv); setShowEditor(true); }} />
+                        <Btn icon={Printer} title="Print" onClick={() => setPrintInvoice(inv)} />
+                        {inv.status === 'draft' && <Btn icon={Send} title="Send" onClick={() => sendInvoice(inv)} hoverColor="hover:text-blue-600" />}
+                        {['sent','overdue','partially_paid'].includes(inv.status) && <Btn icon={CheckCircle2} title="Paid" onClick={() => markPaid(inv)} hoverColor="hover:text-emerald-600" />}
+                        <Btn icon={Copy} title="Copy" onClick={() => duplicateInvoice(inv)} />
+                        {!['void','paid'].includes(inv.status) && <Btn icon={Ban} title="Void" onClick={() => voidInvoice(inv)} hoverColor="hover:text-red-500" />}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {invoices.length === 0 && (
+              <div className="py-16 text-center text-gray-400">
+                <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                <p className="font-medium">No invoices found</p>
+                <p className="text-sm mt-1">Create your first invoice to get started</p>
+              </div>
+            )}
+          </div>
+
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-              <p className="text-sm text-gray-500">Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total}</p>
+              <p className="text-xs sm:text-sm text-gray-500">
+                <span className="hidden sm:inline">Showing {page * PAGE_SIZE + 1}--{Math.min((page + 1) * PAGE_SIZE, total)} of </span>
+                {total} invoices
+              </p>
               <div className="flex gap-1">
                 <button onClick={() => setPage(p => p - 1)} disabled={page === 0} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition-colors">
                   <ChevronLeft className="w-4 h-4" />
