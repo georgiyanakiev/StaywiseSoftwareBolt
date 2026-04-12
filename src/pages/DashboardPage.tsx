@@ -48,9 +48,8 @@ export default function DashboardPage() {
   const maintenanceCount = roomStatusData.find(r => r.key === 'maintenance')?.value ?? 0;
   const outOfServiceCount = roomStatusData.find(r => r.key === 'out_of_service')?.value ?? 0;
 
-  const today = availabilityData[0];
-  const todayAvailable = today?.available ?? availableCount;
-  const todayOccupied = today?.occupied ?? occupiedCount;
+  const todayAvailable = availableCount;
+  const todayOccupied = occupiedCount;
 
   const visibleRevenue = revenueData.slice(-7);
 
