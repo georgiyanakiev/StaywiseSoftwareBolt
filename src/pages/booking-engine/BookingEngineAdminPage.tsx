@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, Euro, Eye, XCircle, RefreshCw, Info, Hash, CreditCard, Shield, Lock } from 'lucide-react';
+import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, Euro, Eye, XCircle, RefreshCw, Info, Hash, CreditCard, Shield } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
 import { useTenantId } from '../../hooks/useTenantQuery';
-import { useTenant } from '../../contexts/TenantContext';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
@@ -63,8 +62,6 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   not_required: 'bg-gray-50 text-gray-500',
 };
 
-const ALLOWED_PLANS = ['growth', 'pro', 'enterprise'];
-
 const DEFAULT_CONFIG: Partial<Config> = {
   primary_color: '#1a56db',
   welcome_message: 'Book directly for the best rates',
@@ -85,9 +82,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
 export default function BookingEngineAdminPage() {
   const { currentHotel } = useHotel();
   const tenantId = useTenantId();
-  const { tenant } = useTenant();
   const { showToast } = useToast();
-  const planAllowed = ALLOWED_PLANS.includes(tenant?.plan ?? '');
   const [tab, setTab] = useState<Tab>('overview');
   const [bookings, setBookings] = useState<DirectBooking[]>([]);
   const [config, setConfig] = useState<Config | null>(null);
@@ -180,48 +175,6 @@ export default function BookingEngineAdminPage() {
   ];
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
-
-  if (!planAllowed) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-            <Globe className="w-6 h-6 text-blue-600" />
-            Booking Engine
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">Commission-free direct bookings from your website</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-10 max-w-lg mx-auto text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <Lock className="w-8 h-8 text-gray-400" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Upgrade to unlock Booking Engine</h2>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            The booking engine is available on <span className="font-semibold text-gray-700">Growth</span> and <span className="font-semibold text-gray-700">Pro</span> plans.
-            Accept zero-commission direct bookings with Stripe payment processing.
-          </p>
-          <div className="grid grid-cols-2 gap-3 text-left mb-6">
-            {[
-              'Embeddable booking widget',
-              'Stripe payment processing',
-              'Zero commission on bookings',
-              'Automated confirmation emails',
-              'Deposit or full payment mode',
-              'Real-time availability check',
-            ].map(f => (
-              <div key={f} className="flex items-center gap-2 text-sm text-gray-600">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                {f}
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400">
-            Current plan: <span className="font-medium capitalize">{tenant?.plan ?? 'starter'}</span>
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
