@@ -156,12 +156,21 @@ export function useDashboardData(currentHotel: Hotel | null) {
     const totalRooms = rooms.length;
     const availableRooms = rooms.filter(r => r.status === 'available').length;
     const occupiedRooms = rooms.filter(r => r.status === 'occupied').length;
-    const dirtyRooms = rooms.filter(r => r.status === 'dirty').length;
-    const maintenanceRooms = rooms.filter(r => r.status === 'maintenance' || r.status === 'out_of_service').length;
+    const dirtyRooms = rooms.filter(r => r.status === 'dirty' || r.status === 'cleaning').length;
+    const maintenanceRooms = rooms.filter(r => r.status === 'maintenance' || r.status === 'out_of_service' || r.status === 'blocked').length;
     const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
+    const STATUS_NORMALIZE: Record<string, string> = {
+      cleaning: 'dirty',
+      inspected: 'clean',
+      blocked: 'out_of_service',
+    };
+
     const statusCounts: Record<string, number> = {};
-    rooms.forEach(r => { statusCounts[r.status] = (statusCounts[r.status] || 0) + 1; });
+    rooms.forEach(r => {
+      const key = STATUS_NORMALIZE[r.status] || r.status;
+      statusCounts[key] = (statusCounts[key] || 0) + 1;
+    });
 
     const statusBreakdown: Record<string, number> = {};
     (resStatusRes.data || []).forEach(r => { statusBreakdown[r.status] = (statusBreakdown[r.status] || 0) + 1; });
