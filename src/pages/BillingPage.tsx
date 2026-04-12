@@ -118,20 +118,44 @@ export default function BillingPage() {
     overdueCount: 0,
   });
 
+  const markOverdueInvoices = useCallback(async () => {
+    if (!currentHotel) return;
+    const today = new Date().toISOString().split('T')[0];
+    const { data: candidates } = await supabase
+      .from('invoices')
+      .select('id, amount_paid, total_amount')
+      .eq('hotel_id', currentHotel.id)
+      .in('status', ['sent', 'draft'])
+      .lt('due_date', today);
+
+    if (!candidates || candidates.length === 0) return;
+    const toMark = candidates.filter(r => Number(r.amount_paid || 0) < Number(r.total_amount || 0));
+    if (toMark.length > 0) {
+      await supabase
+        .from('invoices')
+        .update({ status: 'overdue', updated_at: new Date().toISOString() })
+        .in('id', toMark.map(r => r.id));
+    }
+  }, [currentHotel]);
+
   const fetchAggregateStats = useCallback(async () => {
     if (!currentHotel) return;
     const { data } = await supabase
       .from('invoices')
-      .select('total_amount, amount_paid, status')
+      .select('total_amount, amount_paid, status, due_date')
       .eq('hotel_id', currentHotel.id);
     if (!data) return;
+    const today = new Date().toISOString().split('T')[0];
     const active = data.filter(i => i.status !== 'cancelled' && i.status !== 'void');
+    const isOverdue = (i: { status: string; due_date: string; amount_paid: number; total_amount: number }) =>
+      i.status === 'overdue' ||
+      (i.status === 'sent' && i.due_date < today && Number(i.amount_paid || 0) < Number(i.total_amount || 0));
     setAggregateStats({
-      totalRevenue: active.reduce((s, i) => s + (i.total_amount || 0), 0),
-      collectedRevenue: active.reduce((s, i) => s + (i.amount_paid || 0), 0),
-      outstandingBalance: active.reduce((s, i) => s + Math.max(0, (i.total_amount || 0) - (i.amount_paid || 0)), 0),
+      totalRevenue: active.reduce((s, i) => s + Number(i.total_amount || 0), 0),
+      collectedRevenue: active.reduce((s, i) => s + Number(i.amount_paid || 0), 0),
+      outstandingBalance: active.reduce((s, i) => s + Math.max(0, Number(i.total_amount || 0) - Number(i.amount_paid || 0)), 0),
       paidCount: data.filter(i => i.status === 'paid').length,
-      overdueCount: data.filter(i => i.status === 'overdue').length,
+      overdueCount: active.filter(isOverdue).length,
     });
   }, [currentHotel]);
 
@@ -216,17 +240,24 @@ export default function BillingPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  const [overdueChecked, setOverdueChecked] = useState(false);
+
   useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
+    if (!currentHotel) return;
+    markOverdueInvoices().finally(() => setOverdueChecked(true));
+  }, [currentHotel?.id]);
+
+  useEffect(() => {
+    if (overdueChecked) fetchInvoices();
+  }, [overdueChecked, fetchInvoices]);
+
+  useEffect(() => {
+    if (overdueChecked) fetchAggregateStats();
+  }, [overdueChecked, fetchAggregateStats]);
 
   useEffect(() => {
     fetchGuests();
   }, [fetchGuests]);
-
-  useEffect(() => {
-    fetchAggregateStats();
-  }, [fetchAggregateStats]);
 
   useEffect(() => {
     setPage(0);
