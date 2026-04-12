@@ -79,6 +79,14 @@ const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
 
 const PAGE_SIZE = 15;
 
+interface AggStats {
+  invoicedThisMonth: number;
+  collected: number;
+  outstanding: number;
+  overdueAmount: number;
+  overdueCount: number;
+}
+
 export default function InvoicingPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
@@ -94,6 +102,7 @@ export default function InvoicingPage() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
   const [actioning, setActioning] = useState<string | null>(null);
+  const [stats, setStats] = useState<AggStats>({ invoicedThisMonth: 0, collected: 0, outstanding: 0, overdueAmount: 0, overdueCount: 0 });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -102,6 +111,44 @@ export default function InvoicingPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  const loadStats = useCallback(async () => {
+    if (!currentHotel) return;
+    const { data: all } = await supabase
+      .from('invoices')
+      .select('total_amount, amount_paid, paid_amount, status, created_at')
+      .eq('hotel_id', currentHotel.id)
+      .not('status', 'in', '("cancelled","void")');
+
+    if (!all) return;
+    const now = new Date();
+    const m = now.getMonth();
+    const y = now.getFullYear();
+    let invoicedThisMonth = 0;
+    let collected = 0;
+    let outstanding = 0;
+    let overdueAmount = 0;
+    let overdueCount = 0;
+
+    for (const i of all) {
+      const d = new Date(i.created_at);
+      if (d.getMonth() === m && d.getFullYear() === y) {
+        invoicedThisMonth += Number(i.total_amount);
+      }
+      const paid = Math.max(Number(i.amount_paid), Number(i.paid_amount));
+      if (i.status === 'paid') {
+        collected += paid;
+      } else if (i.status === 'overdue') {
+        collected += paid;
+        overdueAmount += Number(i.total_amount) - paid;
+        overdueCount++;
+      } else if (['sent', 'partially_paid'].includes(i.status)) {
+        collected += paid;
+        outstanding += Number(i.total_amount) - paid;
+      }
+    }
+    setStats({ invoicedThisMonth, collected, outstanding, overdueAmount, overdueCount });
+  }, [currentHotel]);
 
   const loadInvoices = useCallback(async () => {
     if (!currentHotel) return;
@@ -121,13 +168,38 @@ export default function InvoicingPage() {
     setLoading(false);
   }, [currentHotel, page, statusFilter, typeFilter, debouncedSearch]);
 
+  useEffect(() => { loadStats(); }, [loadStats]);
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
+
+  const reload = () => { loadInvoices(); loadStats(); };
 
   const markPaid = async (inv: Invoice) => {
     setActioning(inv.id);
-    await supabase.from('invoices').update({ status: 'paid', paid_amount: inv.total_amount, paid_at: new Date().toISOString() }).eq('id', inv.id);
+    const remaining = Number(inv.total_amount) - Math.max(Number(inv.paid_amount), 0);
+    await supabase.from('invoices').update({
+      status: 'paid',
+      amount_paid: inv.total_amount,
+      paid_amount: inv.total_amount,
+      paid_at: new Date().toISOString(),
+    }).eq('id', inv.id);
+    if (remaining > 0.01) {
+      const { data: invRow } = await supabase.from('invoices').select('guest_id, hotel_id, tenant_id').eq('id', inv.id).maybeSingle();
+      if (invRow) {
+        await supabase.from('payments').insert({
+          hotel_id: invRow.hotel_id,
+          ...(invRow.tenant_id ? { tenant_id: invRow.tenant_id } : {}),
+          invoice_id: inv.id,
+          guest_id: invRow.guest_id,
+          amount: remaining,
+          payment_method: 'card',
+          payment_date: new Date().toISOString(),
+          notes: 'Marked as paid via invoicing',
+          processed_by: 'Invoicing',
+        });
+      }
+    }
     setActioning(null);
-    loadInvoices();
+    reload();
     toast('success', 'Invoice marked as paid');
   };
 
@@ -135,7 +207,7 @@ export default function InvoicingPage() {
     setActioning(inv.id);
     await supabase.from('invoices').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', inv.id);
     setActioning(null);
-    loadInvoices();
+    reload();
     toast('success', 'Invoice marked as sent');
   };
 
@@ -144,7 +216,7 @@ export default function InvoicingPage() {
     setActioning(inv.id);
     await supabase.from('invoices').update({ status: 'void' }).eq('id', inv.id);
     setActioning(null);
-    loadInvoices();
+    reload();
     toast('success', 'Invoice voided');
   };
 
@@ -197,20 +269,10 @@ export default function InvoicingPage() {
       );
     }
     setActioning(null);
-    loadInvoices();
+    reload();
     toast('success', `Duplicated as ${num}`);
   };
 
-  const allInvoices = invoices;
-  const curMonth = new Date();
-  const monthlyInvs = allInvoices.filter(i => {
-    const d = new Date(i.created_at);
-    return d.getMonth() === curMonth.getMonth() && d.getFullYear() === curMonth.getFullYear();
-  });
-  const totalInvoiced = monthlyInvs.reduce((s, i) => s + Number(i.total_amount), 0);
-  const totalCollected = allInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.paid_amount), 0);
-  const totalOutstanding = allInvoices.filter(i => ['sent','partially_paid'].includes(i.status)).reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
-  const overdueCount = allInvoices.filter(i => i.status === 'overdue').length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
@@ -235,10 +297,10 @@ export default function InvoicingPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Invoiced This Month', value: formatCurrency(totalInvoiced), color: 'text-gray-900', bg: 'bg-blue-50', icon: FileText, iconColor: 'text-blue-600' },
-          { label: 'Collected', value: formatCurrency(totalCollected), color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CheckCircle2, iconColor: 'text-emerald-600' },
-          { label: 'Outstanding', value: formatCurrency(totalOutstanding), color: 'text-amber-700', bg: 'bg-amber-50', icon: Clock, iconColor: 'text-amber-600' },
-          { label: 'Overdue', value: overdueCount, color: 'text-red-700', bg: 'bg-red-50', icon: AlertCircle, iconColor: 'text-red-600' },
+          { label: 'Invoiced This Month', value: formatCurrency(stats.invoicedThisMonth), color: 'text-gray-900', bg: 'bg-blue-50', icon: FileText, iconColor: 'text-blue-600' },
+          { label: 'Collected', value: formatCurrency(stats.collected), color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CheckCircle2, iconColor: 'text-emerald-600' },
+          { label: 'Outstanding', value: formatCurrency(stats.outstanding), color: 'text-amber-700', bg: 'bg-amber-50', icon: Clock, iconColor: 'text-amber-600' },
+          { label: 'Overdue', value: stats.overdueCount > 0 ? `${stats.overdueCount} (${formatCurrency(stats.overdueAmount)})` : '0', color: 'text-red-700', bg: 'bg-red-50', icon: AlertCircle, iconColor: 'text-red-600' },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className="flex items-center gap-2 mb-2">
@@ -446,7 +508,7 @@ export default function InvoicingPage() {
           hotelId={currentHotel.id}
           invoice={editingInvoice}
           onClose={() => setShowEditor(false)}
-          onSaved={() => { setShowEditor(false); loadInvoices(); toast('success', 'Invoice saved'); }}
+          onSaved={() => { setShowEditor(false); reload(); toast('success', 'Invoice saved'); }}
         />
       )}
 
