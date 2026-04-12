@@ -31,18 +31,19 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
       const yearEnd = format(endOfYear(new Date()), 'yyyy-MM-dd');
 
       const [resResult, yearlyResult, roomsResult, rtResult, upsellResult] = await Promise.all([
-        supabase.from('reservations').select('*, guest:guests(first_name, last_name, nationality), room:rooms(room_number, room_type_id), room_type:room_types(name, base_rate)').eq('hotel_id', hotelId).gte('check_in', dateRange.start).lte('check_in', dateRange.end + 'T23:59:59'),
-        supabase.from('reservations').select('id, status, check_in, check_out, total_amount, created_at, room_id').eq('hotel_id', hotelId).gte('check_in', yearStart).lte('check_in', yearEnd + 'T23:59:59'),
+        supabase.from('reservations').select('*, guest:guests(first_name, last_name, nationality), room:rooms(number, room_type_id), room_type:room_types(name, base_rate)').eq('hotel_id', hotelId).gte('check_in', dateRange.start).lte('check_in', dateRange.end),
+        supabase.from('reservations').select('id, status, check_in, check_out, total_amount, created_at, room_id, booking_source, source').eq('hotel_id', hotelId).gte('check_in', yearStart).lte('check_in', yearEnd),
         supabase.from('rooms').select('*, room_type:room_types(name, base_rate)').eq('hotel_id', hotelId),
         supabase.from('room_types').select('*').eq('hotel_id', hotelId),
-        supabase.from('upsell_orders').select('*, item:upsell_items(name, price, category)').eq('hotel_id', hotelId).gte('ordered_at', dateRange.start).lte('ordered_at', dateRange.end + 'T23:59:59'),
+        supabase.from('upsell_orders').select('*, item:upsell_items(name, price, category)').eq('hotel_id', hotelId).gte('ordered_at', dateRange.start).lte('ordered_at', dateRange.end),
       ]);
       setReservations(resResult.data || []);
       setYearlyReservations(yearlyResult.data || []);
       setRooms(roomsResult.data || []);
       setRoomTypes(rtResult.data || []);
       setUpsellOrders(upsellResult.data || []);
-    } catch {
+    } catch (err) {
+      console.error('Reports data fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -149,7 +150,7 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
       const nightsOccupied = roomRes.reduce((s, r) => s + Math.max(1, differenceInDays(parseISO(r.check_out || dateRange.end), parseISO(r.check_in || dateRange.start))), 0);
       const revenue = roomRes.reduce((s, r) => s + (r.total_amount || 0), 0);
       const occupancyPct = daysCount > 0 ? Math.min(100, (nightsOccupied / daysCount) * 100) : 0;
-      return { roomNumber: room.room_number, roomType: room.room_type?.name || 'Standard', nightsOccupied, nightsAvailable: daysCount, occupancyPct, revenue };
+      return { roomNumber: room.number, roomType: room.room_type?.name || 'Standard', nightsOccupied, nightsAvailable: daysCount, occupancyPct, revenue };
     });
   }, [rooms, activeRes, daysCount, dateRange]);
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Calendar, BarChart3, Building2, TrendingUp, Receipt } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { DATE_PRESETS, useReportsData } from './useReportsData';
@@ -48,12 +48,8 @@ function buildCSV(tab: ReportTab, data: ReturnType<typeof useReportsData>, curre
 export default function ReportsPage() {
   const { currentHotel } = useHotel();
   const [activeTab, setActiveTab] = useState<ReportTab>('revenue');
-  const [dateRange, setDateRange] = useState<DateRange>({
-    start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
-    end: format(new Date(), 'yyyy-MM-dd'),
-    label: 'Custom',
-  });
-  const [activePreset, setActivePreset] = useState<string>('Custom');
+  const [dateRange, setDateRange] = useState<DateRange>(() => DATE_PRESETS[2].getValue());
+  const [activePreset, setActivePreset] = useState<string>('This month');
   const [customMode, setCustomMode] = useState(false);
 
   const data = useReportsData(currentHotel?.id, dateRange);
