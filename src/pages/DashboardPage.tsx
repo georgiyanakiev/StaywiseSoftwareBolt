@@ -41,12 +41,12 @@ export default function DashboardPage() {
     );
   }
 
-  const occupiedCount = roomStatusData.find(r => r.key === 'occupied')?.value ?? stats.occupiedRooms;
-  const availableCount = roomStatusData.find(r => r.key === 'available')?.value ?? stats.availableRooms;
-  const dirtyCount = roomStatusData.find(r => r.key === 'dirty')?.value ?? 0;
-  const cleanCount = roomStatusData.find(r => r.key === 'clean')?.value ?? 0;
-  const maintenanceCount = roomStatusData.find(r => r.key === 'maintenance')?.value ?? 0;
-  const outOfServiceCount = roomStatusData.find(r => r.key === 'out_of_service')?.value ?? 0;
+  const occupiedCount = stats.occupiedRooms;
+  const availableCount = stats.availableRooms;
+  const dirtyCount = stats.dirtyRooms;
+  const cleanCount = stats.cleanRooms;
+  const maintenanceCount = stats.maintenanceRooms;
+  const outOfServiceCount = stats.outOfServiceRooms;
 
   const todayAvailable = availableCount;
   const todayOccupied = occupiedCount;

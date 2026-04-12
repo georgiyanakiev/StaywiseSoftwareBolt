@@ -8,7 +8,9 @@ export interface DashboardStats {
   availableRooms: number;
   occupiedRooms: number;
   dirtyRooms: number;
+  cleanRooms: number;
   maintenanceRooms: number;
+  outOfServiceRooms: number;
   todayCheckIns: number;
   todayCheckOuts: number;
   pendingCheckIns: number;
@@ -104,7 +106,8 @@ export function useDashboardData(currentHotel: Hotel | null) {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalRooms: 0, availableRooms: 0, occupiedRooms: 0, dirtyRooms: 0,
-    maintenanceRooms: 0, todayCheckIns: 0, todayCheckOuts: 0,
+    cleanRooms: 0, maintenanceRooms: 0, outOfServiceRooms: 0,
+    todayCheckIns: 0, todayCheckOuts: 0,
     pendingCheckIns: 0, pendingCheckOuts: 0, occupancyRate: 0,
     todayRevenue: 0, weekRevenue: 0, monthRevenue: 0, ytdRevenue: 0,
     activeReservations: 0, statusBreakdown: {},
@@ -154,12 +157,8 @@ export function useDashboardData(currentHotel: Hotel | null) {
 
     const rooms = roomsRes.data || [];
     const totalRooms = rooms.length;
-    const availableRooms = rooms.filter(r => r.status === 'available').length;
-    const occupiedRooms = rooms.filter(r => r.status === 'occupied').length;
-    const dirtyRooms = rooms.filter(r => r.status === 'dirty' || r.status === 'cleaning').length;
-    const maintenanceRooms = rooms.filter(r => r.status === 'maintenance' || r.status === 'out_of_service' || r.status === 'blocked').length;
-    const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
+    const KNOWN_STATUSES = ['available', 'occupied', 'dirty', 'clean', 'maintenance', 'out_of_service'];
     const STATUS_NORMALIZE: Record<string, string> = {
       cleaning: 'dirty',
       inspected: 'clean',
@@ -167,10 +166,19 @@ export function useDashboardData(currentHotel: Hotel | null) {
     };
 
     const statusCounts: Record<string, number> = {};
+    KNOWN_STATUSES.forEach(s => { statusCounts[s] = 0; });
     rooms.forEach(r => {
-      const key = STATUS_NORMALIZE[r.status] || r.status;
+      const key = STATUS_NORMALIZE[r.status] || (KNOWN_STATUSES.includes(r.status) ? r.status : 'available');
       statusCounts[key] = (statusCounts[key] || 0) + 1;
     });
+
+    const occupiedRooms = statusCounts['occupied'];
+    const availableRooms = statusCounts['available'];
+    const dirtyRooms = statusCounts['dirty'];
+    const cleanRooms = statusCounts['clean'];
+    const maintenanceRooms = statusCounts['maintenance'];
+    const outOfServiceRooms = statusCounts['out_of_service'];
+    const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
     const statusBreakdown: Record<string, number> = {};
     (resStatusRes.data || []).forEach(r => { statusBreakdown[r.status] = (statusBreakdown[r.status] || 0) + 1; });
@@ -192,7 +200,7 @@ export function useDashboardData(currentHotel: Hotel | null) {
     const ytdRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
 
     setStats({
-      totalRooms, availableRooms, occupiedRooms, dirtyRooms, maintenanceRooms,
+      totalRooms, availableRooms, occupiedRooms, dirtyRooms, cleanRooms, maintenanceRooms, outOfServiceRooms,
       todayCheckIns: checkInsRes.count || 0,
       todayCheckOuts: checkOutsRes.count || 0,
       pendingCheckIns: pendingCIRes.count || 0,

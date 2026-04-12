@@ -159,11 +159,16 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
 
     const rooms = roomsRes.data || [];
     const totalRooms = rooms.length;
-    const occupiedRooms = rooms.filter(r => r.status === 'occupied').length;
-    const availableRooms = rooms.filter(r => r.status === 'available').length;
-    const dirtyRooms = rooms.filter(r => r.status === 'dirty').length;
-    const cleanRooms = rooms.filter(r => r.status === 'clean').length;
-    const maintenanceRooms = rooms.filter(r => r.status === 'maintenance' || r.status === 'out_of_service').length;
+    const KNOWN = ['available', 'occupied', 'dirty', 'clean', 'maintenance', 'out_of_service'];
+    const NORM: Record<string, string> = { cleaning: 'dirty', inspected: 'clean', blocked: 'out_of_service' };
+    const sc: Record<string, number> = {};
+    KNOWN.forEach(s => { sc[s] = 0; });
+    rooms.forEach(r => { const k = NORM[r.status] || (KNOWN.includes(r.status) ? r.status : 'available'); sc[k]++; });
+    const occupiedRooms = sc['occupied'];
+    const availableRooms = sc['available'];
+    const dirtyRooms = sc['dirty'];
+    const cleanRooms = sc['clean'];
+    const maintenanceRooms = sc['maintenance'] + sc['out_of_service'];
     const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
     const arrivalList = (arrivalsRes.data || []) as any[];
