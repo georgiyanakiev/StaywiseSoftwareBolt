@@ -118,8 +118,21 @@ export default function BookingEngineAdminPage() {
     if (!currentHotel) return;
     setSaving(true);
     const payload = {
-      ...form,
       hotel_id: currentHotel.id,
+      primary_color: form.primary_color ?? '#1a56db',
+      welcome_message: form.welcome_message ?? '',
+      cancellation_policy: form.cancellation_policy ?? '',
+      check_in_time: form.check_in_time ?? '15:00',
+      check_out_time: form.check_out_time ?? '11:00',
+      currency: form.currency ?? 'EUR',
+      min_advance_days: form.min_advance_days ?? 0,
+      max_advance_days: form.max_advance_days ?? 365,
+      show_room_photos: form.show_room_photos ?? true,
+      require_deposit: form.require_deposit ?? true,
+      deposit_percentage: form.deposit_percentage ?? 30,
+      active: form.active ?? true,
+      stripe_enabled: form.stripe_enabled ?? false,
+      payment_mode: form.payment_mode ?? 'deposit',
       updated_at: new Date().toISOString(),
       ...(tenantId ? { tenant_id: tenantId } : {}),
     };
@@ -127,7 +140,11 @@ export default function BookingEngineAdminPage() {
       ? await supabase.from('booking_engine_config').update(payload).eq('id', config.id)
       : await supabase.from('booking_engine_config').insert(payload);
     setSaving(false);
-    if (error) { showToast('Failed to save config', 'error'); return; }
+    if (error) {
+      console.error('Save config error:', error);
+      showToast(`Failed to save: ${error.message}`, 'error');
+      return;
+    }
     showToast('Booking engine config saved', 'success');
     loadData();
   };
@@ -159,13 +176,16 @@ export default function BookingEngineAdminPage() {
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const monthRevenue = thisMonth.reduce((s, b) => s + Number(b.total_amount ?? 0), 0);
-  const avgStay = bookings.length > 0
-    ? bookings.reduce((s, b) => s + getNights(b.check_in, b.check_out), 0) / bookings.length
+  const confirmedThisMonth = thisMonth.filter(b => b.status !== 'cancelled' && b.status !== 'no_show');
+  const monthRevenue = confirmedThisMonth.reduce((s, b) => s + Number(b.total_amount ?? 0), 0);
+  const confirmedBookings = bookings.filter(b => b.status !== 'cancelled' && b.status !== 'no_show');
+  const avgStay = confirmedBookings.length > 0
+    ? confirmedBookings.reduce((s, b) => s + getNights(b.check_in, b.check_out), 0) / confirmedBookings.length
     : 0;
-  const avgValue = bookings.length > 0
-    ? bookings.reduce((s, b) => s + Number(b.total_amount ?? 0), 0) / bookings.length
+  const avgValue = confirmedBookings.length > 0
+    ? confirmedBookings.reduce((s, b) => s + Number(b.total_amount ?? 0), 0) / confirmedBookings.length
     : 0;
+  const currency = config?.currency ?? form.currency ?? 'EUR';
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview',  label: 'Overview' },
@@ -199,10 +219,10 @@ export default function BookingEngineAdminPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Bookings This Month', value: thisMonth.length,             icon: Calendar,  color: 'text-blue-600' },
-          { label: 'Revenue This Month',  value: formatCurrency(monthRevenue), icon: Euro, color: 'text-emerald-600' },
+          { label: 'Bookings This Month', value: confirmedThisMonth.length,             icon: Calendar,  color: 'text-blue-600' },
+          { label: 'Revenue This Month',  value: formatCurrency(monthRevenue, currency), icon: Euro, color: 'text-emerald-600' },
           { label: 'Avg Stay Length',     value: `${avgStay.toFixed(1)} nights`, icon: TrendingUp, color: 'text-amber-600' },
-          { label: 'Avg Booking Value',   value: formatCurrency(avgValue),     icon: Users,      color: 'text-gray-700' },
+          { label: 'Avg Booking Value',   value: formatCurrency(avgValue, currency),     icon: Users,      color: 'text-gray-700' },
         ].map(stat => (
           <div key={stat.label} className="bg-white rounded-xl border border-gray-100 p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -239,7 +259,7 @@ export default function BookingEngineAdminPage() {
                   <p className="text-xs text-gray-400">{b.confirmation_number} · {formatDate(b.check_in)} · {getNights(b.check_in, b.check_out)}n</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">{formatCurrency(Number(b.total_amount))}</p>
+                  <p className="text-sm font-semibold text-gray-900">{formatCurrency(Number(b.total_amount), currency)}</p>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[b.status] ?? 'bg-gray-100 text-gray-600'}`}>
                     {b.status}
                   </span>
@@ -506,9 +526,9 @@ export default function BookingEngineAdminPage() {
                       <td className="table-cell text-center">
                         <span className="text-sm font-semibold text-gray-700">{nights}</span>
                       </td>
-                      <td className="table-cell text-right font-semibold text-gray-900">{formatCurrency(Number(b.total_amount))}</td>
+                      <td className="table-cell text-right font-semibold text-gray-900">{formatCurrency(Number(b.total_amount), currency)}</td>
                       <td className="table-cell text-right text-sm text-gray-600">
-                        {Number(b.deposit_amount) > 0 ? formatCurrency(Number(b.deposit_amount)) : '—'}
+                        {Number(b.deposit_amount) > 0 ? formatCurrency(Number(b.deposit_amount), currency) : '—'}
                       </td>
                       <td className="table-cell">
                         <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[b.status] ?? 'bg-gray-100 text-gray-600'}`}>
