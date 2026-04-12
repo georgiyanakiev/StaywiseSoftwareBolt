@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LogIn, LogOut, Users, BedDouble, SprayCan, CheckCircle2,
-  Clock, AlertTriangle, Euro, TrendingUp, RefreshCw,
-  ArrowRight, ChevronDown, ChevronUp, UserCheck, Wrench,
-  CalendarDays, Tag, Moon, Phone,
+  AlertTriangle, Euro, RefreshCw,
+  ArrowRight, Wrench,
+  CalendarDays, Tag, Moon,
 } from 'lucide-react';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { formatCurrency, formatDate } from '../lib/utils';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useFrontDeskData } from './frontdesk/useFrontDeskData';
 import type { ArrivalItem, DepartureItem, StayoverItem } from './frontdesk/useFrontDeskData';
+import type { Translations } from '../contexts/LanguageContext';
 
 type Tab = 'arrivals' | 'departures' | 'stayovers';
 
@@ -22,6 +24,8 @@ const TAB_COLORS: Record<string, { active: string; badge: string }> = {
 
 export default function FrontDeskPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
+  const fd = t.frontDesk;
   const { loading, error, kpis, arrivals, departures, stayovers, lastUpdated, refresh } = useFrontDeskData(currentHotel);
   const [activeTab, setActiveTab] = useState<Tab>('arrivals');
 
@@ -30,9 +34,9 @@ export default function FrontDeskPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-3">
-        <p className="text-red-600 font-semibold">Failed to load front desk data</p>
+        <p className="text-red-600 font-semibold">{fd.failedToLoad}</p>
         <p className="text-gray-500 text-sm">{error}</p>
-        <button onClick={refresh} className="btn-primary">Try Again</button>
+        <button onClick={refresh} className="btn-primary">{fd.tryAgain}</button>
       </div>
     );
   }
@@ -40,46 +44,28 @@ export default function FrontDeskPage() {
   if (!currentHotel) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-2">
-        <p className="text-gray-600 text-lg font-medium">No hotel selected</p>
-        <p className="text-gray-400 text-sm">Please select a property to view the front desk dashboard.</p>
+        <p className="text-gray-600 text-lg font-medium">{fd.noHotel}</p>
+        <p className="text-gray-400 text-sm">{fd.noHotelSub}</p>
       </div>
     );
   }
 
   const tabs: { key: Tab; label: string; count: number; icon: React.ReactNode; color: string }[] = [
-    {
-      key: 'arrivals',
-      label: 'Arrivals',
-      count: arrivals.length,
-      icon: <LogIn className="w-4 h-4" />,
-      color: 'emerald',
-    },
-    {
-      key: 'departures',
-      label: 'Departures',
-      count: departures.length,
-      icon: <LogOut className="w-4 h-4" />,
-      color: 'amber',
-    },
-    {
-      key: 'stayovers',
-      label: 'Stayovers',
-      count: stayovers.length,
-      icon: <Users className="w-4 h-4" />,
-      color: 'blue',
-    },
+    { key: 'arrivals', label: fd.arrivals, count: arrivals.length, icon: <LogIn className="w-4 h-4" />, color: 'emerald' },
+    { key: 'departures', label: fd.departures, count: departures.length, icon: <LogOut className="w-4 h-4" />, color: 'amber' },
+    { key: 'stayovers', label: fd.stayovers, count: stayovers.length, icon: <Users className="w-4 h-4" />, color: 'blue' },
   ];
 
   return (
     <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Front Desk</h1>
+          <h1 className="text-xl font-bold text-gray-900">{fd.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {formatDate(new Date(), 'EEEE, MMMM d, yyyy')}
             {lastUpdated && (
               <span className="ml-2 text-gray-400 text-xs">
-                Updated {formatDate(lastUpdated, 'HH:mm')}
+                {fd.updated} {formatDate(lastUpdated, 'HH:mm')}
               </span>
             )}
           </p>
@@ -89,12 +75,12 @@ export default function FrontDeskPage() {
             to="/reservations"
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
           >
-            <CalendarDays className="w-3.5 h-3.5" /> New Booking
+            <CalendarDays className="w-3.5 h-3.5" /> {fd.newBooking}
           </Link>
           <button
             onClick={refresh}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Refresh"
+            title={fd.refresh}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -103,7 +89,7 @@ export default function FrontDeskPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3">
         <KpiCard
-          label="Occupancy"
+          label={fd.occupancy}
           value={`${kpis.occupancyRate}%`}
           sub={`${kpis.occupiedRooms}/${kpis.totalRooms}`}
           icon={<BedDouble className="w-4 h-4" />}
@@ -111,57 +97,57 @@ export default function FrontDeskPage() {
           iconBg={kpis.occupancyRate >= 90 ? 'bg-red-100' : kpis.occupancyRate >= 70 ? 'bg-amber-100' : 'bg-blue-100'}
         />
         <KpiCard
-          label="Arrivals"
+          label={fd.arrivals}
           value={String(kpis.arrivalsExpected + kpis.arrivalsCheckedIn)}
-          sub={`${kpis.arrivalsCheckedIn} in`}
+          sub={`${kpis.arrivalsCheckedIn} ${fd.inLabel}`}
           icon={<LogIn className="w-4 h-4" />}
           colorClass="bg-emerald-50 text-emerald-700 border-emerald-100"
           iconBg="bg-emerald-100"
         />
         <KpiCard
-          label="Departures"
+          label={fd.departures}
           value={String(kpis.departuresExpected + kpis.departuresCheckedOut)}
-          sub={`${kpis.departuresCheckedOut} out`}
+          sub={`${kpis.departuresCheckedOut} ${fd.outLabel}`}
           icon={<LogOut className="w-4 h-4" />}
           colorClass="bg-amber-50 text-amber-700 border-amber-100"
           iconBg="bg-amber-100"
         />
         <KpiCard
-          label="Stayovers"
+          label={fd.stayovers}
           value={String(kpis.stayovers)}
-          sub="in-house"
+          sub={fd.inHouse}
           icon={<Users className="w-4 h-4" />}
           colorClass="bg-blue-50 text-blue-700 border-blue-100"
           iconBg="bg-blue-100"
         />
         <KpiCard
-          label="Available"
+          label={fd.available}
           value={String(kpis.availableRooms)}
-          sub="free"
+          sub={fd.free}
           icon={<CheckCircle2 className="w-4 h-4" />}
           colorClass="bg-emerald-50 text-emerald-700 border-emerald-100"
           iconBg="bg-emerald-100"
         />
         <KpiCard
-          label="Dirty"
+          label={fd.dirty}
           value={String(kpis.dirtyRooms)}
-          sub={`${kpis.cleanRooms} clean`}
+          sub={`${kpis.cleanRooms} ${fd.clean}`}
           icon={<SprayCan className="w-4 h-4" />}
           colorClass="bg-orange-50 text-orange-700 border-orange-100"
           iconBg="bg-orange-100"
         />
         <KpiCard
-          label="Maint."
+          label={fd.maintenance}
           value={String(kpis.maintenanceRooms)}
-          sub="OOS"
+          sub={fd.oos}
           icon={<Wrench className="w-4 h-4" />}
           colorClass="bg-gray-50 text-gray-700 border-gray-200"
           iconBg="bg-gray-100"
         />
         <KpiCard
-          label="Revenue"
+          label={fd.revenue}
           value={formatCurrency(kpis.todayRevenue)}
-          sub={`ADR ${formatCurrency(kpis.avgRoomRate)}`}
+          sub={`${fd.adr} ${formatCurrency(kpis.avgRoomRate)}`}
           icon={<Euro className="w-4 h-4" />}
           colorClass="bg-teal-50 text-teal-700 border-teal-100"
           iconBg="bg-teal-100"
@@ -195,48 +181,48 @@ export default function FrontDeskPage() {
           </div>
 
           <div className="p-0">
-            {activeTab === 'arrivals' && <ArrivalsTable items={arrivals} />}
-            {activeTab === 'departures' && <DeparturesTable items={departures} />}
-            {activeTab === 'stayovers' && <StayoversTable items={stayovers} />}
+            {activeTab === 'arrivals' && <ArrivalsTable items={arrivals} fd={fd} />}
+            {activeTab === 'departures' && <DeparturesTable items={departures} fd={fd} />}
+            {activeTab === 'stayovers' && <StayoversTable items={stayovers} fd={fd} />}
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Room Status</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{fd.roomStatus}</h3>
             <div className="space-y-2.5">
-              <RoomStatusBar label="Occupied" value={kpis.occupiedRooms} total={kpis.totalRooms} color="bg-blue-500" textColor="text-blue-700" />
-              <RoomStatusBar label="Available" value={kpis.availableRooms} total={kpis.totalRooms} color="bg-emerald-500" textColor="text-emerald-700" />
-              <RoomStatusBar label="Dirty" value={kpis.dirtyRooms} total={kpis.totalRooms} color="bg-orange-400" textColor="text-orange-700" />
-              <RoomStatusBar label="Clean" value={kpis.cleanRooms} total={kpis.totalRooms} color="bg-teal-400" textColor="text-teal-700" />
-              <RoomStatusBar label="Maintenance" value={kpis.maintenanceRooms} total={kpis.totalRooms} color="bg-gray-400" textColor="text-gray-600" />
+              <RoomStatusBar label={fd.occupied} value={kpis.occupiedRooms} total={kpis.totalRooms} color="bg-blue-500" textColor="text-blue-700" />
+              <RoomStatusBar label={fd.available} value={kpis.availableRooms} total={kpis.totalRooms} color="bg-emerald-500" textColor="text-emerald-700" />
+              <RoomStatusBar label={fd.dirty} value={kpis.dirtyRooms} total={kpis.totalRooms} color="bg-orange-400" textColor="text-orange-700" />
+              <RoomStatusBar label={fd.clean[0].toUpperCase() + fd.clean.slice(1)} value={kpis.cleanRooms} total={kpis.totalRooms} color="bg-teal-400" textColor="text-teal-700" />
+              <RoomStatusBar label={fd.maintenance} value={kpis.maintenanceRooms} total={kpis.totalRooms} color="bg-gray-400" textColor="text-gray-600" />
             </div>
             <Link to="/rooms" className="mt-4 flex items-center gap-1 text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium">
-              Manage rooms <ArrowRight className="w-3.5 h-3.5" />
+              {fd.manageRooms} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Today's Summary</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{fd.todaysSummary}</h3>
             <div className="space-y-2">
-              <SummaryRow icon={<LogIn className="w-3.5 h-3.5 text-emerald-600" />} label="Expected Arrivals" value={kpis.arrivalsExpected} />
-              <SummaryRow icon={<UserCheck className="w-3.5 h-3.5 text-emerald-600" />} label="Checked In" value={kpis.arrivalsCheckedIn} />
-              <SummaryRow icon={<LogOut className="w-3.5 h-3.5 text-amber-600" />} label="Expected Departures" value={kpis.departuresExpected} />
-              <SummaryRow icon={<CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />} label="Checked Out" value={kpis.departuresCheckedOut} />
-              <SummaryRow icon={<Users className="w-3.5 h-3.5 text-blue-600" />} label="Stayovers" value={kpis.stayovers} />
+              <SummaryRow icon={<LogIn className="w-3.5 h-3.5 text-emerald-600" />} label={fd.expectedArrivals} value={kpis.arrivalsExpected} />
+              <SummaryRow icon={<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />} label={fd.checkedIn} value={kpis.arrivalsCheckedIn} />
+              <SummaryRow icon={<LogOut className="w-3.5 h-3.5 text-amber-600" />} label={fd.expectedDepartures} value={kpis.departuresExpected} />
+              <SummaryRow icon={<CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />} label={fd.checkedOut} value={kpis.departuresCheckedOut} />
+              <SummaryRow icon={<Users className="w-3.5 h-3.5 text-blue-600" />} label={fd.stayovers} value={kpis.stayovers} />
               {kpis.noShows > 0 && (
-                <SummaryRow icon={<AlertTriangle className="w-3.5 h-3.5 text-red-500" />} label="No Shows" value={kpis.noShows} valueColor="text-red-600" />
+                <SummaryRow icon={<AlertTriangle className="w-3.5 h-3.5 text-red-500" />} label={fd.noShows} value={kpis.noShows} valueColor="text-red-600" />
               )}
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{fd.quickActions}</h3>
             <div className="space-y-2">
               {[
-                { label: 'Walk-in Check-in', to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-                { label: 'Housekeeping', to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
-                { label: 'Guest Directory', to: '/guests', icon: Users, color: 'bg-slate-600 hover:bg-slate-700 text-white' },
+                { label: fd.walkInCheckIn, to: '/reservations', icon: CheckCircle2, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
+                { label: fd.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
+                { label: fd.guestDirectory, to: '/guests', icon: Users, color: 'bg-slate-600 hover:bg-slate-700 text-white' },
               ].map(a => (
                 <Link
                   key={a.label}
@@ -255,6 +241,8 @@ export default function FrontDeskPage() {
     </div>
   );
 }
+
+type FdTranslations = Translations['frontDesk'];
 
 function KpiCard({ label, value, sub, icon, colorClass, iconBg }: {
   label: string;
@@ -305,13 +293,13 @@ function SummaryRow({ icon, label, value, valueColor = 'text-gray-800' }: {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, fd }: { status: string; fd: FdTranslations }) {
   const map: Record<string, { label: string; cls: string }> = {
-    confirmed: { label: 'Expected', cls: 'bg-blue-100 text-blue-700' },
-    checked_in: { label: 'Checked In', cls: 'bg-emerald-100 text-emerald-700' },
-    checked_out: { label: 'Checked Out', cls: 'bg-gray-100 text-gray-600' },
-    no_show: { label: 'No Show', cls: 'bg-red-100 text-red-700' },
-    cancelled: { label: 'Cancelled', cls: 'bg-red-100 text-red-700' },
+    confirmed: { label: fd.expected, cls: 'bg-blue-100 text-blue-700' },
+    checked_in: { label: fd.checkedIn, cls: 'bg-emerald-100 text-emerald-700' },
+    checked_out: { label: fd.checkedOut, cls: 'bg-gray-100 text-gray-600' },
+    no_show: { label: fd.noShow, cls: 'bg-red-100 text-red-700' },
+    cancelled: { label: fd.cancelled, cls: 'bg-red-100 text-red-700' },
   };
   const s = map[status] || { label: status, cls: 'bg-gray-100 text-gray-600' };
   return (
@@ -321,12 +309,12 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function ArrivalsTable({ items }: { items: ArrivalItem[] }) {
+function ArrivalsTable({ items, fd }: { items: ArrivalItem[]; fd: FdTranslations }) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-gray-400">
         <LogIn className="w-10 h-10 mb-3 opacity-30" />
-        <p className="text-sm font-medium">No arrivals scheduled for today</p>
+        <p className="text-sm font-medium">{fd.noArrivals}</p>
       </div>
     );
   }
@@ -337,13 +325,13 @@ function ArrivalsTable({ items }: { items: ArrivalItem[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guests</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-out</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.guest}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.room}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.nights}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.guests}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.checkOut}</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.amount}</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.status}</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -376,11 +364,11 @@ function ArrivalsTable({ items }: { items: ArrivalItem[] }) {
                   {formatCurrency(item.totalAmount)}
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <StatusBadge status={item.status} />
+                  <StatusBadge status={item.status} fd={fd} />
                 </td>
                 <td className="px-4 py-3">
                   <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
-                    View
+                    {fd.view}
                   </Link>
                 </td>
               </tr>
@@ -397,23 +385,23 @@ function ArrivalsTable({ items }: { items: ArrivalItem[] }) {
                 <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode}</p>
               </div>
-              <StatusBadge status={item.status} />
+              <StatusBadge status={item.status} fd={fd} />
             </div>
             <div className="grid grid-cols-4 gap-2 text-xs">
               <div>
-                <span className="text-gray-400">Room</span>
+                <span className="text-gray-400">{fd.room}</span>
                 <p className="font-semibold text-gray-800">{item.roomNumber}</p>
               </div>
               <div>
-                <span className="text-gray-400">Nights</span>
+                <span className="text-gray-400">{fd.nights}</span>
                 <p className="font-medium text-gray-700">{item.nights}</p>
               </div>
               <div>
-                <span className="text-gray-400">Out</span>
+                <span className="text-gray-400">{fd.out}</span>
                 <p className="font-medium text-gray-700">{formatDate(item.checkOut, 'MMM d')}</p>
               </div>
               <div className="text-right">
-                <span className="text-gray-400">Amount</span>
+                <span className="text-gray-400">{fd.amount}</span>
                 <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
               </div>
             </div>
@@ -424,12 +412,12 @@ function ArrivalsTable({ items }: { items: ArrivalItem[] }) {
   );
 }
 
-function DeparturesTable({ items }: { items: DepartureItem[] }) {
+function DeparturesTable({ items, fd }: { items: DepartureItem[]; fd: FdTranslations }) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-gray-400">
         <LogOut className="w-10 h-10 mb-3 opacity-30" />
-        <p className="text-sm font-medium">No departures scheduled for today</p>
+        <p className="text-sm font-medium">{fd.noDepartures}</p>
       </div>
     );
   }
@@ -440,13 +428,13 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Checked In</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Balance Due</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.guest}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.room}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.nights}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.checkIn}</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.amount}</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.balanceDue}</th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.status}</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -479,15 +467,15 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
                   {item.balance > 0 ? (
                     <span className="font-semibold text-red-600">{formatCurrency(item.balance)}</span>
                   ) : (
-                    <span className="text-emerald-600 font-medium text-xs">Paid</span>
+                    <span className="text-emerald-600 font-medium text-xs">{fd.paid}</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <StatusBadge status={item.status} />
+                  <StatusBadge status={item.status} fd={fd} />
                 </td>
                 <td className="px-4 py-3">
                   <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
-                    View
+                    {fd.view}
                   </Link>
                 </td>
               </tr>
@@ -504,27 +492,27 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
                 <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode}</p>
               </div>
-              <StatusBadge status={item.status} />
+              <StatusBadge status={item.status} fd={fd} />
             </div>
             <div className="grid grid-cols-4 gap-2 text-xs">
               <div>
-                <span className="text-gray-400">Room</span>
+                <span className="text-gray-400">{fd.room}</span>
                 <p className="font-semibold text-gray-800">{item.roomNumber}</p>
               </div>
               <div>
-                <span className="text-gray-400">Nights</span>
+                <span className="text-gray-400">{fd.nights}</span>
                 <p className="font-medium text-gray-700">{item.nights}</p>
               </div>
               <div>
-                <span className="text-gray-400">Amount</span>
+                <span className="text-gray-400">{fd.amount}</span>
                 <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
               </div>
               <div className="text-right">
-                <span className="text-gray-400">Balance</span>
+                <span className="text-gray-400">{fd.balance}</span>
                 {item.balance > 0 ? (
                   <p className="font-semibold text-red-600">{formatCurrency(item.balance)}</p>
                 ) : (
-                  <p className="font-medium text-emerald-600">Paid</p>
+                  <p className="font-medium text-emerald-600">{fd.paid}</p>
                 )}
               </div>
             </div>
@@ -535,12 +523,12 @@ function DeparturesTable({ items }: { items: DepartureItem[] }) {
   );
 }
 
-function StayoversTable({ items }: { items: StayoverItem[] }) {
+function StayoversTable({ items, fd }: { items: StayoverItem[]; fd: FdTranslations }) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-gray-400">
         <Users className="w-10 h-10 mb-3 opacity-30" />
-        <p className="text-sm font-medium">No stayovers at this time</p>
+        <p className="text-sm font-medium">{fd.noStayovers}</p>
       </div>
     );
   }
@@ -551,12 +539,12 @@ function StayoversTable({ items }: { items: StayoverItem[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Room</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-in</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-out</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nights Left</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.guest}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.room}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.checkIn}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.checkOut}</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.nightsLeft}</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{fd.total}</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -589,7 +577,7 @@ function StayoversTable({ items }: { items: StayoverItem[] }) {
                 </td>
                 <td className="px-4 py-3">
                   <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
-                    View
+                    {fd.view}
                   </Link>
                 </td>
               </tr>
@@ -607,24 +595,24 @@ function StayoversTable({ items }: { items: StayoverItem[] }) {
                 <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode}</p>
               </div>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium flex-shrink-0">
-                <Moon className="w-3 h-3" /> {item.nightsRemaining} left
+                <Moon className="w-3 h-3" /> {item.nightsRemaining} {fd.left}
               </span>
             </div>
             <div className="grid grid-cols-4 gap-2 text-xs">
               <div>
-                <span className="text-gray-400">Room</span>
+                <span className="text-gray-400">{fd.room}</span>
                 <p className="font-semibold text-gray-800">{item.roomNumber}</p>
               </div>
               <div>
-                <span className="text-gray-400">In</span>
+                <span className="text-gray-400">{fd.in}</span>
                 <p className="font-medium text-gray-700">{formatDate(item.checkIn, 'MMM d')}</p>
               </div>
               <div>
-                <span className="text-gray-400">Out</span>
+                <span className="text-gray-400">{fd.out}</span>
                 <p className="font-medium text-gray-700">{formatDate(item.checkOut, 'MMM d')}</p>
               </div>
               <div className="text-right">
-                <span className="text-gray-400">Total</span>
+                <span className="text-gray-400">{fd.total}</span>
                 <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
               </div>
             </div>
