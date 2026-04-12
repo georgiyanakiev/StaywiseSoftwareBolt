@@ -9,7 +9,7 @@ export interface Tenant {
   logo_url: string | null;
   primary_color: string;
   secondary_color: string;
-  plan: 'starter' | 'pro' | 'enterprise';
+  plan: 'starter' | 'growth' | 'pro' | 'enterprise';
   active: boolean;
   owner_email: string | null;
   created_at: string;

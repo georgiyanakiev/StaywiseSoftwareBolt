@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, Euro, Eye, XCircle, RefreshCw, Info, Hash } from 'lucide-react';
+import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, Euro, Eye, XCircle, RefreshCw, Info, Hash, CreditCard, Shield, Lock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
 import { useTenantId } from '../../hooks/useTenantQuery';
+import { useTenant } from '../../contexts/TenantContext';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
@@ -19,6 +20,7 @@ interface DirectBooking {
   total_amount: number;
   deposit_amount: number;
   status: string;
+  payment_status: string;
   created_at: string;
   room_type?: { name: string };
 }
@@ -37,18 +39,31 @@ interface Config {
   require_deposit: boolean;
   deposit_percentage: number;
   active: boolean;
+  stripe_enabled: boolean;
+  payment_mode: string;
 }
 
 type Tab = 'overview' | 'config' | 'bookings' | 'embed';
 
 const STATUS_COLORS: Record<string, string> = {
-  confirmed:   'bg-emerald-50 text-emerald-700',
-  pending:     'bg-amber-50 text-amber-700',
-  cancelled:   'bg-red-50 text-red-700',
-  checked_in:  'bg-blue-50 text-blue-700',
-  checked_out: 'bg-gray-100 text-gray-600',
-  no_show:     'bg-orange-50 text-orange-700',
+  confirmed:       'bg-emerald-50 text-emerald-700',
+  pending:         'bg-amber-50 text-amber-700',
+  pending_payment: 'bg-amber-50 text-amber-700',
+  cancelled:       'bg-red-50 text-red-700',
+  checked_in:      'bg-blue-50 text-blue-700',
+  checked_out:     'bg-gray-100 text-gray-600',
+  no_show:         'bg-orange-50 text-orange-700',
 };
+
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
+  paid:         'bg-emerald-50 text-emerald-700',
+  pending:      'bg-amber-50 text-amber-700',
+  failed:       'bg-red-50 text-red-700',
+  refunded:     'bg-gray-100 text-gray-600',
+  not_required: 'bg-gray-50 text-gray-500',
+};
+
+const ALLOWED_PLANS = ['growth', 'pro', 'enterprise'];
 
 const DEFAULT_CONFIG: Partial<Config> = {
   primary_color: '#1a56db',
@@ -63,12 +78,16 @@ const DEFAULT_CONFIG: Partial<Config> = {
   require_deposit: true,
   deposit_percentage: 30,
   active: true,
+  stripe_enabled: false,
+  payment_mode: 'deposit',
 };
 
 export default function BookingEngineAdminPage() {
   const { currentHotel } = useHotel();
   const tenantId = useTenantId();
+  const { tenant } = useTenant();
   const { showToast } = useToast();
+  const planAllowed = ALLOWED_PLANS.includes(tenant?.plan ?? '');
   const [tab, setTab] = useState<Tab>('overview');
   const [bookings, setBookings] = useState<DirectBooking[]>([]);
   const [config, setConfig] = useState<Config | null>(null);
@@ -162,6 +181,48 @@ export default function BookingEngineAdminPage() {
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
 
+  if (!planAllowed) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+            <Globe className="w-6 h-6 text-blue-600" />
+            Booking Engine
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">Commission-free direct bookings from your website</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-10 max-w-lg mx-auto text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <Lock className="w-8 h-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Upgrade to unlock Booking Engine</h2>
+          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+            The booking engine is available on <span className="font-semibold text-gray-700">Growth</span> and <span className="font-semibold text-gray-700">Pro</span> plans.
+            Accept zero-commission direct bookings with Stripe payment processing.
+          </p>
+          <div className="grid grid-cols-2 gap-3 text-left mb-6">
+            {[
+              'Embeddable booking widget',
+              'Stripe payment processing',
+              'Zero commission on bookings',
+              'Automated confirmation emails',
+              'Deposit or full payment mode',
+              'Real-time availability check',
+            ].map(f => (
+              <div key={f} className="flex items-center gap-2 text-sm text-gray-600">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                {f}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400">
+            Current plan: <span className="font-medium capitalize">{tenant?.plan ?? 'starter'}</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -243,6 +304,8 @@ export default function BookingEngineAdminPage() {
                 { label: 'Currency',         value: config?.currency ?? 'EUR' },
                 { label: 'Check-in Time',    value: config?.check_in_time ?? '15:00' },
                 { label: 'Check-out Time',   value: config?.check_out_time ?? '11:00' },
+                { label: 'Stripe Payments',  value: config?.stripe_enabled ? 'Enabled' : 'Disabled', badge: true, active: config?.stripe_enabled },
+                { label: 'Payment Mode',     value: config?.stripe_enabled ? (config.payment_mode === 'full' ? 'Full amount' : 'Deposit only') : '—' },
                 { label: 'Deposit Required', value: config?.require_deposit ? `Yes — ${config.deposit_percentage ?? 30}%` : 'No' },
                 { label: 'Advance Booking',  value: `${config?.min_advance_days ?? 0}–${config?.max_advance_days ?? 365} days` },
               ].map(item => (
@@ -378,6 +441,63 @@ export default function BookingEngineAdminPage() {
                 </label>
               ))}
             </div>
+
+            <div className="border-t border-gray-200 pt-5 mt-5">
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard className="w-5 h-5 text-[#1e3a5f]" />
+                <h4 className="font-semibold text-gray-900">Stripe Payment Processing</h4>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!form.stripe_enabled}
+                    onChange={e => setForm(f => ({ ...f, stripe_enabled: e.target.checked }))}
+                    className="w-4 h-4 rounded border-gray-300 text-[#1e3a5f]"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Enable Stripe payments on booking</span>
+                    <p className="text-xs text-gray-500 mt-0.5">Guests pay securely via Stripe Checkout when booking</p>
+                  </div>
+                </label>
+              </div>
+
+              {form.stripe_enabled && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Payment Mode</label>
+                    <select
+                      value={form.payment_mode ?? 'deposit'}
+                      onChange={e => setForm(f => ({ ...f, payment_mode: e.target.value }))}
+                      className="input-field"
+                    >
+                      <option value="deposit">Charge deposit only ({form.deposit_percentage ?? 30}% of total)</option>
+                      <option value="full">Charge full amount at booking</option>
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {form.payment_mode === 'full'
+                        ? 'The full booking total will be charged at time of booking.'
+                        : `A ${form.deposit_percentage ?? 30}% deposit will be charged. Balance due at check-in.`
+                      }
+                    </p>
+                  </div>
+
+                  <div className="flex items-start gap-3 bg-blue-50 rounded-lg p-3 border border-blue-100">
+                    <Shield className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-xs text-blue-700 leading-relaxed">
+                      <p className="font-medium mb-1">How Stripe payment works:</p>
+                      <ul className="space-y-0.5 text-blue-600">
+                        <li>1. Guest fills in details and clicks "Pay Securely"</li>
+                        <li>2. Redirected to Stripe's hosted checkout page</li>
+                        <li>3. After payment, booking is auto-confirmed</li>
+                        <li>4. Confirmation email sent to guest</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <button
@@ -406,6 +526,7 @@ export default function BookingEngineAdminPage() {
                   <th className="table-header text-right">Total</th>
                   <th className="table-header text-right">Deposit Paid</th>
                   <th className="table-header">Status</th>
+                  <th className="table-header">Payment</th>
                   <th className="table-header">Actions</th>
                 </tr>
               </thead>
@@ -438,8 +559,18 @@ export default function BookingEngineAdminPage() {
                       </td>
                       <td className="table-cell">
                         <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[b.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                          {b.status}
+                          {b.status.replace('_', ' ')}
                         </span>
+                      </td>
+                      <td className="table-cell">
+                        {b.payment_status && b.payment_status !== 'not_required' ? (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS_COLORS[b.payment_status] ?? 'bg-gray-100 text-gray-600'}`}>
+                            {b.payment_status === 'paid' && <CheckCircle2 className="w-3 h-3" />}
+                            {b.payment_status}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="table-cell">
                         <div className="flex items-center gap-2">
@@ -458,7 +589,7 @@ export default function BookingEngineAdminPage() {
                 })}
                 {bookings.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-12 text-center text-gray-400">
+                    <td colSpan={11} className="py-12 text-center text-gray-400">
                       <Info className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                       No direct bookings yet
                     </td>

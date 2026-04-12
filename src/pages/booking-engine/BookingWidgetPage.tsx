@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, ChevronRight, Check, Users, Loader2, ArrowLeft, Tag, CalendarDays, MapPin, Phone, Mail, Star, Plus, CheckCircle } from 'lucide-react';
+import { Building2, ChevronRight, Check, Users, Loader2, ArrowLeft, Tag, CalendarDays, MapPin, Phone, Mail, Star, Plus, CheckCircle, CreditCard, Shield } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useTenant } from '../../contexts/TenantContext';
 import LegalFooter from '../../components/legal/LegalFooter';
@@ -37,6 +37,8 @@ interface Config {
   min_advance_days: number;
   max_advance_days: number;
   show_room_photos: boolean;
+  stripe_enabled: boolean;
+  payment_mode: string;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -126,11 +128,16 @@ export default function BookingWidgetPage() {
   const [bookingError, setBookingError] = useState('');
   const [hotelMissing, setHotelMissing] = useState(false);
   const [emailSent, setEmailSent] = useState<boolean | null>(null);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [stripeRedirecting, setStripeRedirecting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hid = params.get('hotel') ?? '';
     const tid = params.get('tenant') ?? '';
+    const sessionId = params.get('session_id');
+    const bookingIdParam = params.get('booking_id');
+
     if (!hid) { setHotelMissing(true); return; }
     setHotelId(hid);
     setTenantId(tid);
@@ -144,7 +151,58 @@ export default function BookingWidgetPage() {
       supabase.from('hotels').select('tax_rate').eq('id', hid).maybeSingle()
         .then(({ data }) => { if (data?.tax_rate) setHotelTaxRate(Number(data.tax_rate)); });
     }
+
+    if (sessionId && bookingIdParam) {
+      handleStripeReturn(bookingIdParam);
+    }
   }, []);
+
+  const handleStripeReturn = async (bid: string) => {
+    const { data } = await supabase
+      .from('direct_bookings')
+      .select('*, room_type:room_types(name)')
+      .eq('id', bid)
+      .maybeSingle();
+
+    if (data) {
+      setBookingId(data.id);
+      setConfirmationNumber(data.confirmation_number);
+      setGuestName(data.guest_name);
+      setGuestEmail(data.guest_email);
+      setCheckIn(data.check_in);
+      setCheckOut(data.check_out);
+      setAdults(data.adults);
+      setChildren(data.children ?? 0);
+      setSelectedRoom({ id: data.room_type_id, name: data.room_type?.name ?? '', base_rate: Number(data.rate_per_night), max_occupancy: 0, bed_type: '', amenities: [], image_url: '', description: '' });
+      setPaymentVerified(data.payment_status === 'paid');
+      setStep(4);
+
+      if (data.payment_status === 'paid') {
+        supabase.functions
+          .invoke('send-booking-confirmation', {
+            body: {
+              confirmationNumber: data.confirmation_number,
+              guestName: data.guest_name,
+              guestEmail: data.guest_email,
+              hotelName,
+              roomName: data.room_type?.name ?? '',
+              checkIn: data.check_in,
+              checkOut: data.check_out,
+              nights: Math.ceil((new Date(data.check_out).getTime() - new Date(data.check_in).getTime()) / 86400000),
+              adults: data.adults,
+              children: data.children ?? 0,
+              total: Number(data.total_amount),
+              depositAmount: Number(data.deposit_amount),
+              currency: 'EUR',
+              requireDeposit: Number(data.deposit_amount) > 0,
+              cancellationPolicy: '',
+            },
+          })
+          .then(({ error: fnError }) => setEmailSent(!fnError))
+          .catch(() => setEmailSent(false));
+      }
+    }
+  };
 
   const nights = checkIn && checkOut
     ? Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)
@@ -162,10 +220,16 @@ export default function BookingWidgetPage() {
   const currency = config?.currency ?? 'EUR';
   const depositPct = config?.deposit_percentage ?? 30;
   const requireDeposit = config?.require_deposit ?? true;
+  const stripeEnabled = config?.stripe_enabled ?? false;
+  const paymentMode = config?.payment_mode ?? 'deposit';
   const subtotal = selectedRoom ? selectedRoom.base_rate * nights : 0;
   const taxAmount = Math.round(subtotal * (hotelTaxRate / 100) * 100) / 100;
   const total = subtotal + taxAmount;
   const depositAmount = requireDeposit ? Math.round((total * depositPct) / 100 * 100) / 100 : 0;
+
+  const stripeChargeAmount = stripeEnabled
+    ? (paymentMode === 'full' ? total : (requireDeposit ? depositAmount : total))
+    : 0;
 
   const formatAmount = (amt: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amt);
@@ -237,6 +301,9 @@ export default function BookingWidgetPage() {
     setBookingError('');
     const confNum = `SW-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const bookingStatus = stripeEnabled ? 'pending_payment' : 'confirmed';
+    const paymentStatus = stripeEnabled ? 'pending' : 'not_required';
+
     const payload: Record<string, unknown> = {
       confirmation_number: confNum,
       room_type_id: selectedRoom.id,
@@ -255,7 +322,8 @@ export default function BookingWidgetPage() {
       deposit_amount: depositAmount,
       special_requests: specialRequests,
       promo_code: promoCode,
-      status: 'confirmed',
+      status: bookingStatus,
+      payment_status: paymentStatus,
       source: 'direct',
     };
     if (hotelId) payload.hotel_id = hotelId;
@@ -279,6 +347,41 @@ export default function BookingWidgetPage() {
 
     setBookingId(inserted.id);
     setConfirmationNumber(confNum);
+
+    if (stripeEnabled) {
+      setStripeRedirecting(true);
+      const widgetBase = `${window.location.origin}/booking-engine/widget`;
+      const returnParams = `hotel=${hotelId}&tenant=${tenantId}&booking_id=${inserted.id}`;
+
+      const { data: checkoutData, error: checkoutError } = await supabase.functions
+        .invoke('create-booking-checkout', {
+          body: {
+            bookingId: inserted.id,
+            hotelName,
+            roomName: selectedRoom.name,
+            checkIn,
+            checkOut,
+            nights,
+            currency,
+            amountToCharge: stripeChargeAmount,
+            depositMode: paymentMode === 'deposit' && requireDeposit,
+            guestEmail,
+            successUrl: `${widgetBase}?${returnParams}&session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${widgetBase}?${returnParams}&cancelled=true`,
+          },
+        });
+
+      if (checkoutError || !checkoutData?.url) {
+        setBookingError('Unable to initiate payment. Please try again or contact the hotel directly.');
+        setStripeRedirecting(false);
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = checkoutData.url;
+      return;
+    }
+
     setEmailSent(null);
     setLoading(false);
     setStep(4);
@@ -364,6 +467,8 @@ export default function BookingWidgetPage() {
     setSelectedUpsells(new Set());
     setBookingError('');
     setEmailSent(null);
+    setPaymentVerified(false);
+    setStripeRedirecting(false);
   };
 
   if (hotelMissing) {
@@ -484,7 +589,6 @@ export default function BookingWidgetPage() {
                         type="button"
                         onClick={() => setAdults(a => Math.min(8, a + 1))}
                         className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 font-bold transition-colors"
-                        style={{ color: adults >= 8 ? undefined : undefined }}
                       >+</button>
                     </div>
                   </div>
@@ -562,7 +666,6 @@ export default function BookingWidgetPage() {
                       <div
                         key={rt.id}
                         className="border-2 border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:border-blue-300 transition-all group"
-                        style={{ borderColor: undefined }}
                         onClick={() => { setSelectedRoom(rt); setStep(3); }}
                       >
                         <div className="flex gap-0 sm:gap-4">
@@ -737,7 +840,7 @@ export default function BookingWidgetPage() {
                           <span className="font-medium text-gray-900">{adults + children}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">{nights} night{nights !== 1 ? 's' : ''} × {formatAmount(selectedRoom.base_rate)}</span>
+                          <span className="text-gray-500">{nights} night{nights !== 1 ? 's' : ''} x {formatAmount(selectedRoom.base_rate)}</span>
                           <span className="font-medium text-gray-900">{formatAmount(subtotal)}</span>
                         </div>
                         {hotelTaxRate > 0 && (
@@ -757,19 +860,55 @@ export default function BookingWidgetPage() {
                           <span style={{ color: primaryColor }}>{formatAmount(total)}</span>
                         </div>
                       </div>
+
+                      {stripeEnabled && (
+                        <div className="border-t border-gray-200 pt-3 mt-2">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>Secure payment via Stripe</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {paymentMode === 'full'
+                              ? `You'll pay ${formatAmount(total)} now`
+                              : requireDeposit
+                                ? `You'll pay a ${formatAmount(depositAmount)} deposit now`
+                                : `You'll pay ${formatAmount(total)} now`
+                            }
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <button
                   onClick={submitBooking}
-                  disabled={!guestName || !guestEmail || loading}
+                  disabled={!guestName || !guestEmail || loading || stripeRedirecting}
                   className="w-full py-3.5 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
-                  style={{ backgroundColor: primaryColor }}
+                  style={{ backgroundColor: stripeEnabled ? '#0f172a' : primaryColor }}
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  Confirm Booking · {formatAmount(total)}
+                  {loading || stripeRedirecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : stripeEnabled ? (
+                    <CreditCard className="w-4 h-4" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                  {stripeRedirecting
+                    ? 'Redirecting to payment...'
+                    : stripeEnabled
+                      ? `Pay Securely · ${formatAmount(stripeChargeAmount)}`
+                      : `Confirm Booking · ${formatAmount(total)}`
+                  }
                 </button>
+
+                {stripeEnabled && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                    <Shield className="w-3 h-3" />
+                    <span>Powered by Stripe — 256-bit SSL encryption</span>
+                  </div>
+                )}
+
                 {bookingError && (
                   <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 text-sm text-red-700">
                     <span className="mt-0.5 flex-shrink-0">&#x26A0;</span>
@@ -788,6 +927,14 @@ export default function BookingWidgetPage() {
                   <Check className="w-9 h-9" style={{ color: primaryColor }} />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">Booking Confirmed!</h2>
+
+                {paymentVerified && (
+                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-medium px-3 py-1.5 rounded-full mb-3 border border-emerald-100">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Payment received
+                  </div>
+                )}
+
                 {emailSent === true && (
                   <>
                     <p className="text-gray-500 mb-1">A confirmation has been sent to</p>
@@ -823,7 +970,7 @@ export default function BookingWidgetPage() {
                   ))}
                   {requireDeposit && (
                     <div className="flex justify-between text-sm text-amber-600">
-                      <span>Deposit due</span>
+                      <span>Deposit{paymentVerified ? ' paid' : ' due'}</span>
                       <span className="font-semibold">{formatAmount(depositAmount)}</span>
                     </div>
                   )}
