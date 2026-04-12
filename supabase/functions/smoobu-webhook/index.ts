@@ -8,6 +8,9 @@ const corsHeaders = {
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAYS = [0, 2000, 5000];
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -28,22 +31,24 @@ Deno.serve(async (req: Request) => {
   try {
     const rawText = await req.text();
 
-    console.log("=== RAW SMOOBU PAYLOAD ===");
-    console.log(rawText);
-    console.log("==========================");
-
     let payload: any;
     try {
       payload = JSON.parse(rawText);
     } catch {
-      console.error("Failed to parse JSON:", rawText);
+      await logWebhookEvent({
+        source: "smoobu",
+        event_type: "parse_error",
+        status: "failed",
+        attempt: 1,
+        error_message: "Invalid JSON payload",
+        payload: { raw: rawText.slice(0, 2000) },
+        response_code: 400,
+      });
       return new Response(
         JSON.stringify({ error: "Invalid JSON" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    console.log("Parsed payload keys:", Object.keys(payload));
 
     const action = payload.action ?? payload.type ?? "newReservation";
 
@@ -53,20 +58,20 @@ Deno.serve(async (req: Request) => {
       payload.data ??
       (payload.id ? payload : null);
 
-    console.log("Action:", action);
-    console.log("Booking ID:", booking?.id ?? "NOT FOUND");
-    console.log("Booking keys:", booking ? Object.keys(booking) : "null");
-
     if (!booking) {
-      console.error(
-        "Could not find booking in payload:",
-        JSON.stringify(payload)
-      );
+      await logWebhookEvent({
+        source: "smoobu",
+        event_type: action,
+        status: "failed",
+        attempt: 1,
+        error_message: "Could not find booking data in payload",
+        payload,
+        response_code: 400,
+      });
       return new Response(
         JSON.stringify({
           error: "Could not find booking data",
           received_keys: Object.keys(payload),
-          payload,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -111,30 +116,109 @@ Deno.serve(async (req: Request) => {
       raw_payload: payload,
     };
 
-    console.log("Mapped bookingData:", JSON.stringify(bookingData));
-
     if (
       !bookingData.smoobu_id ||
       bookingData.smoobu_id === "undefined"
     ) {
+      await logWebhookEvent({
+        source: "smoobu",
+        event_type: action,
+        status: "failed",
+        attempt: 1,
+        error_message: "Missing booking ID in payload",
+        payload,
+        response_code: 400,
+      });
       return new Response(
-        JSON.stringify({ error: "Missing booking ID", payload }),
+        JSON.stringify({ error: "Missing booking ID" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Upsert into bookings table — the DB trigger `trg_booking_to_reservation`
-    // automatically creates/updates the native reservation in the reservations table
-    const { data, error } = await supabase
-      .from("bookings")
-      .upsert(bookingData, { onConflict: "smoobu_id" })
-      .select()
-      .single();
+    let lastError: string | null = null;
+    let upsertedData: any = null;
 
-    if (error) {
-      console.error("Supabase upsert error:", error);
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      if (attempt > 1) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt - 1] || 2000));
+      }
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .upsert(bookingData, { onConflict: "smoobu_id" })
+        .select()
+        .single();
+
+      if (!error) {
+        upsertedData = data;
+        lastError = null;
+
+        const hotelId = await resolveHotelId(bookingData.property_id);
+        const tenantId = hotelId ? await resolveTenantId(hotelId) : null;
+
+        await logWebhookEvent({
+          source: "smoobu",
+          event_type: action,
+          status: "success",
+          attempt,
+          hotel_id: hotelId,
+          tenant_id: tenantId,
+          payload,
+          response_code: 200,
+          error_message: attempt > 1 ? `Succeeded on attempt ${attempt}` : null,
+        });
+
+        break;
+      }
+
+      lastError = error.message;
+      console.error(`Attempt ${attempt}/${MAX_ATTEMPTS} failed:`, error.message);
+
+      if (attempt < MAX_ATTEMPTS) {
+        const hotelId = await resolveHotelId(bookingData.property_id);
+        const tenantId = hotelId ? await resolveTenantId(hotelId) : null;
+        await logWebhookEvent({
+          source: "smoobu",
+          event_type: action,
+          status: "retrying",
+          attempt,
+          hotel_id: hotelId,
+          tenant_id: tenantId,
+          error_message: error.message,
+          payload,
+          response_code: 500,
+        });
+      }
+    }
+
+    if (lastError) {
+      const hotelId = await resolveHotelId(bookingData.property_id);
+      const tenantId = hotelId ? await resolveTenantId(hotelId) : null;
+
+      await logWebhookEvent({
+        source: "smoobu",
+        event_type: action,
+        status: "failed",
+        attempt: MAX_ATTEMPTS,
+        hotel_id: hotelId,
+        tenant_id: tenantId,
+        error_message: lastError,
+        payload,
+        response_code: 500,
+      });
+
+      await sendFailureAlert({
+        source: "smoobu",
+        event_type: action,
+        error_message: lastError,
+        booking_id: bookingData.smoobu_id,
+        guest_name: bookingData.guest_name,
+        attempts: MAX_ATTEMPTS,
+        hotel_id: hotelId,
+      });
+
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: lastError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -145,14 +229,29 @@ Deno.serve(async (req: Request) => {
       await unblockAvailability(booking);
     }
 
-    console.log("Booking processed successfully:", data.id);
-
     return new Response(
-      JSON.stringify({ success: true, booking_id: data.id, action }),
+      JSON.stringify({ success: true, booking_id: upsertedData.id, action }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Webhook error:", err);
+
+    await logWebhookEvent({
+      source: "smoobu",
+      event_type: "unhandled_exception",
+      status: "failed",
+      attempt: 1,
+      error_message: String(err),
+      response_code: 500,
+    });
+
+    await sendFailureAlert({
+      source: "smoobu",
+      event_type: "unhandled_exception",
+      error_message: String(err),
+      attempts: 1,
+    });
+
     return new Response(
       JSON.stringify({
         error: "Internal server error",
@@ -174,6 +273,172 @@ function mapStatus(action: string): string {
     default:
       return "confirmed";
   }
+}
+
+async function resolveHotelId(propertyId: string): Promise<string | null> {
+  if (!propertyId) return null;
+  const { data } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("property_id", propertyId)
+    .limit(1)
+    .maybeSingle();
+
+  if (data) {
+    const { data: room } = await supabase
+      .from("rooms")
+      .select("hotel_id")
+      .limit(1)
+      .maybeSingle();
+    return room?.hotel_id ?? null;
+  }
+  return null;
+}
+
+async function resolveTenantId(hotelId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("hotels")
+    .select("tenant_id")
+    .eq("id", hotelId)
+    .maybeSingle();
+  return data?.tenant_id ?? null;
+}
+
+interface WebhookEventData {
+  source: string;
+  event_type: string;
+  status: string;
+  attempt: number;
+  hotel_id?: string | null;
+  tenant_id?: string | null;
+  error_message?: string | null;
+  payload?: any;
+  response_code?: number | null;
+}
+
+async function logWebhookEvent(event: WebhookEventData) {
+  try {
+    await supabase.from("webhook_events").insert({
+      source: event.source,
+      event_type: event.event_type,
+      status: event.status,
+      attempt: event.attempt,
+      max_attempts: MAX_ATTEMPTS,
+      hotel_id: event.hotel_id ?? null,
+      tenant_id: event.tenant_id ?? null,
+      error_message: event.error_message ?? null,
+      payload: event.payload ?? null,
+      response_code: event.response_code ?? null,
+      alerted: event.status === "failed",
+    });
+  } catch (e) {
+    console.error("Failed to log webhook event:", e);
+  }
+}
+
+interface AlertData {
+  source: string;
+  event_type: string;
+  error_message: string;
+  booking_id?: string;
+  guest_name?: string;
+  attempts: number;
+  hotel_id?: string | null;
+}
+
+async function sendFailureAlert(alert: AlertData) {
+  try {
+    const slackUrl = Deno.env.get("SLACK_WEBHOOK_URL");
+    if (slackUrl) {
+      const hotelName = alert.hotel_id
+        ? await getHotelName(alert.hotel_id)
+        : "Unknown";
+
+      const slackPayload = {
+        text: `[WEBHOOK FAILURE] Smoobu webhook failed after ${alert.attempts} attempts`,
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Webhook Failure Alert",
+            },
+          },
+          {
+            type: "section",
+            fields: [
+              { type: "mrkdwn", text: `*Source:*\n${alert.source}` },
+              { type: "mrkdwn", text: `*Event:*\n${alert.event_type}` },
+              { type: "mrkdwn", text: `*Hotel:*\n${hotelName}` },
+              { type: "mrkdwn", text: `*Attempts:*\n${alert.attempts}/${MAX_ATTEMPTS}` },
+              ...(alert.booking_id
+                ? [{ type: "mrkdwn", text: `*Booking ID:*\n${alert.booking_id}` }]
+                : []),
+              ...(alert.guest_name
+                ? [{ type: "mrkdwn", text: `*Guest:*\n${alert.guest_name}` }]
+                : []),
+            ],
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Error:*\n\`\`\`${alert.error_message.slice(0, 500)}\`\`\``,
+            },
+          },
+        ],
+      };
+
+      await fetch(slackUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(slackPayload),
+      });
+    }
+
+    const emailEnabled = Deno.env.get("ALERT_EMAIL_ENABLED") === "true";
+    if (emailEnabled) {
+      const { data: admins } = await supabase
+        .from("staff_members")
+        .select("email")
+        .eq("role", "admin")
+        .limit(10);
+
+      if (admins && admins.length > 0) {
+        const emails = admins.map((a: any) => a.email).filter(Boolean);
+        if (emails.length > 0) {
+          await supabase.functions.invoke("send-guest-email", {
+            body: {
+              to: emails,
+              subject: `[ALERT] Smoobu webhook failure - ${alert.event_type}`,
+              html: `
+                <h2>Webhook Failure Alert</h2>
+                <p><strong>Source:</strong> ${alert.source}</p>
+                <p><strong>Event:</strong> ${alert.event_type}</p>
+                <p><strong>Attempts:</strong> ${alert.attempts}/${MAX_ATTEMPTS}</p>
+                ${alert.booking_id ? `<p><strong>Booking ID:</strong> ${alert.booking_id}</p>` : ""}
+                ${alert.guest_name ? `<p><strong>Guest:</strong> ${alert.guest_name}</p>` : ""}
+                <p><strong>Error:</strong></p>
+                <pre>${alert.error_message}</pre>
+                <p>Please check the webhook events log in your dashboard for more details.</p>
+              `,
+            },
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to send failure alert:", e);
+  }
+}
+
+async function getHotelName(hotelId: string): Promise<string> {
+  const { data } = await supabase
+    .from("hotels")
+    .select("name")
+    .eq("id", hotelId)
+    .maybeSingle();
+  return data?.name ?? "Unknown";
 }
 
 async function blockAvailability(booking: any) {

@@ -14,6 +14,7 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useDashboardData } from './dashboard/useDashboardData';
 import ActivityFeed from './dashboard/ActivityFeed';
+import SyncStatusIndicator from './dashboard/SyncStatusIndicator';
 
 export default function DashboardPage() {
   const { currentHotel } = useHotel();
@@ -68,6 +69,7 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500 mt-0.5">{formatDate(new Date(), 'EEEE, MMMM d, yyyy')}</p>
         </div>
         <div className="flex items-center gap-2">
+          <SyncStatusIndicator hotelId={currentHotel?.id} />
           <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
             <CalendarDays className="w-3.5 h-3.5" /> {t.dashboard.newBooking}
           </Link>
