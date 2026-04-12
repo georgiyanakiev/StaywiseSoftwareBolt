@@ -348,54 +348,6 @@ interface AlertData {
 
 async function sendFailureAlert(alert: AlertData) {
   try {
-    const slackUrl = Deno.env.get("SLACK_WEBHOOK_URL");
-    if (slackUrl) {
-      const hotelName = alert.hotel_id
-        ? await getHotelName(alert.hotel_id)
-        : "Unknown";
-
-      const slackPayload = {
-        text: `[WEBHOOK FAILURE] Smoobu webhook failed after ${alert.attempts} attempts`,
-        blocks: [
-          {
-            type: "header",
-            text: {
-              type: "plain_text",
-              text: "Webhook Failure Alert",
-            },
-          },
-          {
-            type: "section",
-            fields: [
-              { type: "mrkdwn", text: `*Source:*\n${alert.source}` },
-              { type: "mrkdwn", text: `*Event:*\n${alert.event_type}` },
-              { type: "mrkdwn", text: `*Hotel:*\n${hotelName}` },
-              { type: "mrkdwn", text: `*Attempts:*\n${alert.attempts}/${MAX_ATTEMPTS}` },
-              ...(alert.booking_id
-                ? [{ type: "mrkdwn", text: `*Booking ID:*\n${alert.booking_id}` }]
-                : []),
-              ...(alert.guest_name
-                ? [{ type: "mrkdwn", text: `*Guest:*\n${alert.guest_name}` }]
-                : []),
-            ],
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: `*Error:*\n\`\`\`${alert.error_message.slice(0, 500)}\`\`\``,
-            },
-          },
-        ],
-      };
-
-      await fetch(slackUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(slackPayload),
-      });
-    }
-
     const emailEnabled = Deno.env.get("ALERT_EMAIL_ENABLED") === "true";
     if (emailEnabled) {
       const { data: admins } = await supabase
