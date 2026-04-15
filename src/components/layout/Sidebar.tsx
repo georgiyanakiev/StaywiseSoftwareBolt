@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, SprayCan, QrCode,
   GitBranch, Globe, TrendingUp, ShoppingBag,
@@ -93,6 +93,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { lang, setLang } = useLanguage();
   const { tenant } = useTenant();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const brandColor = tenant?.primary_color ?? '#1e3a5f';
   const displayName = tenant?.name ?? 'StayWise PMS';
@@ -125,7 +126,11 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const content = (
     <div className="flex flex-col h-full">
       <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-4 py-4 border-b border-gray-100`}>
-        <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''} min-w-0`}>
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity"
+          title="Back to dashboard"
+        >
           {tenant?.logo_url ? (
             <img src={tenant.logo_url} alt={displayName} className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
           ) : (
@@ -134,7 +139,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             </div>
           )}
           {!collapsed && <span className="text-sm font-semibold text-gray-900 truncate">{displayName}</span>}
-        </div>
+        </button>
         <button onClick={onMobileClose} className="lg:hidden p-1 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
         <button onClick={onToggle} className="hidden lg:flex p-1 text-gray-400 hover:text-gray-600">
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
