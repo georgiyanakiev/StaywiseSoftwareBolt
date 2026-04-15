@@ -18,19 +18,40 @@ interface Props {
 
 type PoweredBy = 'ai_refined' | 'yield_algorithm' | null;
 
-const LEAD_TIME_LABELS: Record<string, string> = {
-  same_day: 'Same day',
-  last_minute: 'Last minute',
-  short: 'Short lead',
-  medium: 'Mid lead',
-  advance: 'Advance',
-};
-
 const PICKUP_COLORS: Record<string, string> = {
   accelerating: 'text-emerald-700 bg-emerald-50 border-emerald-200',
   stable: 'text-gray-600 bg-gray-50 border-gray-200',
   decelerating: 'text-orange-600 bg-orange-50 border-orange-200',
 };
+
+function getLeadTimeLabel(leadTime: string, t: any): string {
+  const labels: Record<string, string> = {
+    same_day: t.dynamicPricing.sameDay,
+    last_minute: t.dynamicPricing.lastMinute,
+    short: t.dynamicPricing.shortLead,
+    medium: t.dynamicPricing.mediumLead,
+    advance: t.dynamicPricing.advanceLead,
+  };
+  return labels[leadTime] ?? leadTime;
+}
+
+function getDemandLabel(demand: string, t: any): string {
+  const labels: Record<string, string> = {
+    high: t.dynamicPricing.highDemand,
+    medium: t.dynamicPricing.mediumDemand,
+    low: t.dynamicPricing.lowDemand,
+  };
+  return labels[demand] ?? demand;
+}
+
+function getPickupLabel(pickup: string, t: any): string {
+  const labels: Record<string, string> = {
+    accelerating: t.dynamicPricing.accelerating,
+    stable: t.dynamicPricing.stable,
+    decelerating: t.dynamicPricing.decelerating,
+  };
+  return labels[pickup] ?? pickup;
+}
 
 export default function AISuggestionsPanel({ suggestions, roomTypes, loading, onRefresh }: Props) {
   const { currentHotel } = useHotel();
@@ -202,7 +223,7 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
 
                     {s.factors?.demand && (
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${demandColor(s.factors.demand)}`}>
-                        {s.factors.demand} demand
+                        {getDemandLabel(s.factors.demand, t)}
                         {s.factors.occupancy_pct != null ? ` · ${s.factors.occupancy_pct}%` : ''}
                       </span>
                     )}
@@ -210,20 +231,20 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
                     {s.factors?.pickup && s.factors.pickup !== 'stable' && (
                       <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${PICKUP_COLORS[s.factors.pickup]}`}>
                         <Activity className="w-2.5 h-2.5" />
-                        {s.factors.pickup}
+                        {getPickupLabel(s.factors.pickup, t)}
                       </span>
                     )}
 
                     {s.factors?.lead_time && s.factors.lead_time !== 'medium' && (
                       <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200">
                         <Clock className="w-2.5 h-2.5" />
-                        {LEAD_TIME_LABELS[s.factors.lead_time] ?? s.factors.lead_time}
+                        {getLeadTimeLabel(s.factors.lead_time, t)}
                       </span>
                     )}
 
                     {s.factors?.day_type === 'weekend' && (
                       <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200">
-                        Weekend
+                        {t.dynamicPricing.weekend}
                       </span>
                     )}
                   </div>
@@ -237,7 +258,7 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
                         style={{ width: `${s.confidence_score}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-gray-400 flex-shrink-0">{s.confidence_score}% confidence</span>
+                    <span className="text-[10px] text-gray-400 flex-shrink-0">{s.confidence_score}% {t.dynamicPricing.confidence}</span>
                   </div>
                 </div>
 
@@ -256,7 +277,7 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-60"
                   >
                     {isApplying ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                    Apply
+                    {t.dynamicPricing.apply}
                   </button>
                 </div>
               </div>
