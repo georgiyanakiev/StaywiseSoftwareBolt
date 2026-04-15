@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useHotel } from '../contexts/HotelContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useTenantId } from '../hooks/useTenantQuery';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import KanbanBoard from './housekeeping/KanbanBoard';
@@ -26,6 +27,7 @@ interface Room {
 
 export default function HousekeepingPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const tenantId = useTenantId();
   const [tab, setTab] = useState<Tab>('kanban');
   const [tasks, setTasks] = useState<HKTask[]>([]);
@@ -107,10 +109,10 @@ export default function HousekeepingPage() {
   };
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; badge?: number }[] = [
-    { id: 'kanban',      label: 'Kanban Board',  icon: LayoutGrid },
-    { id: 'rooms',       label: 'Room Grid',     icon: Grid3x3 },
-    { id: 'maintenance', label: 'Maintenance',   icon: Wrench,  badge: stats.maintOpen },
-    { id: 'staff',       label: 'Staff',         icon: Users },
+    { id: 'kanban',      label: t.housekeeping.kanbanBoard,  icon: LayoutGrid },
+    { id: 'rooms',       label: t.housekeeping.roomGrid,     icon: Grid3x3 },
+    { id: 'maintenance', label: t.housekeeping.maintenance,   icon: Wrench,  badge: stats.maintOpen },
+    { id: 'staff',       label: t.housekeeping.staff,         icon: Users },
   ];
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
@@ -120,18 +122,18 @@ export default function HousekeepingPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
           <SprayCan className="w-6 h-6 text-blue-600" />
-          Housekeeping
+          {t.housekeeping.title}
         </h1>
-        <p className="text-gray-500 text-sm mt-1">Manage cleaning tasks, room status, and maintenance</p>
+        <p className="text-gray-500 text-sm mt-1">{t.housekeeping.manageClean}</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Cleaned Today',   value: stats.cleaned,    icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Pending',         value: stats.pending,    icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50' },
-          { label: 'In Progress',     value: stats.inProgress, icon: SprayCan,     color: 'text-blue-600',    bg: 'bg-blue-50' },
-          { label: 'Inspected',       value: stats.inspected,  icon: Eye,          color: 'text-teal-600',    bg: 'bg-teal-50' },
-          { label: 'Maintenance Open',value: stats.maintOpen,  icon: AlertTriangle,color: stats.maintOpen > 0 ? 'text-red-600' : 'text-gray-500', bg: stats.maintOpen > 0 ? 'bg-red-50' : 'bg-gray-100' },
+          { label: t.housekeeping.cleanedToday,   value: stats.cleaned,    icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: t.housekeeping.pending,         value: stats.pending,    icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50' },
+          { label: t.housekeeping.inProgress,     value: stats.inProgress, icon: SprayCan,     color: 'text-blue-600',    bg: 'bg-blue-50' },
+          { label: t.housekeeping.inspected,       value: stats.inspected,  icon: Eye,          color: 'text-teal-600',    bg: 'bg-teal-50' },
+          { label: t.housekeeping.maintenanceOpen,value: stats.maintOpen,  icon: AlertTriangle,color: stats.maintOpen > 0 ? 'text-red-600' : 'text-gray-500', bg: stats.maintOpen > 0 ? 'bg-red-50' : 'bg-gray-100' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-4">
             <div className="flex items-center gap-2 mb-1">

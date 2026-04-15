@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, RefreshCw, Loader2, ChevronRight, User, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
 import {
   HKTask, HKStaff,
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByRoom = {}, onTasksChanged }: Props) {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [selectedTask, setSelectedTask] = useState<HKTask | null>(null);
   const [filterStaff, setFilterStaff] = useState('');
@@ -132,23 +134,23 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
         <div className="grid grid-cols-2 sm:flex gap-2">
           <select value={filterStaff} onChange={e => setFilterStaff(e.target.value)} className="input-field py-1.5 text-xs sm:w-36">
-            <option value="">All Staff</option>
-            <option value="">Unassigned</option>
+            <option value="">{t.housekeeping.allStaff}</option>
+            <option value="">{t.housekeeping.unassigned}</option>
             {staffNames.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <select value={filterType} onChange={e => setFilterType(e.target.value)} className="input-field py-1.5 text-xs sm:w-36">
-            <option value="">All Types</option>
+            <option value="">{t.housekeeping.allTypes}</option>
             {Object.entries(TASK_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)} className="input-field py-1.5 text-xs sm:w-32">
-            <option value="">All Priorities</option>
-            <option value="low">Low</option>
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="urgent">Urgent</option>
+            <option value="">{t.housekeeping.allPriorities}</option>
+            <option value="low">{t.housekeeping.low}</option>
+            <option value="normal">{t.housekeeping.normal}</option>
+            <option value="high">{t.housekeeping.high}</option>
+            <option value="urgent">{t.housekeeping.urgent}</option>
           </select>
           <select value={filterFloor} onChange={e => setFilterFloor(e.target.value)} className="input-field py-1.5 text-xs sm:w-28">
-            <option value="">All Floors</option>
+            <option value="">{t.housekeeping.allFloors}</option>
             {floors.map(f => <option key={f} value={String(f)}>Floor {f}</option>)}
           </select>
         </div>
@@ -159,8 +161,8 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
             className="flex items-center justify-center gap-2 w-full sm:w-auto px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors disabled:opacity-70"
           >
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Generate Today's Tasks</span>
-            <span className="sm:hidden">Generate Tasks</span>
+            <span className="hidden sm:inline">{t.housekeeping.generateTodaysTasks}</span>
+            <span className="sm:hidden">{t.housekeeping.tasks}</span>
           </button>
         </div>
       </div>
@@ -187,7 +189,7 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
                   />
                 ))}
                 {colTasks.length === 0 && (
-                  <div className="py-6 text-center text-gray-400 text-xs">No tasks</div>
+                  <div className="py-6 text-center text-gray-400 text-xs">{t.housekeeping.noTasks}</div>
                 )}
               </div>
             </div>
