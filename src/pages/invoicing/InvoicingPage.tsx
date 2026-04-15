@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -90,6 +91,7 @@ interface AggStats {
 export default function InvoicingPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -281,26 +283,26 @@ export default function InvoicingPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
             <FileText className="w-6 h-6 text-blue-600" />
-            Invoicing
+            {t.invoicing.title}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Create, send, and manage invoices and receipts</p>
+          <p className="text-gray-500 text-sm mt-1">{t.invoicing.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/invoicing/settings" className="btn-secondary flex items-center gap-2 py-2">
-            <Settings className="w-4 h-4" /> Settings
+            <Settings className="w-4 h-4" /> {t.invoicing.settings}
           </Link>
           <button onClick={() => { setEditingInvoice(null); setShowEditor(true); }} className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> New Invoice
+            <Plus className="w-4 h-4" /> {t.invoicing.newInvoice}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Invoiced This Month', value: formatCurrency(stats.invoicedThisMonth), color: 'text-gray-900', bg: 'bg-blue-50', icon: FileText, iconColor: 'text-blue-600' },
-          { label: 'Collected', value: formatCurrency(stats.collected), color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CheckCircle2, iconColor: 'text-emerald-600' },
-          { label: 'Outstanding', value: formatCurrency(stats.outstanding), color: 'text-amber-700', bg: 'bg-amber-50', icon: Clock, iconColor: 'text-amber-600' },
-          { label: 'Overdue', value: stats.overdueCount > 0 ? `${stats.overdueCount} (${formatCurrency(stats.overdueAmount)})` : '0', color: 'text-red-700', bg: 'bg-red-50', icon: AlertCircle, iconColor: 'text-red-600' },
+          { label: t.invoicing.invoicedThisMonth, value: formatCurrency(stats.invoicedThisMonth), color: 'text-gray-900', bg: 'bg-blue-50', icon: FileText, iconColor: 'text-blue-600' },
+          { label: t.invoicing.collected, value: formatCurrency(stats.collected), color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CheckCircle2, iconColor: 'text-emerald-600' },
+          { label: t.invoicing.outstanding, value: formatCurrency(stats.outstanding), color: 'text-amber-700', bg: 'bg-amber-50', icon: Clock, iconColor: 'text-amber-600' },
+          { label: t.invoicing.overdue, value: stats.overdueCount > 0 ? `${stats.overdueCount} (${formatCurrency(stats.overdueAmount)})` : '0', color: 'text-red-700', bg: 'bg-red-50', icon: AlertCircle, iconColor: 'text-red-600' },
         ].map(s => (
           <div key={s.label} className="stat-card">
             <div className="flex items-center gap-2 mb-2">
@@ -317,15 +319,15 @@ export default function InvoicingPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2" placeholder="Search by guest name..." />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2" placeholder={t.invoicing.searchByGuestName} />
         </div>
         <div className="flex gap-2">
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }} className="input-field py-2 flex-1 sm:flex-none sm:w-36">
-            <option value="">All Statuses</option>
+            <option value="">{t.invoicing.allStatuses}</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
           <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }} className="input-field py-2 flex-1 sm:flex-none sm:w-36">
-            <option value="">All Types</option>
+            <option value="">{t.invoicing.allTypes}</option>
             {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
         </div>
@@ -340,16 +342,16 @@ export default function InvoicingPage() {
             <table className="w-full">
               <thead className="border-b border-gray-100">
                 <tr>
-                  <th className="table-header">Invoice #</th>
-                  <th className="table-header">Type</th>
-                  <th className="table-header">Guest</th>
-                  <th className="table-header">Issue Date</th>
-                  <th className="table-header">Due Date</th>
-                  <th className="table-header text-right">Total</th>
-                  <th className="table-header text-right">Paid</th>
-                  <th className="table-header text-right">Balance</th>
-                  <th className="table-header">Status</th>
-                  <th className="table-header">Actions</th>
+                  <th className="table-header">{t.invoicing.invoiceNumber}</th>
+                  <th className="table-header">{t.invoicing.type}</th>
+                  <th className="table-header">{t.invoicing.guest}</th>
+                  <th className="table-header">{t.invoicing.issueDate}</th>
+                  <th className="table-header">{t.invoicing.dueDate}</th>
+                  <th className="table-header text-right">{t.invoicing.total}</th>
+                  <th className="table-header text-right">{t.invoicing.paid}</th>
+                  <th className="table-header text-right">{t.invoicing.balance}</th>
+                  <th className="table-header">{t.invoicing.status}</th>
+                  <th className="table-header">{t.invoicing.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -387,12 +389,12 @@ export default function InvoicingPage() {
                             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                           ) : (
                             <>
-                              <Btn icon={Eye} title="View / Edit" onClick={() => { setEditingInvoice(inv); setShowEditor(true); }} />
-                              <Btn icon={Printer} title="Print / PDF" onClick={() => setPrintInvoice(inv)} />
-                              {inv.status === 'draft' && <Btn icon={Send} title="Mark as Sent" onClick={() => sendInvoice(inv)} hoverColor="hover:text-blue-600" />}
-                              {['sent','overdue','partially_paid'].includes(inv.status) && <Btn icon={CheckCircle2} title="Mark as Paid" onClick={() => markPaid(inv)} hoverColor="hover:text-emerald-600" />}
-                              <Btn icon={Copy} title="Duplicate" onClick={() => duplicateInvoice(inv)} />
-                              {!['void','paid'].includes(inv.status) && <Btn icon={Ban} title="Void" onClick={() => voidInvoice(inv)} hoverColor="hover:text-red-500" />}
+                              <Btn icon={Eye} title={t.invoicing.view} onClick={() => { setEditingInvoice(inv); setShowEditor(true); }} />
+                              <Btn icon={Printer} title={t.invoicing.print} onClick={() => setPrintInvoice(inv)} />
+                              {inv.status === 'draft' && <Btn icon={Send} title={t.invoicing.markAsSent} onClick={() => sendInvoice(inv)} hoverColor="hover:text-blue-600" />}
+                              {['sent','overdue','partially_paid'].includes(inv.status) && <Btn icon={CheckCircle2} title={t.invoicing.markAsPaid} onClick={() => markPaid(inv)} hoverColor="hover:text-emerald-600" />}
+                              <Btn icon={Copy} title={t.invoicing.duplicate} onClick={() => duplicateInvoice(inv)} />
+                              {!['void','paid'].includes(inv.status) && <Btn icon={Ban} title={t.invoicing.voidInvoice} onClick={() => voidInvoice(inv)} hoverColor="hover:text-red-500" />}
                             </>
                           )}
                         </div>
@@ -404,8 +406,8 @@ export default function InvoicingPage() {
                   <tr>
                     <td colSpan={10} className="py-16 text-center text-gray-400">
                       <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                      <p className="font-medium">No invoices found</p>
-                      <p className="text-sm mt-1">Create your first invoice to get started</p>
+                      <p className="font-medium">{t.invoicing.noInvoices}</p>
+                      <p className="text-sm mt-1">{t.invoicing.createFirstInvoice}</p>
                     </td>
                   </tr>
                 )}
@@ -438,22 +440,22 @@ export default function InvoicingPage() {
 
                   <div className="grid grid-cols-3 gap-2 text-xs mb-2">
                     <div>
-                      <span className="text-gray-400">Issued</span>
+                      <span className="text-gray-400">{t.invoicing.issued}</span>
                       <p className="font-medium text-gray-700 mt-0.5">{inv.issue_date ? formatDate(inv.issue_date, 'MMM d') : '---'}</p>
                     </div>
                     <div>
-                      <span className="text-gray-400">Due</span>
+                      <span className="text-gray-400">{t.invoicing.due}</span>
                       <p className="font-medium text-gray-700 mt-0.5">{inv.due_date ? formatDate(inv.due_date, 'MMM d') : '---'}</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-gray-400">Total</span>
+                      <span className="text-gray-400">{t.invoicing.total}</span>
                       <p className="font-semibold text-gray-900 mt-0.5">{formatCurrency(Number(inv.total_amount))}</p>
                     </div>
                   </div>
 
                   {balance > 0 && inv.status !== 'paid' && (
                     <div className="flex items-center justify-between text-xs mb-2 bg-red-50 rounded-lg px-2.5 py-1.5">
-                      <span className="text-red-600 font-medium">Balance due</span>
+                      <span className="text-red-600 font-medium">{t.invoicing.balanceDue}</span>
                       <span className="text-red-700 font-bold">{formatCurrency(balance)}</span>
                     </div>
                   )}
@@ -463,12 +465,12 @@ export default function InvoicingPage() {
                       <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                     ) : (
                       <>
-                        <Btn icon={Eye} title="View" onClick={() => { setEditingInvoice(inv); setShowEditor(true); }} />
-                        <Btn icon={Printer} title="Print" onClick={() => setPrintInvoice(inv)} />
-                        {inv.status === 'draft' && <Btn icon={Send} title="Send" onClick={() => sendInvoice(inv)} hoverColor="hover:text-blue-600" />}
-                        {['sent','overdue','partially_paid'].includes(inv.status) && <Btn icon={CheckCircle2} title="Paid" onClick={() => markPaid(inv)} hoverColor="hover:text-emerald-600" />}
-                        <Btn icon={Copy} title="Copy" onClick={() => duplicateInvoice(inv)} />
-                        {!['void','paid'].includes(inv.status) && <Btn icon={Ban} title="Void" onClick={() => voidInvoice(inv)} hoverColor="hover:text-red-500" />}
+                        <Btn icon={Eye} title={t.invoicing.view} onClick={() => { setEditingInvoice(inv); setShowEditor(true); }} />
+                        <Btn icon={Printer} title={t.invoicing.print} onClick={() => setPrintInvoice(inv)} />
+                        {inv.status === 'draft' && <Btn icon={Send} title={t.invoicing.send} onClick={() => sendInvoice(inv)} hoverColor="hover:text-blue-600" />}
+                        {['sent','overdue','partially_paid'].includes(inv.status) && <Btn icon={CheckCircle2} title={t.invoicing.markAsPaid} onClick={() => markPaid(inv)} hoverColor="hover:text-emerald-600" />}
+                        <Btn icon={Copy} title={t.invoicing.copy} onClick={() => duplicateInvoice(inv)} />
+                        {!['void','paid'].includes(inv.status) && <Btn icon={Ban} title={t.invoicing.voidInvoice} onClick={() => voidInvoice(inv)} hoverColor="hover:text-red-500" />}
                       </>
                     )}
                   </div>
@@ -478,8 +480,8 @@ export default function InvoicingPage() {
             {invoices.length === 0 && (
               <div className="py-16 text-center text-gray-400">
                 <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                <p className="font-medium">No invoices found</p>
-                <p className="text-sm mt-1">Create your first invoice to get started</p>
+                <p className="font-medium">{t.invoicing.noInvoices}</p>
+                <p className="text-sm mt-1">{t.invoicing.createFirstInvoice}</p>
               </div>
             )}
           </div>
@@ -487,8 +489,8 @@ export default function InvoicingPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
               <p className="text-xs sm:text-sm text-gray-500">
-                <span className="hidden sm:inline">Showing {page * PAGE_SIZE + 1}--{Math.min((page + 1) * PAGE_SIZE, total)} of </span>
-                {total} invoices
+                <span className="hidden sm:inline">{t.invoicing.showing} {page * PAGE_SIZE + 1}--{Math.min((page + 1) * PAGE_SIZE, total)} {t.common.of} </span>
+                {total} {t.invoicing.invoices}
               </p>
               <div className="flex gap-1">
                 <button onClick={() => setPage(p => p - 1)} disabled={page === 0} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition-colors">
