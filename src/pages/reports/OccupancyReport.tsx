@@ -1,5 +1,6 @@
 import { Download } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { formatCurrency } from '../../lib/utils';
 import type { OccupancyDay, MonthOccupancy, RoomPerf } from './types';
 
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPerf, currency, onExport, daysCount }: Props) {
+  const { t } = useLanguage();
   const avgOccupancy = occupancyByDay.length > 0
     ? occupancyByDay.reduce((s, d) => s + d.occupancyPct, 0) / occupancyByDay.length
     : 0;
@@ -43,21 +45,21 @@ export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPe
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Occupancy Report</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t.reports.occupancyReport}</h2>
         <button onClick={onExport} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-          <Download className="w-4 h-4" /> Export CSV
+          <Download className="w-4 h-4" /> {t.reports.exportCsv}
         </button>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-gray-900">Occupancy Heatmap</h3>
+          <h3 className="text-base font-semibold text-gray-900">{t.reports.occupancyHeatmap}</h3>
           <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span>Low</span>
+            <span>{t.reports.low}</span>
             {['#f87171', '#f59e0b', '#fbbf24', '#34d399', '#10b981', '#059669'].map(c => (
               <div key={c} className="w-5 h-5 rounded" style={{ backgroundColor: c }} />
             ))}
-            <span>High</span>
+            <span>{t.reports.high}</span>
           </div>
         </div>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}>
@@ -77,13 +79,13 @@ export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPe
           ))}
         </div>
         <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-          <span className="font-medium">Avg: {avgOccupancy.toFixed(1)}%</span>
-          <span className="text-gray-400">across {occupancyByDay.length} days</span>
+          <span className="font-medium">{t.reports.avg}: {avgOccupancy.toFixed(1)}%</span>
+          <span className="text-gray-400">{t.reports.across} {occupancyByDay.length} {t.reports.days}</span>
         </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Occupancy Trend</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.occupancyTrend}</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
@@ -98,8 +100,8 @@ export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPe
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-1">Monthly Occupancy</h3>
-        <p className="text-xs text-gray-400 mb-4">Current year — months with recorded reservations</p>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">{t.reports.monthlyOccupancy}</h3>
+        <p className="text-xs text-gray-400 mb-4">{t.reports.currentYear} — {t.reports.monthsWithRecordings}</p>
         {monthOccupancy.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-sm font-medium text-gray-500">Insufficient data</p>
@@ -121,7 +123,7 @@ export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPe
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Room Performance</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.roomPerformance}</h3>
         {roomPerf.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-sm font-medium text-gray-500">No room data</p>
@@ -132,8 +134,8 @@ export default function OccupancyReport({ occupancyByDay, monthOccupancy, roomPe
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Room', 'Type', 'Nights Occupied', 'Nights Available', 'Occupancy', 'Revenue'].map(h => (
-                  <th key={h} className={`text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 ${h === 'Room' || h === 'Type' ? 'text-left' : 'text-right'}`}>{h}</th>
+                {[t.common.name, t.reports.roomType, t.reports.nightsOccupied, t.reports.nightsAvailable, t.reports.occupancy, t.reports.revenue].map(h => (
+                  <th key={h} className={`text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 ${h === t.common.name || h === t.reports.roomType ? 'text-left' : 'text-right'}`}>{h}</th>
                 ))}
               </tr>
             </thead>

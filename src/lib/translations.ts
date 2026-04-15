@@ -148,6 +148,11 @@ export const translations = {
       roomTypePerformance: 'Room Type Performance', roomType: 'Room Type',
       nightsSold: 'Nights Sold', revenue: 'Revenue', occupancy: 'Occupancy',
       adr: 'ADR', revpar: 'RevPAR',
+      occupancyHeatmap: 'Occupancy Heatmap', low: 'Low', high: 'High',
+      occupancyTrend: 'Occupancy Trend', monthlyOccupancy: 'Monthly Occupancy',
+      currentYear: 'Current year', monthsWithRecordings: 'months with recorded reservations',
+      roomPerformance: 'Room Performance', nightsOccupied: 'Nights Occupied',
+      nightsAvailable: 'Nights Available', avg: 'Avg', across: 'across', days: 'days',
     },
     billing: {
       title: 'Billing & Invoicing', invoiceNumber: 'Invoice Number',
@@ -328,6 +333,11 @@ export const translations = {
       roomTypePerformance: 'Производителност по тип стая', roomType: 'Тип стая',
       nightsSold: 'Продадени нощи', revenue: 'Приходи', occupancy: 'Заетост',
       adr: 'ADR', revpar: 'RevPAR',
+      occupancyHeatmap: 'Топлинна карта на заетост', low: 'Ниска', high: 'Висока',
+      occupancyTrend: 'Тренд на заетост', monthlyOccupancy: 'Месечна заетост',
+      currentYear: 'Текуща година', monthsWithRecordings: 'месеци с записани резервации',
+      roomPerformance: 'Производителност на стаи', nightsOccupied: 'Нощи със заетост',
+      nightsAvailable: 'Разполагаеми нощи', avg: 'Средн', across: 'в', days: 'дни',
     },
     billing: {
       title: 'Сметки и Фактуриране', invoiceNumber: 'Номер фактура',
