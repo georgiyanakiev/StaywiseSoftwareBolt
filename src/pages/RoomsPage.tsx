@@ -426,8 +426,8 @@ export default function RoomsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Room Management</h1>
-          <p className="text-sm text-gray-500 mt-1">{rooms.length} rooms across {roomTypes.length} room types</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t.rooms.roomManagement}</h1>
+          <p className="text-sm text-gray-500 mt-1">{rooms.length} {t.rooms.roomsAcross} {roomTypes.length} {t.rooms.roomTypes}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -435,7 +435,7 @@ export default function RoomsPage() {
             className="btn-primary"
           >
             <Plus className="w-4 h-4" />
-            {activeTab === 'rooms' ? 'Add Room' : 'Add Room Type'}
+            {activeTab === 'rooms' ? t.rooms.addRoom : t.rooms.addRoomType}
           </button>
         </div>
       </div>
@@ -452,7 +452,7 @@ export default function RoomsPage() {
           >
             <div className="flex items-center gap-2">
               <BedDouble className="w-4 h-4" />
-              Rooms
+              {t.rooms.roomCount}
               <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">{rooms.length}</span>
             </div>
           </button>
@@ -466,7 +466,7 @@ export default function RoomsPage() {
           >
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4" />
-              Room Types
+              {t.rooms.roomTypeCount}
               <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">{roomTypes.length}</span>
             </div>
           </button>
@@ -517,7 +517,7 @@ export default function RoomsPage() {
                 onChange={e => setStatusFilter(e.target.value)}
                 className="input-field"
               >
-                <option value="">All Statuses</option>
+                <option value="">{t.rooms.allStatuses}</option>
                 {ROOM_STATUSES.map(s => (
                   <option key={s} value={s}>{getStatusLabel(s)}</option>
                 ))}
@@ -527,7 +527,7 @@ export default function RoomsPage() {
                 onChange={e => setFloorFilter(e.target.value)}
                 className="input-field"
               >
-                <option value="">All Floors</option>
+                <option value="">{t.rooms.allFloors}</option>
                 {floors.map(f => (
                   <option key={f} value={f}>Floor {f}</option>
                 ))}
@@ -537,7 +537,7 @@ export default function RoomsPage() {
                 onChange={e => setTypeFilter(e.target.value)}
                 className="input-field"
               >
-                <option value="">All Types</option>
+                <option value="">{t.rooms.allTypes}</option>
                 {roomTypes.map(rt => (
                   <option key={rt.id} value={rt.id}>{rt.name}</option>
                 ))}
@@ -664,7 +664,7 @@ export default function RoomsPage() {
                       <span className="font-medium text-gray-900">{room.floor}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Rate / Night</span>
+                      <span className="text-gray-500">{t.rooms.ratePerNight}</span>
                       <span className="font-semibold text-gray-900">
                         {formatCurrency(getRoomRate(room), currentHotel?.currency)}
                       </span>
@@ -678,7 +678,7 @@ export default function RoomsPage() {
                     >
                       <div className="flex items-center gap-1.5">
                         <span className={`w-2 h-2 rounded-full ${STATUS_DOT_COLORS[room.status]}`} />
-                        Change Status
+                        {t.rooms.changeStatus}
                       </div>
                       <ChevronDown className="w-3 h-3" />
                     </button>
@@ -733,7 +733,7 @@ export default function RoomsPage() {
               action={
                 <button onClick={openAddRoomType} className="btn-primary">
                   <Plus className="w-4 h-4" />
-                  Add Room Type
+                  {t.rooms.addRoomType}
                 </button>
               }
             />
