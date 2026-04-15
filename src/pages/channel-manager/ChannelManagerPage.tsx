@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
 import { useTenantId } from '../../hooks/useTenantQuery';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -21,6 +22,7 @@ type SubTab = 'channels' | 'rates' | 'restrictions' | 'logs';
 export default function ChannelManagerPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const showToast = (msg: string, type: 'success' | 'error') => toast(type, msg);
   const tenantId = useTenantId();
 
@@ -211,10 +213,10 @@ export default function ChannelManagerPage() {
   ).length;
 
   const subTabs: { id: SubTab; label: string; icon: React.ElementType }[] = [
-    { id: 'channels',     label: 'Channels',     icon: GitBranch },
-    { id: 'rates',        label: 'Rate Calendar', icon: Calendar },
-    { id: 'restrictions', label: 'Restrictions',  icon: Lock },
-    { id: 'logs',         label: 'Sync Log',      icon: Activity },
+    { id: 'channels',     label: t.channelManager.channels,     icon: GitBranch },
+    { id: 'rates',        label: t.channelManager.rateCalendar, icon: Calendar },
+    { id: 'restrictions', label: t.channelManager.restrictions,  icon: Lock },
+    { id: 'logs',         label: t.channelManager.syncLog,      icon: Activity },
   ];
 
   if (loading) {
@@ -232,10 +234,10 @@ export default function ChannelManagerPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
             <GitBranch className="w-6 h-6 text-blue-600" />
-            Channel Manager
+            {t.channelManager.title}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Sync rates and availability across OTA channels in real time
+            {t.channelManager.subtitle}
           </p>
         </div>
         {topTab === 'my_channels' && (
@@ -245,7 +247,7 @@ export default function ChannelManagerPage() {
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add Custom
+              {t.channelManager.addCustom}
             </button>
             <button
               onClick={syncAllChannels}
@@ -253,7 +255,7 @@ export default function ChannelManagerPage() {
               className="flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] disabled:opacity-50 transition-colors"
             >
               <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
-              {syncingAll ? 'Syncing...' : 'Sync All'}
+              {syncingAll ? t.channelManager.syncing : t.channelManager.syncAll}
             </button>
           </div>
         )}
@@ -263,10 +265,10 @@ export default function ChannelManagerPage() {
       {topTab === 'my_channels' && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total Channels', value: channels.length,  color: 'text-gray-900' },
-            { label: 'Connected',      value: connectedCount,   color: 'text-emerald-600' },
-            { label: 'Errors',         value: errorCount,       color: 'text-red-500' },
-            { label: 'Syncs Today',    value: todaySyncs,       color: 'text-blue-600' },
+            { label: t.channelManager.totalChannels, value: channels.length,  color: 'text-gray-900' },
+            { label: t.channelManager.connected,      value: connectedCount,   color: 'text-emerald-600' },
+            { label: t.channelManager.errors,         value: errorCount,       color: 'text-red-500' },
+            { label: t.channelManager.syncsToday,    value: todaySyncs,       color: 'text-blue-600' },
           ].map(stat => (
             <div key={stat.label} className="bg-white rounded-xl border border-gray-100 p-4">
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{stat.label}</p>
@@ -281,8 +283,8 @@ export default function ChannelManagerPage() {
         <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
           <FlaskConical className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold text-amber-800">Demo Mode</span>
-            <span className="text-amber-700 ml-2">One or more channels have no API credentials. Syncs will be simulated and logged — no real OTA calls are made. Add credentials in the channel settings to enable live sync.</span>
+            <span className="font-semibold text-amber-800">{t.channelManager.demoMode}</span>
+            <span className="text-amber-700 ml-2">{t.channelManager.demoModeDesc}</span>
           </div>
         </div>
       )}
@@ -290,9 +292,9 @@ export default function ChannelManagerPage() {
       {/* Primary tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
         {([
-          { id: 'my_channels' as TopTab, label: 'My Channels', icon: GitBranch,
+          { id: 'my_channels' as TopTab, label: t.channelManager.myChannels, icon: GitBranch,
             badge: channels.length > 0 ? channels.length : undefined },
-          { id: 'catalog'     as TopTab, label: 'Channel Catalog', icon: BookOpen },
+          { id: 'catalog'     as TopTab, label: t.channelManager.channelCatalog, icon: BookOpen },
         ]).map(tab => (
           <button
             key={tab.id}
@@ -344,16 +346,16 @@ export default function ChannelManagerPage() {
                   <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto mb-4">
                     <GitBranch className="w-7 h-7 text-gray-300" />
                   </div>
-                  <p className="font-semibold text-gray-700 text-base">No channels connected yet</p>
+                  <p className="font-semibold text-gray-700 text-base">{t.channelManager.noChannels}</p>
                   <p className="text-sm text-gray-400 mt-1.5 mb-6 max-w-xs mx-auto">
-                    Browse the catalog below to add your first channel
+                    {t.channelManager.browseChannels}
                   </p>
                   <button
                     onClick={() => setTopTab('catalog')}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1e3a5f] text-white text-sm font-medium rounded-xl hover:bg-[#172e4c] transition-colors"
                   >
                     <BookOpen className="w-4 h-4" />
-                    Browse Channel Catalog →
+                    {t.channelManager.browseChannelCatalog}
                   </button>
                 </div>
               ) : (
