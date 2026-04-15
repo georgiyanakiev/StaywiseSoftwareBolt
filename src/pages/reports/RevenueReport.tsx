@@ -2,6 +2,7 @@ import { Euro, TrendingUp, Building2, BarChart3, Download } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from 'recharts';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { formatCurrency } from '../../lib/utils';
 import type { RevenueKPIs, RevenueBySourceRow, DailyRevenue, RoomTypePerf } from './types';
 
@@ -19,12 +20,13 @@ interface Props {
 }
 
 export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roomTypePerf, currency, onExport, daysCount }: Props) {
+  const { t } = useLanguage();
   const kpiCards = [
-    { label: 'Total Revenue', value: formatCurrency(kpis.totalRevenue, currency), icon: Euro, color: 'text-emerald-600', bg: 'bg-emerald-50', sub: 'Selected period' },
-    { label: 'RevPAR', value: formatCurrency(kpis.revpar, currency), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50', sub: 'Revenue per available room' },
-    { label: 'ADR', value: formatCurrency(kpis.adr, currency), icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50', sub: 'Average daily rate' },
-    { label: 'Occupancy', value: `${kpis.occupancyPct.toFixed(1)}%`, icon: Building2, color: 'text-cyan-600', bg: 'bg-cyan-50', sub: 'Room occupancy' },
-    { label: 'GOP', value: formatCurrency(kpis.gop, currency), icon: TrendingUp, color: 'text-teal-600', bg: 'bg-teal-50', sub: `${kpis.gopMargin.toFixed(1)}% margin` },
+    { label: t.reports.totalRevenue, value: formatCurrency(kpis.totalRevenue, currency), icon: Euro, color: 'text-emerald-600', bg: 'bg-emerald-50', sub: t.reports.selectedPeriod },
+    { label: t.reports.revpar, value: formatCurrency(kpis.revpar, currency), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50', sub: t.reports.revenuePerAvailableRoom },
+    { label: t.reports.adr, value: formatCurrency(kpis.adr, currency), icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50', sub: t.reports.averageDailyRate },
+    { label: t.reports.occupancyRate, value: `${kpis.occupancyPct.toFixed(1)}%`, icon: Building2, color: 'text-cyan-600', bg: 'bg-cyan-50', sub: t.reports.roomOccupancy },
+    { label: t.reports.gop, value: formatCurrency(kpis.gop, currency), icon: TrendingUp, color: 'text-teal-600', bg: 'bg-teal-50', sub: `${kpis.gopMargin.toFixed(1)}% ${t.reports.margin}` },
   ];
 
   const trendInterval = Math.max(0, Math.floor(daysCount / 10) - 1);
@@ -32,9 +34,9 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Revenue Dashboard</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t.reports.revenueDashboard}</h2>
         <button onClick={onExport} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-          <Download className="w-4 h-4" /> Export CSV
+          <Download className="w-4 h-4" /> {t.reports.exportCsv}
         </button>
       </div>
 
@@ -53,7 +55,7 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-4">Revenue by Source</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.revenueBySource}</h3>
           {revenueBySource.length === 0 ? (
             <div className="flex items-center justify-center h-72">
               <div className="text-center">
@@ -91,7 +93,7 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-4">Daily Revenue Trend</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.dailyRevenueTrend}</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyRevenue} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
@@ -107,7 +109,7 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Room Type Performance</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.roomTypePerformance}</h3>
         {roomTypePerf.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-sm font-medium text-gray-500">No room type data</p>
@@ -118,8 +120,8 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {['Room Type', 'Nights Sold', 'Revenue', 'Occupancy', 'ADR', 'RevPAR'].map(h => (
-                    <th key={h} className={`text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 ${h === 'Room Type' ? 'text-left' : 'text-right'}`}>{h}</th>
+                  {[t.reports.roomType, t.reports.nightsSold, t.reports.revenue, t.reports.occupancy, t.reports.adr, t.reports.revpar].map(h => (
+                    <th key={h} className={`text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 ${h === t.reports.roomType ? 'text-left' : 'text-right'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>

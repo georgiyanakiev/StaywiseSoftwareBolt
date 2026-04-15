@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Calendar, BarChart3, Building2, TrendingUp, Receipt } from 'lucide-react';
 import { format } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { DATE_PRESETS, useReportsData } from './useReportsData';
 import RevenueReport from './RevenueReport';
@@ -10,11 +11,11 @@ import BookingAnalysis from './BookingAnalysis';
 import FinancialPL from './FinancialPL';
 import type { ReportTab, DateRange } from './types';
 
-const TABS: { key: ReportTab; label: string; icon: typeof BarChart3 }[] = [
-  { key: 'revenue', label: 'Revenue Dashboard', icon: TrendingUp },
-  { key: 'occupancy', label: 'Occupancy Report', icon: Building2 },
-  { key: 'bookings', label: 'Booking Analysis', icon: BarChart3 },
-  { key: 'financial', label: 'Financial P&L', icon: Receipt },
+const getTabs = (t: any): { key: ReportTab; label: string; icon: typeof BarChart3 }[] => [
+  { key: 'revenue', label: t.reports.revenueDashboard, icon: TrendingUp },
+  { key: 'occupancy', label: t.reports.occupancyReport, icon: Building2 },
+  { key: 'bookings', label: t.reports.bookingAnalysis, icon: BarChart3 },
+  { key: 'financial', label: t.reports.financialPL, icon: Receipt },
 ];
 
 function buildCSV(tab: ReportTab, data: ReturnType<typeof useReportsData>, currency: string): { content: string; filename: string } {
@@ -47,13 +48,15 @@ function buildCSV(tab: ReportTab, data: ReturnType<typeof useReportsData>, curre
 
 export default function ReportsPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<ReportTab>('revenue');
   const [dateRange, setDateRange] = useState<DateRange>(() => DATE_PRESETS[2].getValue());
-  const [activePreset, setActivePreset] = useState<string>('This month');
+  const [activePreset, setActivePreset] = useState<string>(t.reports.thisMonth);
   const [customMode, setCustomMode] = useState(false);
 
   const data = useReportsData(currentHotel?.id, dateRange);
   const currency = currentHotel?.currency || 'EUR';
+  const tabs = getTabs(t);
 
   function applyPreset(preset: typeof DATE_PRESETS[0]) {
     if (preset.label === 'Custom') {
@@ -81,8 +84,8 @@ export default function ReportsPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-gray-900">Financial Reports & Analytics</h1>
-        <p className="text-sm text-gray-500">Performance insights for {currentHotel?.name}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t.reports.financialReports}</h1>
+        <p className="text-sm text-gray-500">{t.reports.performanceInsights} {currentHotel?.name}</p>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -109,7 +112,7 @@ export default function ReportsPage() {
                 onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                 className="input-field text-sm py-1.5 w-36"
               />
-              <span className="text-gray-400 text-sm">to</span>
+              <span className="text-gray-400 text-sm">—</span>
               <input
                 type="date"
                 value={dateRange.end}
@@ -126,7 +129,7 @@ export default function ReportsPage() {
 
       <div className="border-b border-gray-200">
         <nav className="flex gap-1 overflow-x-auto">
-          {TABS.map(tab => (
+          {tabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
