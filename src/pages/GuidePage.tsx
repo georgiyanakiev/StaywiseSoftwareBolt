@@ -5,579 +5,579 @@ import { ArrowLeft } from 'lucide-react';
 const sections = [
   {
     id: 'overview',
-    title: '1. Overview',
-    content: `StayWise is a professional, cloud-based hotel management system designed to streamline every aspect of hotel operations. Built for hotels of all sizes, it provides a centralised platform for managing reservations, rooms, guests, housekeeping, billing, and business analytics — all from a single, intuitive interface.
+    title: '1. Преглед',
+    content: `StayWise е професионална, облачна система за управление на хотели, предназначена да оптимизира всеки аспект на хотелските операции. Изградена за хотели от всички размери, тя предоставя централизирана платформа за управление на резервации, стаи, гости, камериерски услуги, фактуриране и бизнес анализи — всичко от един интуитивен интерфейс.
 
-Key highlights:
-• Role-based access control (Admin, Manager, Receptionist, Housekeeping)
-• Real-time data synchronisation across all connected devices
-• Bilingual interface (English and Bulgarian)
-• Fully responsive design for desktop, tablet, and mobile
-• Secure, cloud-hosted data via Supabase
+Ключови характеристики:
+• Контрол на достъпа на базата на роли (Администратор, Мениджър, Рецепционист, Камериерки)
+• Синхронизиране на данни в реално време на всички свързани устройства
+• Двуезичен интерфейс (Английски и Български)
+• Пълнофункционален дизайн за настолни компютри, таблети и мобилни
+• Безопасни облачни данни чрез Supabase
 
-Demo credentials for testing:
-Email: admin@demo.com
-Password: demo123456`,
+Демо удостоверения за тестване:
+Имейл: admin@demo.com
+Парола: demo123456`,
   },
   {
     id: 'login',
-    title: '2. Login & Authentication',
-    content: `Accessing the system requires a valid staff account. New accounts can be created by an administrator from the Settings page.
+    title: '2. Вход и удостоверяване',
+    content: `Достъпът до системата изисква валидна сметка на персонала. Нови сметки могат да бъдат създадени от администратор от страницата Настройки.
 
-Sign In
-• Navigate to the StayWise login page
-• Enter your email address and password
-• Click "Sign In" to access the system
+Вход
+• Отидете на страницата за вход на StayWise
+• Въведете вашия имейл адрес и парола
+• Щракнете върху "Вход", за да получите достъп до системата
 
-Sign Up (Admin action)
-• Administrators can invite new staff by creating accounts in Settings > Users & Permissions
-• Roles assigned at creation determine which features are accessible
+Регистрация (Администраторско действие)
+• Администраторите могат да приканят нов персонал, като създадат сметки в Настройки > Потребители и разрешения
+• Ролите, присвоени при създаване, определят кои функции са достъпни
 
-Language Selection
-• The login screen includes an EN / BG toggle to switch the interface language before signing in
+Избор на език
+• Екранът за вход включва превключвател EN / BG за смяна на езика на интерфейса преди вход
 
-Security
-• All sessions are managed securely via Supabase Auth
-• Passwords must be at least 6 characters long
-• Leaked password protection checks credentials against known breached databases`,
+Безопасност
+• Всички сесии се управляват безопасно чрез Supabase Auth
+• Паролите трябва да имат поне 6 символа
+• Защитата от течаща парола проверява удостоверенията срещу известни нарушени бази данни`,
   },
   {
     id: 'dashboard',
-    title: '3. Dashboard',
-    content: `The Dashboard is the home screen and provides a real-time overview of the hotel's operational status.
+    title: '3. Табло',
+    content: `Табло е началният екран и предоставя преглед в реално време на оперативния статус на хотела.
 
-Key Metrics (top row)
-• Room Status — shows occupied, available, dirty, clean, maintenance, and out-of-service room counts along with the occupancy rate
-• Today's Departures — expected checkouts, already completed, total guests departing
-• In-House Guests — current occupied room count with adult/children breakdown
-• Today's Arrivals — expected check-ins and already completed arrivals
+Ключови метрики (горен ред)
+• Статус на стаи — показва брой заети, свободни, замърсени, чисти, в ремонт и недостъпни стаи, както и степента на заетост
+• Напускания днес — очаквани напускания, вече завършени, общо гости, които напускат
+• Гости в хотела — текущо брой заети стаи с разбивка възрастни/деца
+• Пристигащи днес — очаквани настанявания и вече завършени пристигания
 
-Revenue Summary Cards
-• Today's Revenue
-• This Week's Revenue
-• This Month's Revenue
-• Year-to-Date Revenue
+Карти с резюме на приходи
+• Приход днес
+• Приход за тази седмица
+• Приход за този месец
+• Приход от начало на година
 
-Charts
-• 7-Day Revenue Trend — area chart showing daily income for the past week
-• 14-Day Occupancy Forecast — colour-coded forecast (green = low, blue = medium, amber = high, red = full)
+Графики
+• Тренд на приходи за 7 дни — график с площ, показващ дневния доход за миналата седмица
+• Прогноза за заетост за 14 дни — цветно кодирана прогноза (зелено = ниска, синьо = средна, янтарно = висока, червено = пълна)
 
-Quick Actions
-Buttons for common tasks: New Reservation, Quick Check-In, Housekeeping, View Rooms, Reports.
+Бързи действия
+Бутони за обичайни задачи: Нова резервация, Бързо настаняване, Камериерки, Виж стаи, Справки.
 
-Recent Activity Feed
-A scrollable feed showing the latest operational events across the property.`,
+Последна лента с активност
+Скролируемо поле, показващо най-новите оперативни събития в хотела.`,
   },
   {
     id: 'reservations',
-    title: '4. Reservations',
-    content: `The Reservations page is the central hub for managing all guest bookings throughout their full lifecycle.
+    title: '4. Резервации',
+    content: `Страницата Резервации е централния хъб за управление на всички гостни резервации през целия техен жизнен цикъл.
 
-Reservation List
-The table shows: confirmation code, guest name, room, check-in/check-out dates, status, amount, and payment status.
+Списък резервации
+Таблицата показва: код за потвърждение, име на гост, стая, дати настаняване/напускане, статус, сума и статус плащане.
 
-Search & Filters
-• Search by guest name or confirmation code
-• Filter by status: Pending, Confirmed, Checked In, Checked Out, Cancelled
-• Date range filters for check-in or check-out periods
+Търсене и филтри
+• Търсене по име на гост или код за потвърждение
+• Филтриране по статус: Очаквано, Потвърдено, Настанено, Напуснало, Отменено
+• Филтри с диапазон дати за периоди настаняване или напускане
 
-Reservation Status Workflow
-  Pending → Confirm → Confirmed → Check In → Checked In → Check Out → Checked Out
-Any non-completed reservation can also be Cancelled (with a reason recorded).
+Работен процес на статус резервация
+  Очаквано → Потвърди → Потвърдено → Настани → Настанено → Напусни → Напуснало
+Всяка незавършена резервация може да бъде отменена (с записано причине).
 
-Creating a Reservation
-1. Click "New Reservation"
-2. Select or create a guest
-3. Choose room type and specific room
-4. Set check-in and check-out dates
-5. Enter adult/children count
-6. Adjust rate, discount, and payment details if needed
-7. Select booking source (Direct, Website, Booking.com, Expedia, Airbnb, Corporate)
-8. Add any special requests
-9. Click "Save"
+Създаване на резервация
+1. Щракнете върху "Нова резервация"
+2. Изберете или създайте гост
+3. Изберете тип стая и конкретна стая
+4. Поставете дати на настаняване и напускане
+5. Въведете брой възрастни/деца
+6. Коригирайте тариф, отстъпка и детайли плащане, ако е необходимо
+7. Изберете източник на резервация (Преки, Сайт, Booking.com, Expedia, Airbnb, Корпоративна)
+8. Добавете всякакви специални желания
+9. Щракнете върху "Запази"
 
-A unique confirmation code is automatically generated.
+Уникален код за потвърждение се генерира автоматично.
 
-Checkout Automation
-When a reservation is checked out, the system automatically:
-• Creates an invoice for the guest
-• Assigns a high-priority housekeeping cleaning task to the room
-• Updates room status to "Dirty"
+Автоматизация при напускане
+Когато резервация е напуснала, системата автоматично:
+• Създава фактура за гост
+• Назначава висока приоритетна задача за почистване на камериерките към стаята
+• Актуализира статуса на стаята на "Замърсена"
 
-Conflict Prevention
-The system checks for date overlaps and prevents double-booking of the same room.
+Предотвратяване на конфликти
+Системата проверява за наслагване на дати и предотвратява двойно резервиране на същата стая.
 
-Pagination
-10 reservations are shown per page with navigation controls.`,
+Разбивка на страници
+10 резервации са показани на страница с навигационни контроли.`,
   },
   {
     id: 'rooms',
-    title: '5. Rooms',
-    content: `The Rooms page has two tabs: Rooms Management and Room Types.
+    title: '5. Стаи',
+    content: `Страницата Стаи има две табла: Управление на стаи и Типове стаи.
 
-Rooms Management Tab
+Табла управление на стаи
 
-View Modes
-• Grid View — card-based layout showing room number, type, status, floor, and nightly rate
-• Board View — visual floor-by-floor layout (similar to a kanban board) with colour-coded room status
+Режими на преглед
+• Преглед решетка — оформление на базата на карти, показващо номер стая, тип, статус, етаж и нощна тариф
+• Преглед таблица — визуален оформление по етажи (подобно на таблица канбан) с цветно кодиран статус на стаи
 
-Room Status Colours
-• Green — Available / Clean
-• Blue — Occupied
-• Amber/Red — Dirty / Being Cleaned
-• Grey — Maintenance / Out of Service
+Цветове на статус на стаи
+• Зелено — Свободна / Чиста
+• Синьо — Заета
+• Янтарно/Червено — Замърсена / В процес на почистване
+• Сиво — В ремонт / Недостъпна
 
-Filters
-Search by room number or type; filter by status, floor, or room type.
+Филтри
+Търсене по номер стая или тип; филтриране по статус, етаж или тип стая.
 
-Adding / Editing a Room
-Fields: Room number, Floor, Room type, Rate override (optional), Notes.
+Добавяне / Редактиране на стая
+Полета: Номер стая, Етаж, Тип стая, Отмяна на тариф (незадължително), Бележки.
 
-Room Types Tab
-Room types define the template for all rooms of that category.
+Табла типове стаи
+Типовете стаи определят шаблона за всички стаи от тази категория.
 
-Room Type Details
-• Name and description
-• Base nightly rate
-• Maximum occupancy
-• Bed type (Single, Double, Queen, King, Twin)
-• Optional room image URL
-• Amenities (choose from 14 options including WiFi, AC, Balcony, Sea View, Mini Bar, Safe, and more)
+Детайли на типа стая
+• Име и описание
+• Базова нощна тариф
+• Максимална заемственост
+• Тип легло (Единично, Двойно, Куийн, Кинг, Двойни)
+• Произволен URL на снимка на стая
+• Удобства (изберете от 14 опции, включително WiFi, AC, Балкон, Морска гледка, Мини бар, Сейф и повече)
 
-Managing Room Types
-Create, edit, or delete room types. Deleting a type is blocked if rooms are currently assigned to it.`,
+Управление на типове стаи
+Създавайте, редактирайте или изтривайте типове стаи. Изтриването на тип е блокирано, ако в момента има назначени стаи на него.`,
   },
   {
     id: 'guests',
-    title: '6. Guests',
-    content: `The Guests page provides a comprehensive CRM (Customer Relationship Management) module for tracking all guest information and history.
+    title: '6. Гости',
+    content: `Страницата Гости предоставя изчерпателен CRM (управление на взаимоотношения с клиентите) модул за проследяване на цялата информация за гостите и историята.
 
-Guest List
-Displays: name avatar, email, phone, country, total stays, total spent, VIP status, last visit.
+Списък гости
+Показва: аватар на име, имейл, телефон, държава, общо престои, общо похарчено, VIP статус, последния визит.
 
-VIP Status Levels
-• Regular — standard guests
-• Silver — returning loyal guests
-• Gold — high-value guests (crown icon)
-• Platinum — top-tier guests (crown icon)
+Нива на VIP статус
+• Обикновен — стандартни гости
+• Сребърен — верни гости, които се връщат
+• Золотен — висока стойност гости (икона на корона)
+• Платинен — гости от висок клас (икона на корона)
 
-Search, Filter & Sort
-• Search by name, email, or phone
-• Filter by VIP level or country
-• Sort by: Newest, Oldest, Name A-Z/Z-A, Most Stays, Highest Spent
+Търсене, филтриране и сортиране
+• Търсене по име, имейл или телефон
+• Филтриране по VIP ниво или държава
+• Сортиране по: Най-ново, Най-старо, Име A-Z/Z-A, Повечето престои, Най-високо похарчено
 
-Guest Profile Tabs
-Each guest has a detailed profile with five tabs:
+Табла профил на гост
+Всеки гост има подробен профил с пет табла:
 
-Profile — Personal info, contact details, address, ID/passport, marketing preferences, and internal notes.
+Профил — Лична информация, детайли за контакт, адрес, документ за самоличност/паспорт, предпочитания за маркетинг и вътрешни бележки.
 
-Bookings — Complete reservation history with status, dates, room type, and amounts.
+Резервации — Пълна история на резервации със статус, дати, тип стая и суми.
 
-Communications — Log of all emails, SMS, WhatsApp, and phone calls with delivery status.
+Комуникации — Дневник на всички имейли, SMS, WhatsApp и телефонни разговори със статус доставка.
 
-Documents — Uploaded identity documents (passport, ID card, visa, etc.).
+Документи — Качени документи за самоличност (паспорт, документ за самоличност, виза и т.н.).
 
-Preferences — Room floor/view/bed-type preferences, dietary restrictions, allergies, special requests, and complaint history.
+Предпочитания — Предпочитания за етаж на стая/гледка/тип легло, диетични ограничения, алергии, специални желания и история на жалби.
 
-Adding / Editing Guests
-Fields include: title, first/last name, email, phone, mobile, preferred contact method, address, nationality, date of birth, ID number, room preferences, dietary/allergy info, VIP status, and marketing opt-ins.
+Добавяне / Редактиране на гости
+Полета включват: титла, име/фамилия, имейл, телефон, мобилен, предпочитан метод на контакт, адрес, националност, дата на раждане, номер на документ, предпочитания за стая, диетично/алергийна информация, VIP статус и маркетингово управление на избор.
 
-Send Communication
-Staff can send a message to a guest (email, SMS, WhatsApp, or phone note) directly from the guest profile. All communications are logged.
+Изпращане на комуникация
+Персоналът може да изпрати съобщение на гост (имейл, SMS, WhatsApp или телефонна бележка) директно от профила на гост. Всички комуникации се записват.
 
-Export
-Export the full guest list to a CSV file for external use.`,
+Експортиране
+Експортирайте пълния списък гости в CSV файл за външни нужди.`,
   },
   {
     id: 'housekeeping',
-    title: '7. Housekeeping',
-    content: `The Housekeeping page manages all cleaning and maintenance operations.
+    title: '7. Камериерски услуги',
+    content: `Страницата Камериерски услуги управлява всички операции по почистване и поддръжка.
 
-Dashboard Statistics
-Four metric cards show: Pending tasks, In-Progress tasks, Completed today, and Total dirty rooms.
+Статистика на табло
+Четири метрични карти показват: Очаквани задачи, В процес задачи, Завършени днес и Общо замърсени стаи.
 
-Task Views
-• Task List (Table) — shows room, task type, priority, assigned staff, status, and notes
-• Room Status Board — visual floor grid with colour-coded room status buttons
+Преглади на задачи
+• Списък задачи (Таблица) — показва стая, тип задача, приоритет, назначен персонал, статус и бележки
+• Таблица статус на стаи — визуална мрежа с етажи с цветно кодирани бутони за статус на стаи
 
-Task Types
-• Clean — standard room cleaning (8 checklist items)
-• Deep Clean — thorough cleaning (11 checklist items)
-• Linen Change — bed and towel refresh (5 items)
-• Restock — replenish amenities (5 items)
-• Inspection — quality assurance check (6 items)
+Типове задачи
+• Почистване — стандартно почистване на стаята (8 елемента на контролния списък)
+• Дълбоко почистване — тържествено почистване (11 елемента на контролния списък)
+• Смяна на спално бельо — обновяване на легло и кърпи (5 елемента)
+• Разчика на материали — попълване на удобства (5 елемента)
+• Инспекция — контрола на качеството (6 елемента)
 
-Priority Levels
-Low, Normal, High, Urgent — colour-coded badges for quick visual identification.
+Нива на приоритет
+Нисък, Нормален, Висок, Спешен — цветно кодирани значки за бързо визуално идентифициране.
 
-Task Checklist
-Each task has a step-by-step interactive checklist. Staff check off items as they complete them. The "Complete Task" button only activates when all items are ticked. Completing a task automatically updates the room status to "Clean."
+Контролен списък на задачи
+Всяка задача има интерактивен контролен списък стъпка по стъпка. Персоналът отмечта позиции, докато ги завършва. Бутонът "Завърши задача" се активира само, когато всички позиции са отмечти. Завършването на задача автоматично актуализира статуса на стаята на "Чиста".
 
-Filters
-Filter tasks by assigned staff, status, priority, or task type.
+Филтри
+Филтрирайте задачи по назначен персонал, статус, приоритет или тип задача.
 
-Maintenance Requests
-A collapsible section for logging and tracking maintenance issues:
-• Fields: room, description, priority, assigned staff
-• Workflow: Reported → In Progress → Completed
+Заявки за поддръжка
+Разтегнат раздел за регистриране и проследяване на проблеми с поддръжката:
+• Полета: стая, описание, приоритет, назначен персонал
+• Работен процес: Докладвано → В процес → Завършено
 
-Staff Performance
-A modal showing a performance table for all housekeeping staff with completed count, in-progress, pending, and completion rate percentage.
+Производителност на персонала
+Модално окно, показващо таблица на производителност за всички камериерски персонал с брой завършени, в процес, очаквани и процент завършване.
 
-Adding Tasks
-Click "Add Task" to assign a new cleaning or inspection task to a room and staff member.`,
+Добавяне на задачи
+Щракнете върху "Добави задача", за да назначите нова задача за почистване или инспекция към стаята и персонала.`,
   },
   {
     id: 'billing',
-    title: '8. Billing',
-    content: `The Billing page handles all financial transactions, invoices, and payment tracking.
+    title: '8. Фактуриране',
+    content: `Страницата Фактуриране управлява всички финансови транзакции, фактури и проследяване на плащания.
 
-Financial Overview Cards
-• Total Revenue — sum of all payments received
-• Outstanding Balance — total amount still owed
-• Paid Invoices — count of fully settled invoices
-• Overdue Invoices — invoices past their due date
+Финансови карти преглед
+• Общи приходи — сума на всички получени плащания
+• Неуредено салдо — обща сума, която все още е дължима
+• Платени фактури — брой напълно уредени фактури
+• Просрочени фактури — фактури, които са преминали срока си
 
-Invoice List
-Table shows: invoice number, guest name, issue date, due date, total, amount paid, balance due, and status.
+Списък фактури
+Таблица показва: номер фактура, име гост, дата издаване, краен срок, обща сума, платена сума, салдо дължимо и статус.
 
-Invoice Status Flow
-  Draft → Sent → Paid
-  (or Cancelled / Overdue if past due date without full payment)
+Поток на статус фактура
+  Чернова → Изпратена → Платена
+  (или Отменена / Просрочена, ако е изминало крайното време без пълно плащане)
 
-Creating an Invoice
-1. Click "New Invoice"
-2. Select a guest and optionally link a reservation
-3. Set issue date and due date
-4. Add line items (description, category, quantity, unit price)
-5. Apply a discount if applicable
-6. Tax is calculated automatically from hotel settings
-7. Add payment notes
-8. Save as Draft or Send directly
+Създаване на фактура
+1. Щракнете върху "Нова фактура"
+2. Изберете гост и произволно свържете резервация
+3. Поставете дата издаване и крайния срок
+4. Добавете редови позиции (описание, категория, количество, единична цена)
+5. Приложете отстъпка, ако е приложимо
+6. Данъкът се изчислява автоматично от настройките на хотела
+7. Добавете бележки за плащане
+8. Запазете като Чернова или Изпратете директно
 
-Line Item Categories
-Room, Food & Beverage, Spa, Laundry, Parking, Other.
+Категории редови позиции
+Стая, Храна и напитки, Спа, Пране, Паркиране, Други.
 
-Recording Payments
-Click "Record Payment" on any invoice to log a payment:
-• Enter amount paid (up to the balance due)
-• Select payment method: Cash, Credit/Debit Card, Bank Transfer, Cheque, Other
-• Add reference notes (e.g. transaction ID)
+Регистриране на плащания
+Щракнете върху "Регистрирай плащане" на всяка фактура, за да регистрирате плащане:
+• Въведете платена сума (до салдото дължимо)
+• Изберете метод на плащане: Брой, Кредитна/Дебитна карта, Банков превод, Чек, Друго
+• Добавете референтни бележки (например ID на транзакция)
 
-Invoice status updates automatically to "Partial" or "Paid" based on the amount recorded.
+Статусът на фактура се актуализира автоматично на "Частично" или "Платено", въз основа на регистрираната сума.
 
-Payment History
-View a full payment log for any invoice showing dates, amounts, methods, and who processed them.
+История на плащания
+Виж пълен дневник на плащания за всяка фактура, показващ дати, суми, методи и кой ги обработи.
 
-PDF Generation
-Any invoice can be rendered as a print-ready PDF directly in the browser, formatted with hotel header, guest details, line items, and totals.
+Генериране на PDF
+Всяка фактура може да бъде изобразена като готива за печат PDF директно в браузъра, форматирана със заглавие на хотела, детайли на гост, редови позиции и суми.
 
-Search & Filters
-Search by invoice number or guest name; filter by status; set date range filters.`,
+Търсене и филтри
+Търсене по номер фактура или име гост; филтриране по статус; поставяне на филтри с диапазон дати.`,
   },
   {
     id: 'reports',
-    title: '9. Reports',
-    content: `The Reports page provides seven categories of business intelligence with charts, tables, and export options.
+    title: '9. Справки',
+    content: `Страницата Справки предоставя седем категории бизнес интелигентност с графики, таблици и опции за експортиране.
 
-Date Range Controls
-Set a custom date range or click "Last 30 Days" for a quick view. All reports update dynamically.
+Контроли за диапазон дати
+Поставете персонализиран диапазон дати или щракнете върху "Последни 30 дни" за бърз преглед. Всички справки се актуализират динамично.
 
-1. Occupancy Reports
-• Average occupancy rate and length of stay
-• RevPAR (Revenue Per Available Room)
-• Line chart: occupancy rate over time
-• Bar chart: occupancy by room type
-• Room utilisation table
+1. Справки за заетост
+• Средна степен на заетост и дължина на престой
+• RevPAR (Приход на разполагаема стая)
+• Линейна графика: степен на заетост с течение на времето
+• Столбиковидна графика: заетост по тип стая
+• Таблица на използване на стаи
 
-2. Revenue Reports
-• Total revenue, ADR (Average Daily Rate), RevPAR
-• Bar chart: monthly revenue trends
-• Pie chart: revenue by payment method
-• Table: top revenue-generating rooms
+2. Справки за приходи
+• Общи приходи, ADR (Средна дневна тариф), RevPAR
+• Столбиковидна графика: тренди на месечни приходи
+• Кръгова диаграма: приходи по метод на плащане
+• Таблица: най-добрите приходоносни стаи
 
-3. Guest Reports
-• Total guests, VIP breakdown (Silver, Gold, Platinum)
-• New vs. returning guests chart
-• Top spenders table
-• Guests by country chart
+3. Справки за гости
+• Общо гости, разбивка на VIP (Сребърен, Золотен, Платинен)
+• Графика нови срещу повторни гости
+• Таблица на най-добрите похарчени
+• Графика гости по държава
 
-4. Booking Sources
-• Total bookings, direct booking percentage, commission costs
-• Pie chart: distribution by source (Direct, Website, Booking.com, Expedia, Airbnb, Corporate)
-• Revenue breakdown per source
+4. Източници на резервации
+• Общо резервации, процент преки резервации, разходи за комисия
+• Кръгова диаграма: разпределение по източник (Преки, Сайт, Booking.com, Expedia, Airbnb, Корпоративна)
+• Разбивка на приходи на източник
 
-5. Housekeeping Reports
-• Tasks completed, in-progress, and pending
-• Daily task completion bar chart
-• Staff performance table with completion rates
+5. Справки камериерски услуги
+• Задачи завършени, в процес и очаквани
+• Столбиковидна графика дневно завършване на задачи
+• Таблица производителност на персонала с проценти завършване
 
-6. Financial Reports
-• Revenue, expenses (estimated at 35% of revenue), net income
-• Revenue vs. expenses comparison chart (6 months)
-• Payment method breakdown pie chart
+6. Финансови справки
+• Приходи, разходи (прогнозни 35% от приходите), чист доход
+• Графика сравнение приходи срещу разходи (6 месеца)
+• Кръгова диаграма разбивка по метод на плащане
 
-7. Cancellations Report
-• Total cancellations, cancellation rate, lost revenue
-• Average days before check-in when cancelled
-• Cancellations over time line chart
-• Recent cancellations table with reasons
+7. Справка отмени
+• Общо отмени, процент отмени, загубени приходи
+• Средни дни преди регистрация при отмяна
+• Графика отмени с течение на времето
+• Таблица скорошни отмени с причини
 
-Export Options
-• Export CSV — downloads the active report tab as a formatted spreadsheet
-• Print — opens the browser print dialog for the current report view`,
+Опции за експортиране
+• Експортирай CSV — изтегля активното табло на справка като форматирана електронна таблица
+• Печат — отваря диалога за печат на браузъра за текущия преглед на справка`,
   },
   {
     id: 'settings',
-    title: '10. Settings',
-    content: `The Settings page allows authorised staff to configure all aspects of the hotel system. It is organised into multiple tabs.
+    title: '10. Настройки',
+    content: `Страницата Настройки позволява на оторизиран персонал да конфигурира всички аспекти на системата на хотела. Организирана е в няколко табла.
 
-1. Hotel Settings
-Configure the hotel's basic profile: name, star rating, address, city, country, phone, email, website, check-in/check-out times, currency, timezone, cancellation policy, and payment policy.
+1. Настройки на хотела
+Конфигурирайте базичния профил на хотела: име, звездна класификация, адрес, град, държава, телефон, имейл, сайт, часове настаняване/напускане, валута, часова зона, политика за отказ и политика за плащане.
 
-2. Room Types
-Add, edit, or remove room type templates. Fields: name, description, base rate, max occupancy, amenities.
+2. Типове стаи
+Добавяйте, редактирайте или премахвайте шаблони на типове стаи. Полета: име, описание, базова тариф, максимална заемственост, удобства.
 
-3. Tax Configuration
-Set tax rates (%) for:
-• Standard tax / hotel tax
-• VAT / GST
-• City tax
-• Service charge
-The combined total rate is displayed. An option for tax-inclusive pricing is also available.
+3. Конфигурация на данък
+Поставете данъчни ставки (%) за:
+• Стандартен данък / данък на хотела
+• ДДС / Приходен данък
+• Градски данък
+• Такса за услуга
+Комбинираният общ процент е показан. Налична е и опция за данъчна инклузивна ценообразуване.
 
-4. Users & Permissions (Admin only)
-Manage all staff accounts:
-• Add new staff with name, email, phone, and role
-• Roles: Admin (full access), Manager (all operations), Receptionist (bookings and check-in/out), Housekeeping (tasks only)
-• Deactivate or re-activate accounts as needed
+4. Потребители и разрешения (Само администратор)
+Управлявайте всички сметки на персонала:
+• Добавяйте нов персонал с име, имейл, телефон и роля
+• Роли: Администратор (пълен достъп), Мениджър (всички операции), Рецепционист (резервации и регистрация/отпътуване), Камериерки (само задачи)
+• Деактивирайте или преактивирайте сметки по необходимост
 
-5. Email Templates
-Customise the content of automated emails:
-• Booking Confirmation
-• Check-in Reminder
-• Thank You (post-stay)
-Template variables such as {guest_name}, {room_number}, {check_in_date} are supported.
+5. Шаблони на имейли
+Персонализирайте съдържанието на автоматични имейли:
+• Потвърждение на резервация
+• Напомняне за регистрация
+• Благодаря (след престой)
+Поддържат се променливи на шаблон като {guest_name}, {room_number}, {check_in_date}.
 
-6. Payment Settings (Admin only)
-• Enable/disable accepted payment methods (Credit Card, Debit Card, Cash, Bank Transfer)
-• Configure deposit requirements and deposit percentage
-• Toggle Stripe online payment integration (test mode)
+6. Настройки за плащане (Само администратор)
+• Включете/изключите приети методи на плащане (Кредитна карта, Дебитна карта, Брой, Банков превод)
+• Конфигурирайте изискванията за депозит и процент на депозит
+• Превключете интеграция на Stripe онлайн плащане (тестов режим)
 
-7. Notifications
-Toggle email, SMS, and in-app notifications for events:
-• New bookings
-• Check-in / check-out reminders
-• Payment received alerts
-• Housekeeping task assignments
+7. Уведомления
+Превключете имейли, SMS и в-приложение уведомления за събития:
+• Нови резервации
+• Напомняния за регистрация/отпътуване
+• Уведомления за получени плащания
+• Назначаване на задачи на камериерските услуги
 
-8. Digital Check-In Configuration
-Configure digital check-in settings (see Section 11 for full details):
-• Enable/disable data collection fields (ID documents, preferences, digital signature)
-• Set up upsell options with descriptions and pricing
-• Configure automated link delivery timing
-• Customise Terms & Conditions text
+8. Конфигурация дигитална регистрация
+Конфигурирайте настройки дигитална регистрация (вижте раздел 11 за пълни детайли):
+• Включете/изключете полета за събиране на данни (документи за самоличност, предпочитания, дигитален подпис)
+• Поставете опции за допълнителни услуги с описания и цени
+• Конфигурирайте време за автоматично доставяне на линк
+• Персонализирайте текст на условия и разпоредби
 
-9. Preferences
-Personalise the interface:
-• Language (8 languages including English, Spanish, French, German, etc.)
-• Date format (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, DD.MM.YYYY)
-• Time format (12-hour or 24-hour)
-• First day of week
-• Theme (Light, Dark, Auto/System)`,
+9. Предпочитания
+Персонализирайте интерфейса:
+• Език (8 езика, включително Английски, Испански, Френски, Немски и т.н.)
+• Формат на дата (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, DD.MM.YYYY)
+• Формат на час (12-часов или 24-часов)
+• Първи ден на седмица
+• Тема (Светло, Тъмно, Авто/Система)`,
   },
   {
     id: 'digital-checkin',
-    title: '11. Digital Check-In',
-    content: `Digital Check-In enables guests to complete their arrival process remotely, before or upon arrival, through a secure online portal. This streamlines front-desk operations and improves the guest experience.
+    title: '11. Дигитална регистрация',
+    content: `Дигиталната регистрация позволява на гостите да завършат своя процес на пристигане отдалечено, преди или при пристигане, през защитен онлайн портал. Това оптимизира операциите на рецепцията и подобрява преживяването на гост.
 
-Overview
-The Digital Check-In module manages pre-arrival check-in links, guest form submissions, and customisable check-in workflows. All guest data collected is secure and compliant.
+Преглед
+Модулът дигитална регистрация управлява линкове за преди пристигане регистрация, подаяния на формуляри на гост и персонализируеми работни процеси на регистрация. Всички събрани данни на гост са защитени и съответстват на изискванията.
 
-Dashboard Statistics
-Four metric cards display:
-• Arrivals Today & Tomorrow — guests expected to arrive in the next 48 hours
-• Links Sent — number of check-in invitations dispatched
-• Forms Completed — guests who have completed digital check-in
-• Pending Check-ins — guests who have not yet submitted their form
+Статистика на табло
+Четири метрични карти показват:
+• Пристигащи днес и утре — гости, които се очаква да пристигнат в следващите 48 часа
+• Изпратени линкове — брой разпратени поканилища за регистрация
+• Завършени формуляри — гости, които са завършили дигитална регистрация
+• Очаквани регистрации — гости, които все още не са подали своя формуляр
 
-Three Main Tabs
+Три главни табла
 
-1. Pending Check-Ins
-Lists all arrivals for today and tomorrow with:
-• Guest name and email
-• Booking reference (confirmation code)
-• Room assignment
-• Check-in date
-• Portal status (Not Sent, Link Sent, Partial, Completed)
-• Action buttons
+1. Очаквани регистрации
+Списък всички пристигащи за днес и утре с:
+• Име гост и имейл
+• Референция на резервация (код за потвърждение)
+• Назначение на стая
+• Дата на регистрация
+• Статус портал (Не е изпратено, Линк изпратен, Частично, Завършено)
+• Бутони за действие
 
-Actions
-• Send Link — generates a unique check-in URL and copies it to clipboard (appears for guests with no link sent yet)
-• Copy Link — re-copies an existing check-in URL (appears for guests who already have a link)
-• View — opens the guest's submitted form data (appears only if guest has begun or completed submission)
+Действия
+• Изпрати линк — генерира уникален URL за регистрация и го копира в буфера за обмен (се появява за гости без изпратен линк)
+• Копирай линк — пре-копира съществуващ URL за регистрация (се появява за гости, които вече имат линк)
+• Виж — отваря подадения формулярни данни на гост (се появява само, ако гостът е започнал или завършил подаяние)
 
-2. Completed Submissions
-Displays all guests who have finished their digital check-in, with:
-• Guest name and email
-• Completion date and time
-• Step completion tracker (5 visual steps)
-• View button to review their submission
+2. Завършени подаяния
+Показва всички гости, които са завършили своята дигитална регистрация, с:
+• Име гост и имейл
+• Дата и час на завършване
+• Проследяващ тракер завършване на стъпки (5 визуални стъпки)
+• Бутон Виж, за да преглед своето подаяние
 
-3. Settings
-Configure all aspects of the digital check-in experience.
+3. Настройки
+Конфигурирайте всички аспекти на преживяването на дигитална регистрация.
 
-Fields to Collect
-Three toggles to enable/disable collection of:
-• ID Document Details — document type, number, nationality, expiration dates
-• Preferences & Special Requests — arrival time preferences, room preferences, dietary restrictions
-• Digital Signature — consent to terms and conditions
+Полета за събиране
+Три превключватели за включване/изключване на събиране на:
+• Детайли на документ за самоличност — тип документ, номер, националност, дати на изтичане
+• Предпочитания и специални желания — предпочитания за час на пристигане, предпочитания за стая, диетични ограничения
+• Дигитален подпис — съгласие с условията и разпоредбите
 
-Upsell Options (shown on confirmation page)
-After completing check-in, guests see optional add-ons they can purchase:
-• Late Check-Out — set custom checkout time (e.g. "until 14:00") with price
-• Breakfast — meal plan option with price
-• Parking — parking service with price
+Опции за допълнителни услуги (показано на страницата за потвърждение)
+След завършване на регистрация, гостите виждат произволни допълнителни услуги, които могат да закупят:
+• Позно напускане — поставете персонализиран час на напускане (например "до 14:00") с цена
+• Закуска — опция за план за хранене с цена
+• Паркиране — услуга за паркиране с цена
 
-Configure each by:
-1. Toggling to enable/disable the option
-2. Setting the service description
-3. Entering the price in euros (€)
+Конфигурирайте всяка чрез:
+1. Превключване на включване/изключване на опцията
+2. Поставяне на описание на услугата
+3. Въвеждане на цена в евро (€)
 
-Automated Send
-Configure automatic check-in link delivery:
-• Set number of days before arrival to send (1–14 days)
-• Select the day and time for automatic sending
-• Requires email integration to be configured in Settings
+Автоматично изпращане
+Конфигурирайте автоматично доставяне на линк за регистрация:
+• Поставете брой дни преди пристигане за изпращане (1–14 дни)
+• Изберете ден и час за автоматично изпращане
+• Изисква конфигурирана интеграция на имейл в Настройки
 
-Note: Automated sending is optional. Links can always be sent manually.
+Забележка: Автоматичното изпращане е произволно. Линковете могат всегда да бъдат изпратени ръчно.
 
-Terms & Conditions
-Customise the legal text guests must accept. Variables such as {hotel_name}, {check_in_time}, {check_out_time} can be inserted and will be replaced dynamically when displayed to guests.
+Условия и разпоредби
+Персонализирайте правния текст, който гостите трябва да приемат. Променливи като {hotel_name}, {check_in_time}, {check_out_time} могат да бъдат вмъкнати и ще бъдат заменени динамично, когато се покажат на гостите.
 
-Workflow
-1. Guest arrives in StayWise database as a reservation
-2. Receptionist (or automated task) sends check-in link to guest email
-3. Guest clicks link, accesses secure portal with unique token
-4. Guest completes multi-step form:
-   - Step 1: ID document upload and details
-   - Step 2: Preferences and special requests
-   - Step 3: Digital signature and T&Cs acceptance
-   - Step 4: Upsell review and optional purchases
-   - Step 5: Confirmation and receipt
-5. Data is stored securely in StayWise database
-6. Staff can view completed forms from the "Completed Submissions" tab
+Работен процес
+1. Гостът пристига в базата данни на StayWise като резервация
+2. Рецепционист (или автоматизирана задача) изпраща линк за регистрация на имейла на гост
+3. Гостът щраква върху линк, получава достъп до защитен портал с уникален токен
+4. Гостът завършва многостъпковия формуляр:
+   - Стъпка 1: Качване на документ за самоличност и детайли
+   - Стъпка 2: Предпочитания и специални желания
+   - Стъпка 3: Дигитален подпис и приемане на условия
+   - Стъпка 4: Преглед на допълнителни услуги и произволни закупуване
+   - Стъпка 5: Потвърждение и разписка
+5. Данни се съхраняват защитено в базата данни на StayWise
+6. Персоналът може да преглед завършени формуляри от табло "Завършени подаяния"
 
-Best Practices
-• Enable digital check-in 3–5 days before arrival for best completion rates
-• Customise the Terms & Conditions to reflect your specific hotel policies
-• Use upsell options to increase ancillary revenue (parking, late checkout, breakfast)
-• Review completed submissions daily to flag any incomplete or flagged documents
-• Link data automatically updates guest profiles in the CRM when submitted`,
+Добрите практики
+• Включете дигитална регистрация 3–5 дни преди пристигане за най-добри процентови завършения
+• Персонализирайте условията и разпоредбите, за да отражават вашите специфични политики на хотела
+• Използвайте опции за допълнителни услуги, за да увеличите допълнителен приход (паркиране, позно напускане, закуска)
+• Преглед завършени подаяния ежедневно, за да отбележите всички непълни или обозначени документи
+• Данни за линк автоматично актуализира профилите на гост в CRM, когато бъдат подадени`,
   },
   {
     id: 'roles',
-    title: '12. Roles & Permissions',
-    content: `StayWise uses four staff roles to control access to features.
+    title: '12. Роли и разрешения',
+    content: `StayWise използва четири роли на персонала за контрол на достъпа до функции.
 
-Admin
-Full system access including user management, payment settings, tax configuration, and all operational modules.
+Администратор
+Пълен системен достъп, включително управление на потребители, настройки за плащане, конфигурация на данък и всички оперативни модули.
 
-Manager
-Access to all operational modules: reservations, rooms, guests, housekeeping, billing, and reports. Cannot manage users or system-level settings.
+Мениджър
+Достъп до всички оперативни модули: резервации, стаи, гости, камериерски услуги, фактуриране и справки. Не могат да управляват потребители или настройки на системно ниво.
 
-Receptionist
-Access to reservations (create, confirm, check-in, check-out), guest profiles, and basic reporting. Cannot access housekeeping management or billing settings.
+Рецепционист
+Достъп до резервации (създаване, потвърждение, регистрация, отпътуване), профили на гости и основни справки. Не могат да получат достъп до управление на камериерски услуги или настройки за фактуриране.
 
-Housekeeping
-Can view and update housekeeping tasks and room status only. No access to guest data, billing, or reports.
+Камериерки
+Могат да преглед и актуализират само задачи на камериерски услуги и статус на стаи. Без достъп до данни на гости, фактуриране или справки.
 
-Role Assignment
-Roles are assigned when a staff account is created in Settings > Users & Permissions. Only Admins can change roles.`,
+Назначаване на роля
+Ролите се назначават при създаване на сметка на персонала в Настройки > Потребители и разрешения. Само администраторите могат да променят ролите.`,
   },
   {
     id: 'tips',
-    title: '13. Tips & Best Practices',
-    content: `Daily Operations Checklist
-• Check the Dashboard each morning for arrivals, departures, and room status
-• Use the Arrivals tile to quickly confirm expected check-ins
-• Review the Activity Feed for overnight events and any issues
+    title: '13. Советы и добрые практики',
+    content: `Контролен списък ежедневни операции
+• Проверете табло всяко утро за пристигащи, заминаващи и статус на стаи
+• Използвайте плочката Пристигащи, за да бързо потвърдите очаквани настанявания
+• Преглед лентата за активност за нощни события и всякакви проблеми
 
-Reservations
-• Always link a reservation to an existing guest profile to maintain accurate stay history
-• Use the "Special Requests" field to capture guest preferences at booking time
-• Set the booking source correctly to track channel performance in Reports
+Резервации
+• Всегда свържете резервация с съществуващ профил на гост, за да запазите точна история на престоя
+• Използвайте полето "Специални желания", за да събере предпочитанията на гост при време на резервация
+• Поставете източника на резервация правилно, за да проследите производителност на канала в справките
 
-Housekeeping
-• Assign tasks to specific staff members for accountability
-• Use the checklist feature to ensure consistent cleaning standards
-• Check the Room Status Board for a quick visual of floor-by-floor readiness
+Камериерски услуги
+• Назначете задачи на конкретни членове на персонала за отговорност
+• Използвайте функцията контролен списък, за да гарантирате последователни стандарти на почистване
+• Проверете табла статус на стаи за бърз визуален преглед на готовност по етаж
 
-Billing
-• Generate invoices immediately after checkout to minimise outstanding balances
-• Use line item categories consistently (Room, Food, Spa, etc.) for accurate financial reports
-• Record partial payments as they arrive — the system will automatically update invoice status
+Фактуриране
+• Генерирайте фактури веднага след напускане, за да минимизирате неуредени салда
+• Използвайте категории редови позиции последователно (Стая, Храна, Спа и т.н.) за точни финансови справки
+• Регистрирайте частични плащания, докато пристигат — системата ще автоматично актуализира статуса на фактура
 
-Guests
-• Update VIP status when guests reach loyalty milestones
-• Log all communications in the guest profile for a complete interaction history
-• Use the preferences tab to prepare the room before arrival (floor, view, bed type)
+Гости
+• Актуализирайте VIP статус, когато гостите достигнат вериност миливици
+• Записвайте всички комуникации в профила на гост за пълна история на взаимодействие
+• Използвайте табло на предпочитания, за да подготвите стаята преди пристигане (етаж, гледка, тип легло)
 
-Reports
-• Run the Revenue Report at month-end to compare ADR and RevPAR against targets
-• Use the Booking Sources report to evaluate OTA commission costs vs. direct bookings
-• Export CSV reports for use in external accounting or business intelligence tools
+Справки
+• Изпълните справка за приходи в край на месец, за да сравните ADR и RevPAR срещу целите
+• Използвайте справка за във источници на резервации, за да оцените разходи за комисия на OTA срещу преки резервации
+• Експортирайте CSV справки за използване в външни счетоводни или бизнес интелигентност инструменти
 
-Settings
-• Review and update email templates seasonally or for special promotions
-• Keep tax rates current to ensure invoices are accurate
-• Deactivate staff accounts immediately when an employee leaves
+Настройки
+• Преглед и актуализирайте имейлни шаблони сезонно или за специални промоции
+• Поддържайте данъчни ставки текущи, за да гарантирате точни фактури
+• Деактивирайте сметки на персонала незабавно, когато служител напуска
 
-Digital Check-In
-• Send digital check-in links 3–5 days before arrival for best completion rates
-• Customise your Terms & Conditions to match your specific hotel policies
-• Enable upsell options to generate extra revenue from ancillary services
-• Check completed submissions daily to verify all required documents are valid
-• Use the Pending Check-ins tab to manually send links to guests who haven't received them automatically`,
+Дигитална регистрация
+• Изпратете линкове за дигитална регистрация 3–5 дни преди пристигане за най-добрите процентови завършения
+• Персонализирайте вашите условия и разпоредби, за да отговарят на вашите специфични политики на хотела
+• Включете опции за допълнителни услуги, за да генерирате допълнителен приход от услуги за добавки
+• Проверете завършени подаяния ежедневно, за да проверите всички необходими документи са валидни
+• Използвайте табло очаквани регистрации, за да ръчно изпратите линкове на гости, които не са получили автоматично`,
   },
   {
     id: 'glossary',
-    title: '14. Glossary',
-    content: `ADR (Average Daily Rate) — Total room revenue divided by the number of rooms sold. Indicates the average price achieved per occupied room.
+    title: '14. Речник',
+    content: `ADR (Средна дневна тариф) — Обши приходи от стаи, разделени на брой продадени стаи. Показва средната цена, постигната на заета стая.
 
-RevPAR (Revenue Per Available Room) — Total room revenue divided by total available rooms. A key performance metric combining both occupancy and rate.
+RevPAR (Приход на разполагаема стая) — Обши приходи от стаи, разделени на общо разполагаеми стаи. Ключова метрика на производителност, съчетаваща заетост и тариф.
 
-OTA (Online Travel Agency) — Third-party booking platforms such as Booking.com, Expedia, or Airbnb.
+OTA (Онлайн туристическа агенция) — Платформи за резервации от трети страни като Booking.com, Expedia или Airbnb.
 
-Occupancy Rate — The percentage of available rooms that are occupied during a given period.
+Степен на заетост — Процентът на разполагаеми стаи, които са заети през даден период.
 
-Check-In — The process of welcoming an arriving guest and assigning them their room.
+Регистрация — Процес на приветствие на пристигащ гост и назначаване на своята стая.
 
-Check-Out — The process of a guest departing and settling their bill.
+Напускане — Процес на гост, който заминава и уреждане на своята сметка.
 
-Confirmation Code — A unique reference number automatically assigned to each reservation (e.g. SW-2024-0001).
+Код за потвърждение — Уникален референтен номер, автоматично назначен на всяка резервация (например SW-2024-0001).
 
-VIP Status — A loyalty classification (Regular, Silver, Gold, Platinum) used to recognise and prioritise valued guests.
+VIP статус — Класификация на верност (Обикновен, Сребърен, Золотен, Платинен), използвана за признаване и приоритизиране на ценни гости.
 
-Invoice — A financial document sent to a guest itemising all charges for their stay and additional services.
+Фактура — Финансов документ, изпратен на гост, който възлага всички такси за своя престой и допълнителни услуги.
 
-RLS (Row Level Security) — A database security feature ensuring each user can only access data they are authorised to see.
+RLS (Разрешение на ред ниво) — Функция за сигурност на базата данни, гарантираща, че всеки потребител може да достъпи само данни, които е оторизиран да види.
 
-RevPAR Index — A comparison of a hotel's RevPAR against a competitive set benchmark (not calculated within StayWise but useful for context).
+Индекс RevPAR — Сравнение на RevPAR на хотела срещу еталон на конкурентен набор (не се изчислява в StayWise, но полезен за контекст).
 
-Dirty Room — A room that has been vacated and requires cleaning before it can be assigned to a new guest.
+Замърсена стая — Стая, която е напуснала и изисква почистване преди да може да бъде назначена на нов гост.
 
-Checklist — A structured list of tasks within a housekeeping job, used to ensure quality and consistency.
+Контролен списък — Структуриран списък на задачи в работа на камериерски услуги, използван за гарантиране на качество и последователност.
 
-Digital Check-In — A secure online form process allowing guests to complete pre-arrival registration, document submission, and preferences collection before arrival.
+Дигитална регистрация — Защитен онлайн процес на формуляр, позволяващ на гостите да завършат предварително пристигане на регистрация, подаване на документи и събиране на предпочитания преди пристигане.
 
-Portal — The guest-facing web interface where guests complete digital check-in forms using a unique secure token/link.
+Портал — Интерфейсът, обърнат към гостите, където гостите завършват формуляри за дигитална регистрация, използвайки уникален защитен токен/линк.
 
-Token — A unique, time-limited security identifier used to grant guests access to their specific digital check-in form.
+Токен — Уникален, времево ограничен идентификатор за сигурност, използван за даване на достъп до гостите за своя специфичен формуляр за дигитална регистрация.
 
-Upsell — Optional add-on services (parking, late checkout, breakfast) offered to guests after completing digital check-in.
+Допълнителна услуга — Произволни услуги за добавки (паркиране, позно напускане, закуска), предложени на гостите след завършване на дигитална регистрация.
 
-Ancillary Revenue — Income generated from optional services and add-ons beyond the base room rate.`,
+Допълнителен приход — Приход, генериран от произволни услуги и допълнения отвъд базовата тариф на стаята.`,
   },
 ];
 
@@ -585,7 +585,7 @@ export default function GuidePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'StayWise Software — User Guide';
+    document.title = 'StayWise Software — Ръководство за потребител';
   }, []);
 
   return (
@@ -598,7 +598,7 @@ export default function GuidePage() {
           onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
         >
           <ArrowLeft style={{ width: '14px', height: '14px' }} />
-          Back to Dashboard
+          Обратно към табло
         </button>
       </div>
       <style>{`
@@ -676,9 +676,9 @@ export default function GuidePage() {
       `}</style>
 
       <div className="print-bar">
-        <span className="print-bar-text">To download this guide as a PDF:</span>
-        <button className="print-btn" onClick={() => window.print()}>Open Print / Save as PDF</button>
-        <span className="print-bar-text">then choose <strong style={{color:'#fff'}}>"Save as PDF"</strong> as the destination</span>
+        <span className="print-bar-text">За да изтеглите това ръководство като PDF:</span>
+        <button className="print-btn" onClick={() => window.print()}>Отваря печат / Запази като PDF</button>
+        <span className="print-bar-text">след това изберете <strong style={{color:'#fff'}}>"Запази като PDF"</strong> като дестинация</span>
       </div>
 
       {/* COVER */}
@@ -690,20 +690,20 @@ export default function GuidePage() {
           </svg>
         </div>
         <div className="cover-brand">StayWise Software</div>
-        <h1 className="cover-title">Complete User Guide</h1>
-        <div className="cover-subtitle">Hotel Management System — Full Feature Reference</div>
+        <h1 className="cover-title">Пълно ръководство за потребител</h1>
+        <div className="cover-subtitle">Система за управление на хотели — Пълна справка на функции</div>
         <div className="cover-divider" />
         <div className="cover-meta">
-          A comprehensive guide to all features and modules<br />
-          of the StayWise hotel management platform.<br />
-          For use by hotel staff at all levels.
+          Изчерпателно ръководство за всички функции и модули<br />
+          на платформата за управление на хотела StayWise.<br />
+          За използване от персонала на хотела от всички нива.
         </div>
-        <div className="cover-version">Version 1.0 &nbsp;·&nbsp; March 2026</div>
+        <div className="cover-version">Версия 1.0 &nbsp;·&nbsp; март 2026</div>
       </div>
 
       {/* TABLE OF CONTENTS */}
       <div className="toc-page">
-        <div className="toc-heading">Table of Contents</div>
+        <div className="toc-heading">Съдържание</div>
         <ul className="toc-list">
           {sections.map((s, i) => (
             <li key={s.id} className="toc-item">
