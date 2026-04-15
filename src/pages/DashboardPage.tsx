@@ -277,10 +277,10 @@ export default function DashboardPage() {
           <div className="space-y-2">
             {[
               { label: t.dashboard.quickCheckIn, to: '/reservations', icon: UserCheck, color: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-              { label: t.nav.frontDesk, to: '/front-desk', icon: ClipboardList, color: 'bg-cyan-600 hover:bg-cyan-700 text-white' },
-              { label: t.nav.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
+              { label: t.frontDesk, to: '/front-desk', icon: ClipboardList, color: 'bg-cyan-600 hover:bg-cyan-700 text-white' },
+              { label: t.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
               { label: t.dashboard.viewRooms, to: '/rooms', icon: BedDouble, color: 'bg-slate-700 hover:bg-slate-800 text-white' },
-              { label: t.nav.reports, to: '/reports', icon: BarChart3, color: 'bg-gray-600 hover:bg-gray-700 text-white' },
+              { label: t.reports, to: '/reports', icon: BarChart3, color: 'bg-gray-600 hover:bg-gray-700 text-white' },
             ].map(a => (
               <Link key={a.label} to={a.to}
                 className={`${a.color} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm`}>
