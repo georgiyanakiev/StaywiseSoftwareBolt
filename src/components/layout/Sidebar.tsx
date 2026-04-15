@@ -22,67 +22,67 @@ interface SidebarProps {
 interface NavItem {
   to: string;
   icon: React.ElementType;
-  label: string;
+  labelKey: string;
 }
 
 interface NavGroup {
-  label: string;
+  labelKey: string;
   items: NavItem[];
 }
 
-const NAV_GROUPS: NavGroup[] = [
+const getNavGroups = (): NavGroup[] => [
   {
-    label: 'Operations',
+    labelKey: 'Operations',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/front-desk', icon: ClipboardList, label: 'Front Desk' },
-      { to: '/reservations', icon: CalendarCheck, label: 'Reservations' },
-      { to: '/rooms', icon: BedDouble, label: 'Rooms' },
-      { to: '/housekeeping', icon: SprayCan, label: 'Housekeeping' },
-      { to: '/maintenance', icon: Wrench, label: 'Maintenance' },
-      { to: '/guest-portal', icon: QrCode, label: 'Guest Portal' },
+      { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+      { to: '/front-desk', icon: ClipboardList, labelKey: 'nav.frontDesk' },
+      { to: '/reservations', icon: CalendarCheck, labelKey: 'nav.reservations' },
+      { to: '/rooms', icon: BedDouble, labelKey: 'nav.rooms' },
+      { to: '/housekeeping', icon: SprayCan, labelKey: 'nav.housekeeping' },
+      { to: '/maintenance', icon: Wrench, labelKey: 'maintenance.title' },
+      { to: '/guest-portal', icon: QrCode, labelKey: 'guestPortal.title' },
     ],
   },
   {
-    label: 'Revenue',
+    labelKey: 'Revenue',
     items: [
-      { to: '/channel-manager', icon: GitBranch, label: 'Channel Manager' },
-      { to: '/booking-engine', icon: Globe, label: 'Booking Engine' },
-      { to: '/dynamic-pricing', icon: TrendingUp, label: 'Dynamic Pricing' },
-      { to: '/upselling', icon: ShoppingBag, label: 'Upselling' },
+      { to: '/channel-manager', icon: GitBranch, labelKey: 'channelManager.title' },
+      { to: '/booking-engine', icon: Globe, labelKey: 'common.add' },
+      { to: '/dynamic-pricing', icon: TrendingUp, labelKey: 'dynamicPricing.title' },
+      { to: '/upselling', icon: ShoppingBag, labelKey: 'upselling.title' },
     ],
   },
   {
-    label: 'Finance',
+    labelKey: 'Finance',
     items: [
-      { to: '/payment-automation', icon: CreditCard, label: 'Payments' },
-      { to: '/billing', icon: FileText, label: 'Invoicing & Billing' },
-      { to: '/reports', icon: BarChart3, label: 'Reports' },
+      { to: '/payment-automation', icon: CreditCard, labelKey: 'payments.title' },
+      { to: '/billing', icon: FileText, labelKey: 'billing.title' },
+      { to: '/reports', icon: BarChart3, labelKey: 'reports.title' },
     ],
   },
   {
-    label: 'Guests',
+    labelKey: 'Guests',
     items: [
-      { to: '/guests', icon: Users, label: 'Guest Profiles' },
+      { to: '/guests', icon: Users, labelKey: 'nav.guests' },
     ],
   },
   {
-    label: 'Integrations',
+    labelKey: 'Integrations',
     items: [
-      { to: '/booking-com', icon: Link2, label: 'Booking.com' },
-      { to: '/expedia', icon: Link2, label: 'Expedia' },
-      { to: '/cloudbeds', icon: Link2, label: 'Cloudbeds' },
-      { to: '/siteminder', icon: Link2, label: 'SiteMinder' },
-      { to: '/lodgify', icon: Link2, label: 'Lodgify' },
+      { to: '/booking-com', icon: Link2, labelKey: 'common.add' },
+      { to: '/expedia', icon: Link2, labelKey: 'common.add' },
+      { to: '/cloudbeds', icon: Link2, labelKey: 'common.add' },
+      { to: '/siteminder', icon: Link2, labelKey: 'common.add' },
+      { to: '/lodgify', icon: Link2, labelKey: 'common.add' },
     ],
   },
   {
-    label: 'Settings',
+    labelKey: 'Settings',
     items: [
-      { to: '/settings/staff', icon: UserCog, label: 'Staff & Roles' },
-      { to: '/owner-portal', icon: KeyRound, label: 'Owner Portal' },
-      { to: '/settings', icon: Settings, label: 'General' },
-      { to: '/guide', icon: BookOpen, label: 'User Guide' },
+      { to: '/settings/staff', icon: UserCog, labelKey: 'common.add' },
+      { to: '/owner-portal', icon: KeyRound, labelKey: 'ownerPortal.title' },
+      { to: '/settings', icon: Settings, labelKey: 'nav.settings' },
+      { to: '/guide', icon: BookOpen, labelKey: 'guide.title' },
     ],
   },
 ];
@@ -90,20 +90,53 @@ const NAV_GROUPS: NavGroup[] = [
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { signOut, staff, canAccess } = useAuth();
   const { currentHotel } = useHotel();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const { tenant } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
 
   const brandColor = tenant?.primary_color ?? '#1e3a5f';
   const displayName = tenant?.name ?? 'StayWise PMS';
+  const NAV_GROUPS = getNavGroups();
 
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname === to || location.pathname.startsWith(to + '/');
 
+  const getTranslationValue = (key: string): string => {
+    const parts = key.split('.');
+    let value: any = t;
+    for (const part of parts) {
+      value = value?.[part];
+    }
+    return value || key;
+  };
+
+  const getGroupLabel = (groupKey: string): string => {
+    const labels: Record<string, Record<string, string>> = {
+      'en': {
+        'Operations': 'Operations',
+        'Revenue': 'Revenue',
+        'Finance': 'Finance',
+        'Guests': 'Guests',
+        'Integrations': 'Integrations',
+        'Settings': 'Settings',
+      },
+      'bg': {
+        'Operations': 'Операции',
+        'Revenue': 'Приходи',
+        'Finance': 'Финанси',
+        'Guests': 'Гости',
+        'Integrations': 'Интеграции',
+        'Settings': 'Настройки',
+      },
+    };
+    return labels[lang]?.[groupKey] || groupKey;
+  };
+
   const renderNavItem = (item: NavItem) => {
     if (!canAccess(item.to)) return null;
     const active = isActive(item.to);
+    const label = getTranslationValue(item.labelKey);
     return (
       <NavLink
         key={item.to}
@@ -115,10 +148,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           } ${collapsed ? 'justify-center px-2' : ''}`
         }
         style={active ? { color: brandColor, backgroundColor: `${brandColor}14` } : undefined}
-        title={collapsed ? item.label : undefined}
+        title={collapsed ? label : undefined}
       >
         <item.icon className="w-4 h-4 flex-shrink-0" />
-        {!collapsed && <span className="truncate">{item.label}</span>}
+        {!collapsed && <span className="truncate">{label}</span>}
       </NavLink>
     );
   };
@@ -129,7 +162,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity"
-          title="Back to dashboard"
+          title={lang === 'bg' ? 'Обратно към таблото' : 'Back to dashboard'}
         >
           {tenant?.logo_url ? (
             <img src={tenant.logo_url} alt={displayName} className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
@@ -148,7 +181,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {!collapsed && currentHotel && (
         <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Property</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{lang === 'bg' ? 'Обект' : 'Property'}</p>
           <p className="text-sm font-medium text-gray-800 truncate mt-0.5">{currentHotel.name}</p>
         </div>
       )}
@@ -158,9 +191,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           const visibleItems = group.items.filter(item => canAccess(item.to));
           if (visibleItems.length === 0) return null;
           return (
-            <div key={group.label} className="mb-1">
+            <div key={group.labelKey} className="mb-1">
               {!collapsed && (
-                <p className="px-3 pt-3 pb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{group.label}</p>
+                <p className="px-3 pt-3 pb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{getGroupLabel(group.labelKey)}</p>
               )}
               {collapsed && <div className="my-1.5 border-t border-gray-100" />}
               <div className="space-y-0.5">
@@ -194,7 +227,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ${collapsed ? 'justify-center px-2' : ''}`}
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
+          {!collapsed && <span>{lang === 'bg' ? 'Изход' : 'Sign Out'}</span>}
         </button>
       </div>
     </div>
