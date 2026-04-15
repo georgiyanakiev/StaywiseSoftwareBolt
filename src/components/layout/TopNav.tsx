@@ -34,7 +34,7 @@ interface SidebarInnerProps {
 
 function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProps) {
   const { signOut, user, staff } = useAuth();
-  const { t, lang, setLang } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { session, clearActiveHotel } = useActiveHotel();
   const location = useLocation();
   const navigate = useNavigate();
@@ -218,16 +218,16 @@ function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProp
         {!collapsed && (
           <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden mb-2 mx-1">
             <button
-              onClick={() => setLang('en')}
-              className={`flex-1 py-1.5 text-xs font-semibold transition-colors ${lang === 'en' ? 'text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-              style={lang === 'en' ? { backgroundColor: brandColor } : undefined}
+              onClick={() => setLanguage('en')}
+              className={`flex-1 py-1.5 text-xs font-semibold transition-colors ${language === 'en' ? 'text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              style={language === 'en' ? { backgroundColor: brandColor } : undefined}
             >
               EN
             </button>
             <button
-              onClick={() => setLang('bg')}
-              className={`flex-1 py-1.5 text-xs font-semibold transition-colors ${lang === 'bg' ? 'text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-              style={lang === 'bg' ? { backgroundColor: brandColor } : undefined}
+              onClick={() => setLanguage('bg')}
+              className={`flex-1 py-1.5 text-xs font-semibold transition-colors ${language === 'bg' ? 'text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              style={language === 'bg' ? { backgroundColor: brandColor } : undefined}
             >
               BG
             </button>
