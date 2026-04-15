@@ -1,5 +1,6 @@
 import { Download, FlaskConical } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { formatCurrency } from '../../lib/utils';
 import type { PLRow } from './types';
 
@@ -24,11 +25,12 @@ interface Props {
 }
 
 export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCosts, grossProfit, monthlyBreakdown, currency, onExport }: Props) {
+  const { t } = useLanguage();
   const kpiCards = [
-    { label: 'Total Revenue', value: formatCurrency(totalRevenue, currency), color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Total Costs', value: formatCurrency(totalCosts, currency), color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Gross Profit', value: formatCurrency(grossProfit, currency), color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Gross Margin', value: `${grossMargin.toFixed(1)}%`, color: 'text-teal-600', bg: 'bg-teal-50' },
+    { label: t.reports.totalRevenue, value: formatCurrency(totalRevenue, currency), color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: t.reports.totalCosts, value: formatCurrency(totalCosts, currency), color: 'text-red-600', bg: 'bg-red-50' },
+    { label: t.reports.grossProfit, value: formatCurrency(grossProfit, currency), color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: t.reports.grossMargin, value: `${grossMargin.toFixed(1)}%`, color: 'text-teal-600', bg: 'bg-teal-50' },
   ];
 
   const hasEstimatedRows = rows.some(r => r.isEstimated);
@@ -36,9 +38,9 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Financial P&L</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t.reports.financialPL}</h2>
         <button onClick={onExport} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-          <Download className="w-4 h-4" /> Export CSV
+          <Download className="w-4 h-4" /> {t.reports.exportCsv}
         </button>
       </div>
 
@@ -46,8 +48,8 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
         <div className="flex items-start gap-2.5 px-3.5 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
           <FlaskConical className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <p className="text-amber-800">
-            <span className="font-semibold">Estimated P&L — Demo Mode.</span>
-            <span className="ml-1">Rows marked <span className="font-semibold">(est.)</span> are calculated from industry-standard benchmarks, not actual recorded costs. Connect your accounting system or enter real cost data for accurate figures.</span>
+            <span className="font-semibold">{t.reports.estimatedPLDemoMode}</span>
+            <span className="ml-1">{t.reports.estimatedPLWarning}</span>
           </p>
         </div>
       )}
@@ -62,7 +64,7 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">P&L Statement</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.plStatement}</h3>
         {totalRevenue === 0 ? (
           <div className="text-center py-10">
             <p className="text-sm font-medium text-gray-500">No revenue data for this period</p>
@@ -73,10 +75,10 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 w-1/2">Line Item</th>
-                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-3">Current Period</th>
-                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-3">Est. Prior Period</th>
-                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-3">Change</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider py-3 w-1/2">{t.reports.lineItem}</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-3">{t.reports.currentPeriod}</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-3">{t.reports.estPriorPeriod}</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider py-3">{t.reports.change}</th>
                 </tr>
               </thead>
               <tbody>
@@ -113,8 +115,8 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-1">Month-by-Month Breakdown</h3>
-        <p className="text-xs text-gray-400 mb-4">Current year — months with recorded reservations</p>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">{t.reports.monthByMonthBreakdown}</h3>
+        <p className="text-xs text-gray-400 mb-4">{t.reports.currentYear} — {t.reports.monthsWithRecordings}</p>
         {monthlyBreakdown.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-sm font-medium text-gray-500">Insufficient data</p>
@@ -129,9 +131,9 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
                 <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [formatCurrency(Number(v || 0), currency), '']} />
                 <Legend />
-                <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="costs" name="Costs" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="profit" name="Gross Profit" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" name={t.reports.revenue} fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="costs" name={t.reports.costs} fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="profit" name={t.reports.grossProfit} fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
