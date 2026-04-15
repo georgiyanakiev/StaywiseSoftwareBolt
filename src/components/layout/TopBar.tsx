@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
+import { translations } from '../../lib/translations';
 import { useChannels, type Channel } from '../../hooks/useChannels';
 import { getChannelIcon } from '../../utils/channelCatalog';
 import { supabase } from '../../lib/supabase';
@@ -22,44 +23,46 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-/* ─── Nav definitions ───────────────────────────────────────── */
-const ROW2_GROUPS: NavItem[][] = [
+/* ─── Nav definitions (translation keys) ───────────────────────────────────── */
+type NavItemKey = keyof typeof translations.en.navigation;
+
+const ROW2_KEYS: NavItemKey[][] = [
   [
-    { to: '/',             label: 'Dashboard',    icon: LayoutDashboard },
-    { to: '/front-desk',   label: 'Front Desk',   icon: ClipboardList },
-    { to: '/reservations', label: 'Reservations', icon: CalendarCheck },
-    { to: '/rooms',        label: 'Rooms',        icon: BedDouble },
+    'dashboard',
+    'frontDesk',
+    'reservations',
+    'rooms',
   ],
   [
-    { to: '/guests', label: 'Guests', icon: Users },
+    'guests',
   ],
   [
-    { to: '/housekeeping', label: 'Housekeeping', icon: SprayCan },
-    { to: '/maintenance',  label: 'Maintenance',  icon: Wrench },
+    'housekeeping',
+    'maintenance',
   ],
   [
-    { to: '/reports', label: 'Reports', icon: BarChart3 },
+    'reports',
   ],
 ];
 
-const ROW3_GROUPS: NavItem[][] = [
+const ROW3_KEYS: NavItemKey[][] = [
   [
-    { to: '/billing',            label: 'Billing',   icon: Receipt },
-    { to: '/payment-automation', label: 'Payments',  icon: CreditCard },
-    { to: '/invoicing',          label: 'Invoicing', icon: FileText },
+    'billing',
+    'payments',
+    'invoicing',
   ],
   [
-    { to: '/channel-manager', label: 'Channel Manager', icon: GitBranch },
-    { to: '/booking-engine',  label: 'Booking Engine',  icon: Globe },
-    { to: '/dynamic-pricing', label: 'Dynamic Pricing', icon: Zap },
-    { to: '/upselling',       label: 'Upselling',       icon: Gift },
+    'channelManager',
+    'bookingEngine',
+    'dynamicPricing',
+    'upselling',
   ],
   [
-    { to: '/guest-portal', label: 'Guest Portal', icon: MonitorSmartphone },
+    'guestPortal',
   ],
   [
-    { to: '/settings', label: 'Settings',   icon: Settings },
-    { to: '/guide',    label: 'User Guide', icon: BookOpen },
+    'settings',
+    'userGuide',
   ],
 ];
 
@@ -368,22 +371,13 @@ function statusDot(status: Channel['status']) {
 }
 
 /* ─── Mobile drawer ─────────────────────────────────────────── */
-const DRAWER_SECTIONS = [
-  { label: 'DAILY', items: ROW2_GROUPS[0] },
-  { label: 'GUESTS & STAFF', items: [...ROW2_GROUPS[1], ...ROW2_GROUPS[2]] },
-  { label: 'ANALYTICS', items: ROW2_GROUPS[3] },
-  { label: 'FINANCE', items: ROW3_GROUPS[0] },
-  { label: 'CHANNELS & REVENUE', items: ROW3_GROUPS[1] },
-  { label: 'GUEST EXPERIENCE', items: ROW3_GROUPS[2] },
-  { label: 'ACCOUNT', items: ROW3_GROUPS[3] },
-];
-
-function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin }: {
+function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin, drawerSections }: {
   onClose: () => void;
   brandColor: string;
   hotelName: string;
   userRole: string | null;
   isSuperAdmin: boolean;
+  drawerSections: { label: string; items: NavItem[] }[];
 }) {
   const isActive = useIsActive();
   const { signOut, user, canAccess } = useAuth();
@@ -528,6 +522,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const { session } = useActiveHotel();
   const { staff, canAccess, user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -548,6 +543,46 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
   const hotelLogo  = session?.hotelLogo ?? null;
   const plan       = session?.plan ?? null;
   const userRole   = session?.role ?? staff?.role ?? null;
+
+  const ROW2_GROUPS: NavItem[][] = [
+    [
+      { to: '/',             label: t.nav.dashboard,    icon: LayoutDashboard },
+      { to: '/front-desk',   label: t.nav.frontDesk,   icon: ClipboardList },
+      { to: '/reservations', label: t.nav.reservations, icon: CalendarCheck },
+      { to: '/rooms',        label: t.nav.rooms,        icon: BedDouble },
+    ],
+    [
+      { to: '/guests', label: t.nav.guests, icon: Users },
+    ],
+    [
+      { to: '/housekeeping', label: t.nav.housekeeping, icon: SprayCan },
+      { to: '/maintenance',  label: t.nav.maintenance,  icon: Wrench },
+    ],
+    [
+      { to: '/reports', label: t.nav.reports, icon: BarChart3 },
+    ],
+  ];
+
+  const ROW3_GROUPS: NavItem[][] = [
+    [
+      { to: '/billing',            label: t.nav.billing,   icon: Receipt },
+      { to: '/payment-automation', label: t.nav.payments,  icon: CreditCard },
+      { to: '/invoicing',          label: t.nav.invoicing, icon: FileText },
+    ],
+    [
+      { to: '/channel-manager', label: t.nav.channelManager, icon: GitBranch },
+      { to: '/booking-engine',  label: t.nav.bookingEngine,  icon: Globe },
+      { to: '/dynamic-pricing', label: t.nav.dynamicPricing, icon: Zap },
+      { to: '/upselling',       label: t.nav.upselling,       icon: Gift },
+    ],
+    [
+      { to: '/guest-portal', label: t.nav.guestPortal, icon: MonitorSmartphone },
+    ],
+    [
+      { to: '/settings', label: t.nav.settings,   icon: Settings },
+      { to: '/guide',    label: t.nav.userGuide, icon: BookOpen },
+    ],
+  ];
 
   /* ── Lobby ── */
   if (variant === 'lobby') {
@@ -759,6 +794,15 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
           hotelName={hotelName}
           userRole={userRole}
           isSuperAdmin={isSuperAdmin}
+          drawerSections={[
+            { label: 'DAILY', items: ROW2_GROUPS[0] },
+            { label: 'GUESTS & STAFF', items: [...ROW2_GROUPS[1], ...ROW2_GROUPS[2]] },
+            { label: 'ANALYTICS', items: ROW2_GROUPS[3] },
+            { label: 'FINANCE', items: ROW3_GROUPS[0] },
+            { label: 'CHANNELS & REVENUE', items: ROW3_GROUPS[1] },
+            { label: 'GUEST EXPERIENCE', items: ROW3_GROUPS[2] },
+            { label: 'ACCOUNT', items: ROW3_GROUPS[3] },
+          ]}
         />
       )}
     </>
