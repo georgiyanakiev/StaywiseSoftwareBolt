@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
 import { useTenantId } from '../../hooks/useTenantQuery';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import PaymentRuleModal from './PaymentRuleModal';
@@ -65,17 +66,18 @@ const TYPE_COLORS: Record<string, string> = {
   adjustment: 'bg-orange-50 text-orange-700',
 };
 
-const TRIGGER_LABELS: Record<string, string> = {
+const getTriggerLabels = (t: any) => ({
   on_booking:          'On Booking',
   days_before_arrival: 'Days Before Arrival',
   on_checkin:          'On Check-in',
   on_checkout:         'On Check-out',
   manual:              'Manual',
-};
+});
 
 export default function PaymentAutomationPage() {
   const { currentHotel } = useHotel();
   const { showToast } = useToast();
+  const { t } = useLanguage();
   const tenantId = useTenantId();
 
   const [tab, setTab] = useState<Tab>('all');
@@ -302,41 +304,43 @@ export default function PaymentAutomationPage() {
   };
 
   const tabs: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'all',      label: 'All Transactions', badge: transactions.length || undefined },
-    { id: 'pending',  label: 'Pending',   badge: pendingTxs.length || undefined },
-    { id: 'captured', label: 'Completed', badge: capturedTxs.length || undefined },
-    { id: 'failed',   label: 'Failed',    badge: failedTxs.length || undefined },
-    { id: 'refunded', label: 'Refunded',  badge: refundedTxs.length || undefined },
-    { id: 'rules',    label: 'Payment Rules' },
-    { id: 'scheduled', label: 'Scheduled', badge: overdue.length + scheduled.length || undefined },
+    { id: 'all',      label: t.payments.allTransactions, badge: transactions.length || undefined },
+    { id: 'pending',  label: t.payments.pending,   badge: pendingTxs.length || undefined },
+    { id: 'captured', label: t.payments.completed, badge: capturedTxs.length || undefined },
+    { id: 'failed',   label: t.payments.failed,    badge: failedTxs.length || undefined },
+    { id: 'refunded', label: t.payments.refunded,  badge: refundedTxs.length || undefined },
+    { id: 'rules',    label: t.payments.paymentRules },
+    { id: 'scheduled', label: t.payments.scheduled, badge: overdue.length + scheduled.length || undefined },
   ];
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
+
+  const TRIGGER_LABELS = getTriggerLabels(t);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
           <CreditCard className="w-6 h-6 text-blue-600" />
-          Payment Automation
+          {t.payments.title}
         </h1>
-        <p className="text-gray-500 text-sm mt-1">Automate deposits, pre-authorisations, and charges</p>
+        <p className="text-gray-500 text-sm mt-1">{t.payments.subtitle}</p>
       </div>
 
       <div className="flex items-start gap-2.5 px-3.5 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
         <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
         <p className="text-amber-800">
-          <span className="font-semibold">Manual ledger entries only.</span>
-          <span className="ml-1">"Record as Paid" records the balance as settled in your ledger — no card or external payment gateway is charged.</span>
+          <span className="font-semibold">{t.payments.manualLedgerOnly}</span>
+          <span className="ml-1">{t.payments.recordAsPaidNote}</span>
         </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Collected This Month', value: formatCurrency(collectedThisMonth, currentHotel?.currency), icon: Euro,         color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Pending Collection',   value: formatCurrency(pendingTotal, currentHotel?.currency),       icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50' },
-          { label: 'Overdue',              value: formatCurrency(overdueTotal, currentHotel?.currency),       icon: ShieldAlert,  color: 'text-red-600',     bg: 'bg-red-50' },
-          { label: 'Refunded',             value: formatCurrency(refundedTotal, currentHotel?.currency),      icon: TrendingDown, color: 'text-gray-700',    bg: 'bg-gray-100' },
+          { label: t.payments.collectedThisMonth, value: formatCurrency(collectedThisMonth, currentHotel?.currency), icon: Euro,         color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: t.payments.pendingCollection,   value: formatCurrency(pendingTotal, currentHotel?.currency),       icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50' },
+          { label: t.payments.overdue,              value: formatCurrency(overdueTotal, currentHotel?.currency),       icon: ShieldAlert,  color: 'text-red-600',     bg: 'bg-red-50' },
+          { label: t.payments.refunded,             value: formatCurrency(refundedTotal, currentHotel?.currency),      icon: TrendingDown, color: 'text-gray-700',    bg: 'bg-gray-100' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -383,7 +387,7 @@ export default function PaymentAutomationPage() {
           <div className="bg-white rounded-xl border border-gray-100 p-3">
             <div className="flex items-center gap-2 mb-2.5">
               <Filter className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-600">Filters</span>
+              <span className="text-sm font-medium text-gray-600">{t.payments.filters}</span>
               {hasFilters && (
                 <button
                   onClick={() => {
@@ -393,34 +397,34 @@ export default function PaymentAutomationPage() {
                   }}
                   className="ml-auto text-xs text-blue-600 hover:underline"
                 >
-                  Clear all
+                  {t.payments.clearAll}
                 </button>
               )}
             </div>
             <div className={`grid gap-2 ${tab === 'all' ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-5'}`}>
               {tab === 'all' && (
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field py-1.5 text-xs">
-                  <option value="">All Statuses</option>
+                  <option value="">{t.payments.allStatuses}</option>
                   {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
               )}
               <select value={filterType} onChange={e => setFilterType(e.target.value)} className="input-field py-1.5 text-xs">
-                <option value="">All Types</option>
-                <option value="deposit">Deposit</option>
-                <option value="pre_auth">Pre-auth</option>
-                <option value="charge">Charge</option>
-                <option value="refund">Refund</option>
-                <option value="adjustment">Adjustment</option>
+                <option value="">{t.payments.allTypes}</option>
+                <option value="deposit">{t.payments.deposit}</option>
+                <option value="pre_auth">{t.payments.preAuth}</option>
+                <option value="charge">{t.payments.charge}</option>
+                <option value="refund">{t.payments.refund}</option>
+                <option value="adjustment">{t.payments.adjustment}</option>
               </select>
               <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="input-field py-1.5 text-xs" title="Date from" />
               <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="input-field py-1.5 text-xs" title="Date to" />
-              <input type="number" value={filterAmtMin} onChange={e => setFilterAmtMin(e.target.value)} className="input-field py-1.5 text-xs" placeholder="Min amount" />
-              <input type="number" value={filterAmtMax} onChange={e => setFilterAmtMax(e.target.value)} className="input-field py-1.5 text-xs" placeholder="Max amount" />
+              <input type="number" value={filterAmtMin} onChange={e => setFilterAmtMin(e.target.value)} className="input-field py-1.5 text-xs" placeholder={t.payments.minAmount} />
+              <input type="number" value={filterAmtMax} onChange={e => setFilterAmtMax(e.target.value)} className="input-field py-1.5 text-xs" placeholder={t.payments.maxAmount} />
             </div>
           </div>
           {hasFilters && (() => {
             const displayed = statusTabMap[tab] ?? filtered;
-            return <p className="text-xs text-gray-400">{displayed.length} result{displayed.length !== 1 ? 's' : ''}</p>;
+            return <p className="text-xs text-gray-400">{displayed.length} {displayed.length !== 1 ? t.payments.results : t.payments.result}</p>;
           })()}
           <TransactionTable
             transactions={statusTabMap[tab] ?? filtered}
@@ -437,7 +441,7 @@ export default function PaymentAutomationPage() {
         <div className="space-y-4">
           <div className="flex justify-end">
             <button onClick={() => setShowRuleModal(true)} className="btn-primary flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Rule
+              <Plus className="w-4 h-4" /> {t.payments.addRule}
             </button>
           </div>
           <div className="space-y-3">
@@ -496,8 +500,8 @@ export default function PaymentAutomationPage() {
             {rules.length === 0 && (
               <div className="py-16 text-center text-gray-400">
                 <CreditCard className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                <p className="font-medium">No payment rules configured</p>
-                <p className="text-sm mt-1">Add rules to automate deposit collection and charges</p>
+                <p className="font-medium">{t.payments.noRules}</p>
+                <p className="text-sm mt-1">{t.payments.addRulesToAutomate}</p>
               </div>
             )}
           </div>
@@ -521,7 +525,7 @@ export default function PaymentAutomationPage() {
                       <div>
                         <p className="font-semibold text-gray-900">{tx.guest_name || '—'}</p>
                         <p className="text-xs text-red-600 mt-0.5">
-                          {tx.type} · Due {formatDate(tx.scheduled_date!)} · {daysLate} day{daysLate !== 1 ? 's' : ''} overdue
+                          {tx.type} · Due {formatDate(tx.scheduled_date!)} · {daysLate} {daysLate !== 1 ? t.payments.daysOverdue : t.payments.dayOverdue}
                         </p>
                         {tx.booking_source && <p className="text-xs text-gray-400">{tx.booking_source}</p>}
                       </div>
@@ -534,7 +538,7 @@ export default function PaymentAutomationPage() {
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-70"
                       >
                         {chargingId === tx.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                        Record as Paid
+                        {t.payments.recordAsPaid}
                       </button>
                     </div>
                   </div>
@@ -546,12 +550,12 @@ export default function PaymentAutomationPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-amber-500" />
-              <h3 className="font-semibold text-gray-700">Due in Next 30 Days ({scheduled.length})</h3>
+              <h3 className="font-semibold text-gray-700">{t.payments.dueInNext30Days} ({scheduled.length})</h3>
             </div>
             {scheduled.length === 0 ? (
               <div className="py-10 text-center text-gray-400 bg-white rounded-xl border border-gray-100">
                 <Clock className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                <p>No upcoming scheduled payments in the next 30 days</p>
+                <p>{t.payments.noUpcoming}</p>
               </div>
             ) : (
               [...scheduled]
@@ -574,7 +578,7 @@ export default function PaymentAutomationPage() {
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors disabled:opacity-70"
                     >
                       {chargingId === tx.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                      Charge Now
+                      {t.payments.chargeNow}
                     </button>
                   </div>
                 </div>
@@ -585,7 +589,7 @@ export default function PaymentAutomationPage() {
           {overdue.length === 0 && scheduled.length === 0 && (
             <div className="py-12 text-center text-gray-400">
               <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-300" />
-              <p className="font-medium">All clear — no overdue or upcoming payments</p>
+              <p className="font-medium">{t.payments.allClear}</p>
             </div>
           )}
         </div>
@@ -616,6 +620,15 @@ export default function PaymentAutomationPage() {
   );
 }
 
+interface TransactionTableProps {
+  transactions: Transaction[];
+  today: string;
+  chargingId: string | null;
+  onChargeNow: (tx: Transaction) => void;
+  onRefund: (tx: Transaction) => void;
+  currency?: string;
+}
+
 function TransactionTable({
   transactions,
   today,
@@ -623,19 +636,14 @@ function TransactionTable({
   onChargeNow,
   onRefund,
   currency,
-}: {
-  transactions: Transaction[];
-  today: string;
-  chargingId: string | null;
-  onChargeNow: (tx: Transaction) => void;
-  onRefund: (tx: Transaction) => void;
-  currency?: string;
-}) {
+}: TransactionTableProps) {
+  const { t } = useLanguage();
+
   if (transactions.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 py-16 text-center text-gray-400">
         <CreditCard className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-        <p>No transactions found</p>
+        <p>{t.payments.noTransactionsFound}</p>
       </div>
     );
   }
@@ -646,14 +654,14 @@ function TransactionTable({
         <table className="w-full">
           <thead className="border-b border-gray-100">
             <tr>
-              <th className="table-header">Guest</th>
-              <th className="table-header">Invoice</th>
-              <th className="table-header text-right">Amount</th>
-              <th className="table-header">Type</th>
-              <th className="table-header">Status</th>
-              <th className="table-header">Method</th>
-              <th className="table-header">Due / Processed</th>
-              <th className="table-header">Actions</th>
+              <th className="table-header">{t.payments.guest}</th>
+              <th className="table-header">{t.payments.invoice}</th>
+              <th className="table-header text-right">{t.payments.amount}</th>
+              <th className="table-header">{t.payments.type}</th>
+              <th className="table-header">{t.payments.status}</th>
+              <th className="table-header">{t.payments.method}</th>
+              <th className="table-header">{t.payments.dueProcessed}</th>
+              <th className="table-header">{t.payments.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -716,7 +724,7 @@ function TransactionTable({
                           }`}
                         >
                           {chargingId === tx.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                          Record as Paid
+                          {t.payments.recordAsPaid}
                         </button>
                       )}
                       {tx.status === 'captured' && (
@@ -725,7 +733,7 @@ function TransactionTable({
                           className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
                         >
                           <RotateCcw className="w-3 h-3" />
-                          Refund
+                          {t.payments.refund}
                         </button>
                       )}
                     </div>
