@@ -74,6 +74,8 @@ export const translations = {
       email: 'Email', phone: 'Phone', country: 'Country',
       addGuest: 'Add Guest', noGuests: 'No guests found',
       search: 'Search guests...', history: 'History', totalStays: 'Total Stays',
+      guestProfiles: 'Guest Profiles', guestCount: 'guests in CRM', autoTag: 'Auto-tag',
+      exportCsv: 'Export CSV', filters: 'Filters',
     },
     housekeeping: {
       title: 'Housekeeping', tasks: 'Tasks', assignTo: 'Assign To',
@@ -225,6 +227,8 @@ export const translations = {
       email: 'Имейл', phone: 'Телефон', country: 'Държава',
       addGuest: 'Добави гост', noGuests: 'Няма намерени гости',
       search: 'Търси гости...', history: 'История', totalStays: 'Общо престои',
+      guestProfiles: 'Профили на гостите', guestCount: 'гостите в CRM', autoTag: 'Автоматично етикетиране',
+      exportCsv: 'Експортирай CSV', filters: 'Филтри',
     },
     housekeeping: {
       title: 'Камериерки', tasks: 'Задачи', assignTo: 'Назначи на',

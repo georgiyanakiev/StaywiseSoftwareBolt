@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Search, Download, Filter, Tag, AlertTriangle, ChevronLeft, ChevronRight, X, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import EmptyState from '../../components/ui/EmptyState';
@@ -18,6 +19,7 @@ const ALL_AUTO_TAGS = ['Loyal', 'High Value', 'Lapsed', 'New'];
 
 export default function GuestListPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
@@ -76,18 +78,18 @@ export default function GuestListPage() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Guest Profiles</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{total} guests in CRM</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t.guests.guestProfiles}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{total} {t.guests.guestCount}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={handleAutoTag} disabled={applyingAutoTags} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50">
-            <Zap className="w-4 h-4" />{applyingAutoTags ? 'Tagging...' : 'Auto-tag'}
+            <Zap className="w-4 h-4" />{applyingAutoTags ? 'Tagging...' : t.guests.autoTag}
           </button>
           <button onClick={exportCSV} className="btn-secondary">
-            <Download className="w-4 h-4" />Export CSV
+            <Download className="w-4 h-4" />{t.guests.exportCsv}
           </button>
           <button onClick={() => { setEditGuest(null); setShowForm(true); }} className="btn-primary">
-            <Plus className="w-4 h-4" />Add Guest
+            <Plus className="w-4 h-4" />{t.guests.addGuest}
           </button>
         </div>
       </div>
@@ -101,7 +103,7 @@ export default function GuestListPage() {
             </div>
             <button onClick={() => setShowFilters(p => !p)} className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${showFilters || activeFilterCount > 0 ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
               <Filter className="w-4 h-4" />
-              Filters
+              {t.guests.filters}
               {activeFilterCount > 0 && <span className="bg-[#1e3a5f] text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">{activeFilterCount}</span>}
             </button>
             {activeFilterCount > 0 && (
