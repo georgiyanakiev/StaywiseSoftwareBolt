@@ -3,6 +3,7 @@ import { Globe, Copy, CheckCircle2, TrendingUp, Users, Calendar, Euro, Eye, XCir
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useTenantId } from '../../hooks/useTenantQuery';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -81,6 +82,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
 
 export default function BookingEngineAdminPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const tenantId = useTenantId();
   const { toast: showToast } = useToast();
   const [tab, setTab] = useState<Tab>('overview');
@@ -188,10 +190,10 @@ export default function BookingEngineAdminPage() {
   const currency = config?.currency ?? form.currency ?? 'EUR';
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'overview',  label: 'Overview' },
-    { id: 'config',    label: 'Configuration' },
-    { id: 'bookings',  label: `Bookings (${bookings.length})` },
-    { id: 'embed',     label: 'Embed Code' },
+    { id: 'overview',  label: t.bookingEngine.overview },
+    { id: 'config',    label: t.bookingEngine.configuration },
+    { id: 'bookings',  label: `${t.bookingEngine.bookings} (${bookings.length})` },
+    { id: 'embed',     label: t.bookingEngine.embedCode },
   ];
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
@@ -202,9 +204,9 @@ export default function BookingEngineAdminPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
             <Globe className="w-6 h-6 text-blue-600" />
-            Booking Engine
+            {t.bookingEngine.title}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Commission-free direct bookings from your website</p>
+          <p className="text-gray-500 text-sm mt-1">{t.bookingEngine.subtitle}</p>
         </div>
         <a
           href={`/booking-engine/widget?hotel=${currentHotel?.id}`}
@@ -213,16 +215,16 @@ export default function BookingEngineAdminPage() {
           className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
           <Eye className="w-4 h-4" />
-          Preview Widget
+          {t.bookingEngine.previewWidget}
         </a>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Bookings This Month', value: confirmedThisMonth.length,             icon: Calendar,  color: 'text-blue-600' },
-          { label: 'Revenue This Month',  value: formatCurrency(monthRevenue, currency), icon: Euro, color: 'text-emerald-600' },
-          { label: 'Avg Stay Length',     value: `${avgStay.toFixed(1)} nights`, icon: TrendingUp, color: 'text-amber-600' },
-          { label: 'Avg Booking Value',   value: formatCurrency(avgValue, currency),     icon: Users,      color: 'text-gray-700' },
+          { label: t.bookingEngine.bookingsThisMonth, value: confirmedThisMonth.length,             icon: Calendar,  color: 'text-blue-600' },
+          { label: t.bookingEngine.revenueThisMonth,  value: formatCurrency(monthRevenue, currency), icon: Euro, color: 'text-emerald-600' },
+          { label: t.bookingEngine.avgStayLength,     value: `${avgStay.toFixed(1)} ${t.bookingEngine.nights}`, icon: TrendingUp, color: 'text-amber-600' },
+          { label: t.bookingEngine.avgBookingValue,   value: formatCurrency(avgValue, currency),     icon: Users,      color: 'text-gray-700' },
         ].map(stat => (
           <div key={stat.label} className="bg-white rounded-xl border border-gray-100 p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -251,7 +253,7 @@ export default function BookingEngineAdminPage() {
       {tab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <h3 className="font-semibold text-gray-900 mb-4">Recent Direct Bookings</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">{t.bookingEngine.recentDirectBookings}</h3>
             {bookings.slice(0, 6).map(b => (
               <div key={b.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
                 <div>
@@ -266,21 +268,21 @@ export default function BookingEngineAdminPage() {
                 </div>
               </div>
             ))}
-            {bookings.length === 0 && <p className="text-gray-400 text-sm text-center py-6">No direct bookings yet</p>}
+            {bookings.length === 0 && <p className="text-gray-400 text-sm text-center py-6">{t.bookingEngine.noDirectBookings}</p>}
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <h3 className="font-semibold text-gray-900 mb-4">Booking Engine Status</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">{t.bookingEngine.bookingEngineStatus}</h3>
             <div className="space-y-3">
               {[
-                { label: 'Widget Status',    value: config?.active ? 'Active' : 'Inactive', badge: true, active: config?.active },
-                { label: 'Currency',         value: config?.currency ?? 'EUR' },
-                { label: 'Check-in Time',    value: config?.check_in_time ?? '15:00' },
-                { label: 'Check-out Time',   value: config?.check_out_time ?? '11:00' },
-                { label: 'Stripe Payments',  value: config?.stripe_enabled ? 'Enabled' : 'Disabled', badge: true, active: config?.stripe_enabled },
-                { label: 'Payment Mode',     value: config?.stripe_enabled ? (config.payment_mode === 'full' ? 'Full amount' : 'Deposit only') : '—' },
-                { label: 'Deposit Required', value: config?.require_deposit ? `Yes — ${config.deposit_percentage ?? 30}%` : 'No' },
-                { label: 'Advance Booking',  value: `${config?.min_advance_days ?? 0}–${config?.max_advance_days ?? 365} days` },
+                { label: t.bookingEngine.widgetStatus,    value: config?.active ? t.bookingEngine.active : t.bookingEngine.inactive, badge: true, active: config?.active },
+                { label: t.bookingEngine.currency,         value: config?.currency ?? 'EUR' },
+                { label: t.bookingEngine.checkInTime,    value: config?.check_in_time ?? '15:00' },
+                { label: t.bookingEngine.checkOutTime,   value: config?.check_out_time ?? '11:00' },
+                { label: t.bookingEngine.stripePayments,  value: config?.stripe_enabled ? t.bookingEngine.enabled : t.bookingEngine.disabled, badge: true, active: config?.stripe_enabled },
+                { label: t.bookingEngine.paymentMode,     value: config?.stripe_enabled ? (config.payment_mode === 'full' ? t.bookingEngine.fullAmount : t.bookingEngine.depositOnly) : '—' },
+                { label: t.bookingEngine.depositRequired, value: config?.require_deposit ? `Yes — ${config.deposit_percentage ?? 30}%` : 'No' },
+                { label: t.bookingEngine.advanceBooking,  value: `${config?.min_advance_days ?? 0}–${config?.max_advance_days ?? 365} ${t.bookingEngine.days}` },
               ].map(item => (
                 <div key={item.label} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-sm text-gray-700">{item.label}</span>
@@ -300,10 +302,10 @@ export default function BookingEngineAdminPage() {
 
       {tab === 'config' && (
         <div className="bg-white rounded-xl border border-gray-100 p-6 max-w-2xl">
-          <h3 className="font-semibold text-gray-900 mb-5">Widget Configuration</h3>
+          <h3 className="font-semibold text-gray-900 mb-5">{t.bookingEngine.widgetConfiguration}</h3>
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Welcome Message</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.welcomeMessage}</label>
               <input
                 type="text"
                 value={form.welcome_message ?? ''}
@@ -313,7 +315,7 @@ export default function BookingEngineAdminPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Cancellation Policy</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.cancellationPolicy}</label>
               <textarea
                 value={form.cancellation_policy ?? ''}
                 onChange={e => setForm(f => ({ ...f, cancellation_policy: e.target.value }))}
@@ -323,24 +325,24 @@ export default function BookingEngineAdminPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Check-in Time</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.checkInTime}</label>
                 <input type="time" value={form.check_in_time ?? '15:00'} onChange={e => setForm(f => ({ ...f, check_in_time: e.target.value }))} className="input-field" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Check-out Time</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.checkOutTime}</label>
                 <input type="time" value={form.check_out_time ?? '11:00'} onChange={e => setForm(f => ({ ...f, check_out_time: e.target.value }))} className="input-field" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Currency</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.currency}</label>
                 <select value={form.currency ?? 'EUR'} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))} className="input-field">
                   {['EUR', 'USD', 'GBP', 'BGN', 'CHF', 'CAD', 'AUD'].map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Brand Color</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.brandColor}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -360,30 +362,30 @@ export default function BookingEngineAdminPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Min Advance Days</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.minAdvanceDays}</label>
                 <input
                   type="number" min="0" max="365"
                   value={form.min_advance_days ?? 0}
                   onChange={e => setForm(f => ({ ...f, min_advance_days: Number(e.target.value) }))}
                   className="input-field"
                 />
-                <p className="text-xs text-gray-400 mt-1">How many days in advance bookings must be made</p>
+                <p className="text-xs text-gray-400 mt-1">{t.bookingEngine.howManyDaysAdvance}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Advance Days</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.maxAdvanceDays}</label>
                 <input
                   type="number" min="1" max="730"
                   value={form.max_advance_days ?? 365}
                   onChange={e => setForm(f => ({ ...f, max_advance_days: Number(e.target.value) }))}
                   className="input-field"
                 />
-                <p className="text-xs text-gray-400 mt-1">How far in advance bookings can be made</p>
+                <p className="text-xs text-gray-400 mt-1">{t.bookingEngine.howFarAdvance}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Deposit Percentage</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.depositPercentage}</label>
                 <div className="relative">
                   <input
                     type="number" min="0" max="100" step="5"
@@ -399,9 +401,9 @@ export default function BookingEngineAdminPage() {
 
             <div className="space-y-3 pt-1">
               {[
-                { key: 'active',           label: 'Widget is active (guests can book)' },
-                { key: 'show_room_photos', label: 'Show room photos in the widget' },
-                { key: 'require_deposit',  label: 'Require deposit at time of booking' },
+                { key: 'active',           label: t.bookingEngine.widgetIsActive },
+                { key: 'show_room_photos', label: t.bookingEngine.showRoomPhotos },
+                { key: 'require_deposit',  label: t.bookingEngine.requireDeposit },
               ].map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-3 cursor-pointer">
                   <input
@@ -418,7 +420,7 @@ export default function BookingEngineAdminPage() {
             <div className="border-t border-gray-200 pt-5 mt-5">
               <div className="flex items-center gap-2 mb-4">
                 <CreditCard className="w-5 h-5 text-[#1e3a5f]" />
-                <h4 className="font-semibold text-gray-900">Stripe Payment Processing</h4>
+                <h4 className="font-semibold text-gray-900">{t.bookingEngine.stripePaymentProcessing}</h4>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
@@ -430,8 +432,8 @@ export default function BookingEngineAdminPage() {
                     className="w-4 h-4 rounded border-gray-300 text-[#1e3a5f]"
                   />
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Enable Stripe payments on booking</span>
-                    <p className="text-xs text-gray-500 mt-0.5">Guests pay securely via Stripe Checkout when booking</p>
+                    <span className="text-sm font-medium text-gray-700">{t.bookingEngine.enableStripePayments}</span>
+                    <p className="text-xs text-gray-500 mt-0.5">{t.bookingEngine.guestsPaySecurely}</p>
                   </div>
                 </label>
               </div>
@@ -439,19 +441,19 @@ export default function BookingEngineAdminPage() {
               {form.stripe_enabled && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Payment Mode</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.bookingEngine.paymentMode}</label>
                     <select
                       value={form.payment_mode ?? 'deposit'}
                       onChange={e => setForm(f => ({ ...f, payment_mode: e.target.value }))}
                       className="input-field"
                     >
-                      <option value="deposit">Charge deposit only ({form.deposit_percentage ?? 30}% of total)</option>
-                      <option value="full">Charge full amount at booking</option>
+                      <option value="deposit">{t.bookingEngine.chargeDepositOnly} ({form.deposit_percentage ?? 30}% of total)</option>
+                      <option value="full">{t.bookingEngine.chargeFull}</option>
                     </select>
                     <p className="text-xs text-gray-400 mt-1">
                       {form.payment_mode === 'full'
-                        ? 'The full booking total will be charged at time of booking.'
-                        : `A ${form.deposit_percentage ?? 30}% deposit will be charged. Balance due at check-in.`
+                        ? t.bookingEngine.fullBookingTotal
+                        : t.bookingEngine.depositWillBeCharged
                       }
                     </p>
                   </div>
@@ -459,12 +461,12 @@ export default function BookingEngineAdminPage() {
                   <div className="flex items-start gap-3 bg-blue-50 rounded-lg p-3 border border-blue-100">
                     <Shield className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                     <div className="text-xs text-blue-700 leading-relaxed">
-                      <p className="font-medium mb-1">How Stripe payment works:</p>
+                      <p className="font-medium mb-1">{t.bookingEngine.howStripeWorks}</p>
                       <ul className="space-y-0.5 text-blue-600">
-                        <li>1. Guest fills in details and clicks "Pay Securely"</li>
-                        <li>2. Redirected to Stripe's hosted checkout page</li>
-                        <li>3. After payment, booking is auto-confirmed</li>
-                        <li>4. Confirmation email sent to guest</li>
+                        <li>{t.bookingEngine.stripeStep1}</li>
+                        <li>{t.bookingEngine.stripeStep2}</li>
+                        <li>{t.bookingEngine.stripeStep3}</li>
+                        <li>{t.bookingEngine.stripeStep4}</li>
                       </ul>
                     </div>
                   </div>
@@ -479,7 +481,7 @@ export default function BookingEngineAdminPage() {
             className="btn-primary mt-6 flex items-center gap-2"
           >
             {saving && <RefreshCw className="w-4 h-4 animate-spin" />}
-            Save Configuration
+            {t.bookingEngine.saveConfiguration}
           </button>
         </div>
       )}
@@ -490,17 +492,17 @@ export default function BookingEngineAdminPage() {
             <table className="w-full">
               <thead className="border-b border-gray-100">
                 <tr>
-                  <th className="table-header">Confirmation</th>
-                  <th className="table-header">Guest</th>
-                  <th className="table-header">Room Type</th>
-                  <th className="table-header">Check-in</th>
-                  <th className="table-header">Check-out</th>
-                  <th className="table-header text-center">Nights</th>
-                  <th className="table-header text-right">Total</th>
-                  <th className="table-header text-right">Deposit Paid</th>
-                  <th className="table-header">Status</th>
-                  <th className="table-header">Payment</th>
-                  <th className="table-header">Actions</th>
+                  <th className="table-header">{t.bookingEngine.confirmation}</th>
+                  <th className="table-header">{t.bookingEngine.guest}</th>
+                  <th className="table-header">{t.bookingEngine.roomType}</th>
+                  <th className="table-header">{t.bookingEngine.checkIn}</th>
+                  <th className="table-header">{t.bookingEngine.checkOut}</th>
+                  <th className="table-header text-center">{t.bookingEngine.nights}</th>
+                  <th className="table-header text-right">{t.bookingEngine.total}</th>
+                  <th className="table-header text-right">{t.bookingEngine.depositPaid}</th>
+                  <th className="table-header">{t.bookingEngine.status}</th>
+                  <th className="table-header">{t.bookingEngine.payment}</th>
+                  <th className="table-header">{t.bookingEngine.actions}</th>
                 </tr>
               </thead>
               <tbody>
@@ -552,7 +554,7 @@ export default function BookingEngineAdminPage() {
                               onClick={() => updateStatus(b.id, 'cancelled')}
                               className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-medium"
                             >
-                              <XCircle className="w-3.5 h-3.5" /> Cancel
+                              <XCircle className="w-3.5 h-3.5" /> {t.bookingEngine.cancel}
                             </button>
                           )}
                         </div>
@@ -564,7 +566,7 @@ export default function BookingEngineAdminPage() {
                   <tr>
                     <td colSpan={11} className="py-12 text-center text-gray-400">
                       <Info className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                      No direct bookings yet
+                      {t.bookingEngine.noDirectBookings}
                     </td>
                   </tr>
                 )}
@@ -580,9 +582,9 @@ export default function BookingEngineAdminPage() {
             <div key={type} className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h4 className="font-semibold text-gray-900">{type === 'iframe' ? 'iFrame Embed' : 'Script Tag'}</h4>
+                  <h4 className="font-semibold text-gray-900">{type === 'iframe' ? t.bookingEngine.iFrameEmbed : t.bookingEngine.scriptTag}</h4>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {type === 'iframe' ? 'Recommended — works on any website' : 'For advanced integrations'}
+                    {type === 'iframe' ? t.bookingEngine.recommended : t.bookingEngine.forAdvanced}
                   </p>
                 </div>
                 <button
@@ -590,7 +592,7 @@ export default function BookingEngineAdminPage() {
                   className="flex items-center gap-1.5 text-sm text-[#1e3a5f] hover:text-[#172e4c] font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
                 >
                   {copiedType === type ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                  {copiedType === type ? 'Copied!' : 'Copy'}
+                  {copiedType === type ? t.bookingEngine.copied : t.bookingEngine.copy}
                 </button>
               </div>
               <pre className="bg-gray-50 rounded-lg p-4 text-xs text-gray-600 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap break-all">
@@ -604,8 +606,7 @@ export default function BookingEngineAdminPage() {
           <div className="bg-blue-50 rounded-xl border border-blue-100 p-4 flex items-start gap-3">
             <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-blue-700 leading-relaxed">
-              Paste either snippet into your hotel website's HTML where you want the booking widget to appear.
-              The iFrame embed works on any website without requiring any technical knowledge.
+              {t.bookingEngine.pasteSnippet}
             </p>
           </div>
         </div>
