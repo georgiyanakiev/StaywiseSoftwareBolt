@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Wifi, WifiOff, AlertCircle, RefreshCw, Plug, PlugZap, Settings, Percent, FlaskConical } from 'lucide-react';
 import { formatDateTime } from '../../lib/utils';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { getChannelIcon } from '../../utils/channelCatalog';
 
 export interface Channel {
@@ -27,6 +28,7 @@ interface Props {
 
 export default function ChannelCard({ channel, onToggle, onSync, onSettings, syncing }: Props) {
   const [toggling, setToggling] = useState(false);
+  const { t } = useLanguage();
   const icon = getChannelIcon(channel.type);
   const isConnected = channel.status === 'connected';
   const isError = channel.status === 'error';
@@ -55,7 +57,7 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
               {isError && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
               {!isConnected && !isError && <WifiOff className="w-3.5 h-3.5 text-gray-400" />}
               <span className={`text-xs font-medium ${isConnected ? 'text-emerald-600' : isError ? 'text-red-600' : 'text-gray-400'}`}>
-                {isConnected ? 'Connected' : isError ? 'Error' : 'Disconnected'}
+                {isConnected ? t.channelManager.connected : isError ? t.channelManager.error : t.channelManager.disconnected}
               </span>
             </div>
           </div>
@@ -65,7 +67,7 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
           <button
             onClick={() => onSettings(channel)}
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Channel settings"
+            title={t.channelManager.channelSettings}
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
@@ -75,19 +77,19 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
       {isDemo && (
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
           <FlaskConical className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-          <span className="text-xs font-medium text-amber-700">Demo — no API credentials</span>
+          <span className="text-xs font-medium text-amber-700">{t.channelManager.demoNoCredentials}</span>
         </div>
       )}
 
       <div className="flex items-center justify-between text-xs text-gray-500">
         <div className="flex items-center gap-1">
           <Percent className="w-3 h-3" />
-          <span>{channel.commission_pct ?? 0}% commission</span>
+          <span>{channel.commission_pct ?? 0}% {t.channelManager.commission}</span>
         </div>
         {channel.last_sync ? (
-          <span>Synced {formatDateTime(channel.last_sync)}</span>
+          <span>{t.channelManager.synced} {formatDateTime(channel.last_sync)}</span>
         ) : (
-          <span>Never synced</span>
+          <span>{t.channelManager.neverSynced}</span>
         )}
       </div>
 
@@ -108,7 +110,7 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
           ) : (
             <PlugZap className="w-3.5 h-3.5" />
           )}
-          {isConnected ? 'Disconnect' : 'Connect'}
+          {isConnected ? t.channelManager.disconnect : t.channelManager.connect}
         </button>
         {isConnected && (
           <button
@@ -117,7 +119,7 @@ export default function ChannelCard({ channel, onToggle, onSync, onSettings, syn
             className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-            Sync
+            {t.channelManager.sync}
           </button>
         )}
       </div>
