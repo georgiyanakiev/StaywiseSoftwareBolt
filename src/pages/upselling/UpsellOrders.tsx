@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -18,6 +19,7 @@ interface PopularItem {
 
 export default function UpsellOrders() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [orders, setOrders] = useState<UpsellOrder[]>([]);
   const [items, setItems] = useState<UpsellItem[]>([]);
@@ -94,30 +96,30 @@ export default function UpsellOrders() {
             <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
               <Euro className="w-5 h-5 text-emerald-600" />
             </div>
-            <p className="text-sm text-gray-500">Upsell Revenue (this month)</p>
+            <p className="text-sm text-gray-500">{t.upselling.upsellRevenue}</p>
           </div>
           <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(monthRevenue)}</p>
-          <p className="text-xs text-gray-400 mt-1">{monthOrders.length} order{monthOrders.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-gray-400 mt-1">{monthOrders.length} {monthOrders.length !== 1 ? t.upselling.orders : t.upselling.order}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-blue-600" />
             </div>
-            <p className="text-sm text-gray-500">Avg Upsell per Order</p>
+            <p className="text-sm text-gray-500">{t.upselling.avgUpsellPerOrder}</p>
           </div>
           <p className="text-2xl font-bold text-gray-900 mt-2">{formatCurrency(avgUpsellValue)}</p>
-          <p className="text-xs text-gray-400 mt-1">based on this month</p>
+          <p className="text-xs text-gray-400 mt-1">{t.upselling.basedOnThisMonth}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center">
               <BarChart2 className="w-5 h-5 text-amber-600" />
             </div>
-            <p className="text-sm text-gray-500">Most Popular</p>
+            <p className="text-sm text-gray-500">{t.upselling.mostPopular}</p>
           </div>
           {popularItems.length === 0 ? (
-            <p className="text-xs text-gray-400">No data yet</p>
+            <p className="text-xs text-gray-400">{t.upselling.noDataYet}</p>
           ) : (
             <div className="space-y-1">
               {popularItems.map((p, i) => (
@@ -140,7 +142,7 @@ export default function UpsellOrders() {
           onChange={e => setStatusFilter(e.target.value as OrderStatus | '')}
           className="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
         >
-          <option value="">All statuses</option>
+          <option value="">{t.upselling.allStatuses}</option>
           {Object.entries(STATUS_CONFIG).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
         </select>
         <select
@@ -148,7 +150,7 @@ export default function UpsellOrders() {
           onChange={e => setCategoryFilter(e.target.value)}
           className="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96] bg-white"
         >
-          <option value="">All categories</option>
+          <option value="">{t.upselling.allCategories}</option>
           {Object.entries(CATEGORY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
         <input
@@ -157,7 +159,7 @@ export default function UpsellOrders() {
           onChange={e => setDateFrom(e.target.value)}
           className="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6b96]"
         />
-        <span className="text-gray-400 text-sm">to</span>
+        <span className="text-gray-400 text-sm">{t.upselling.to}</span>
         <input
           type="date"
           value={dateTo}
@@ -169,32 +171,32 @@ export default function UpsellOrders() {
             onClick={() => { setStatusFilter(''); setCategoryFilter(''); setDateFrom(''); setDateTo(''); }}
             className="text-sm text-blue-600 hover:text-blue-800"
           >
-            Clear filters
+            {t.upselling.clearFilters}
           </button>
         )}
         <button onClick={load} className="ml-auto p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
           <RefreshCw className="w-4 h-4" />
         </button>
-        <span className="text-xs text-gray-500">{filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-gray-500">{filteredOrders.length} {filteredOrders.length !== 1 ? t.upselling.orders : t.upselling.order}</span>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
         {filteredOrders.length === 0 ? (
           <div className="py-16 text-center text-gray-400">
-            <p className="text-sm">No orders match your filters</p>
+            <p className="text-sm">{t.upselling.noOrdersMatch}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="table-header">Guest</th>
-                <th className="table-header">Item</th>
-                <th className="table-header">Qty</th>
-                <th className="table-header">Price</th>
-                <th className="table-header">Status</th>
-                <th className="table-header">Ordered</th>
-                <th className="table-header">Notes</th>
-                <th className="table-header">Actions</th>
+                <th className="table-header">{t.upselling.guest}</th>
+                <th className="table-header">{t.upselling.item}</th>
+                <th className="table-header">{t.upselling.qty}</th>
+                <th className="table-header">{t.upselling.price}</th>
+                <th className="table-header">{t.upselling.status}</th>
+                <th className="table-header">{t.upselling.ordered}</th>
+                <th className="table-header">{t.upselling.notes}</th>
+                <th className="table-header">{t.upselling.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

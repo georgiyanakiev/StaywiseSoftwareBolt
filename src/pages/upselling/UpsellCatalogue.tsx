@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, ChevronUp, ChevronDown, ImageOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -13,6 +14,7 @@ const FALLBACK_IMAGE = 'https://images.pexels.com/photos/271624/pexels-photo-271
 
 export default function UpsellCatalogue() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [items, setItems] = useState<UpsellItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,20 +71,20 @@ export default function UpsellCatalogue() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">{items.length} items · {activeCount} active</p>
+          <p className="text-sm text-gray-500">{items.length} {t.upselling.items} · {activeCount} {t.upselling.active}</p>
         </div>
         <button onClick={() => setAddOpen(true)} className="btn-primary flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" />
-          Add Item
+          {t.upselling.addItem}
         </button>
       </div>
 
       {items.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
-          <p className="text-sm font-medium text-gray-700 mb-1">No upsell items yet</p>
-          <p className="text-sm text-gray-400 mb-4">Add items to offer guests room upgrades, breakfast, transfers and more</p>
+          <p className="text-sm font-medium text-gray-700 mb-1">{t.upselling.noUpsellItemsYet}</p>
+          <p className="text-sm text-gray-400 mb-4">{t.upselling.addItemsDesc}</p>
           <button onClick={() => setAddOpen(true)} className="btn-primary text-sm flex items-center gap-2 mx-auto">
-            <Plus className="w-4 h-4" /> Add your first item
+            <Plus className="w-4 h-4" /> {t.upselling.addYourFirstItem}
           </button>
         </div>
       ) : (
@@ -153,8 +155,8 @@ export default function UpsellCatalogue() {
                     title={item.active ? 'Deactivate' : 'Activate'}
                   >
                     {item.active
-                      ? <><ToggleRight className="w-5 h-5 text-emerald-500" /><span className="text-emerald-600">Active</span></>
-                      : <><ToggleLeft className="w-5 h-5 text-gray-400" /><span className="text-gray-400">Inactive</span></>
+                      ? <><ToggleRight className="w-5 h-5 text-emerald-500" /><span className="text-emerald-600">{t.upselling.active}</span></>
+                      : <><ToggleLeft className="w-5 h-5 text-gray-400" /><span className="text-gray-400">{t.upselling.inactive}</span></>
                     }
                   </button>
                 </div>
@@ -180,9 +182,9 @@ export default function UpsellCatalogue() {
       />
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete Upsell Item"
-        message={`Delete "${deleteTarget?.name}"? Any existing orders referencing this item will lose their link.`}
-        confirmLabel="Delete"
+        title={t.upselling.deleteUpsellItem}
+        message={t.upselling.deleteItemDesc.replace('{name}', deleteTarget?.name || '')}
+        confirmLabel={t.common.delete}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

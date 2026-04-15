@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { ShoppingBag, ClipboardList } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import UpsellCatalogue from './UpsellCatalogue';
 import UpsellOrders from './UpsellOrders';
 
 type Tab = 'catalogue' | 'orders';
 
 export default function UpsellPage() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('catalogue');
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
-    { key: 'catalogue', label: 'Upsell Catalogue', icon: ShoppingBag },
-    { key: 'orders', label: 'Orders & Revenue', icon: ClipboardList },
+    { key: 'catalogue', label: t.upselling.upsellCatalogue, icon: ShoppingBag },
+    { key: 'orders', label: t.upselling.ordersRevenue, icon: ClipboardList },
   ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Upselling Engine</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Offer add-ons and upgrades to guests at booking and check-in</p>
+        <h1 className="text-2xl font-semibold text-gray-900">{t.upselling.title}</h1>
+        <p className="text-sm text-gray-500 mt-0.5">{t.upselling.subtitle}</p>
       </div>
 
       <div className="border-b border-gray-200">
