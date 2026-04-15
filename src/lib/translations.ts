@@ -100,6 +100,9 @@ export const translations = {
       assignTo: 'Assign To', priority: 'Priority', status: 'Status',
       open: 'Open', inProgress: 'In Progress', resolved: 'Resolved',
       noIssues: 'No issues reported',
+      trackIssues: 'Track room issues, repairs, and vendor work orders',
+      openIssues: 'Open Issues', inProgressIssues: 'In Progress', resolvedThisMonth: 'Resolved This Month',
+      totalRepairCost: 'Total Repair Cost', filters: 'Filters', board: 'Board', list: 'List',
     },
     frontDesk: {
       title: 'Front Desk', arrivals: 'Arrivals', departures: 'Departures',
@@ -263,6 +266,9 @@ export const translations = {
       assignTo: 'Назначи на', priority: 'Приоритет', status: 'Статус',
       open: 'Отворен', inProgress: 'В процес', resolved: 'Решен',
       noIssues: 'Няма докладвани проблеми',
+      trackIssues: 'Проследяване на проблеми със стаи, ремонти и работни поръчки от доставчици',
+      openIssues: 'Отворени проблеми', inProgressIssues: 'В процес', resolvedThisMonth: 'Решени този месец',
+      totalRepairCost: 'Обща цена на ремонта', filters: 'Филтри', board: 'Таблица', list: 'Списък',
     },
     frontDesk: {
       title: 'Рецепция', arrivals: 'Пристигащи', departures: 'Заминаващи',

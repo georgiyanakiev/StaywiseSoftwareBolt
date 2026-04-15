@@ -28,6 +28,7 @@ import {
   Hammer,
 } from 'lucide-react';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { useTenantId } from '../../hooks/useTenantQuery';
 import { getStatusColor, getStatusLabel, formatDate, formatDateTime } from '../../lib/utils';
@@ -105,6 +106,7 @@ type ViewTab = 'list' | 'kanban';
 
 export default function MaintenancePage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const tenantId = useTenantId();
   const { toast } = useToast();
 
@@ -296,8 +298,8 @@ export default function MaintenancePage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Maintenance</h1>
-          <p className="text-sm text-gray-500 mt-1">Track room issues, repairs, and vendor work orders</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t.maintenance.title}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t.maintenance.trackIssues}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={fetchAll} className="btn-secondary p-2.5" title="Refresh">
@@ -305,7 +307,7 @@ export default function MaintenancePage() {
           </button>
           <button onClick={openCreate} className="btn-primary">
             <Plus className="w-4 h-4" />
-            Report Issue
+            {t.maintenance.reportIssue}
           </button>
         </div>
       </div>
@@ -314,7 +316,7 @@ export default function MaintenancePage() {
         <div className="stat-card">
           <div className="flex items-center gap-2 mb-1">
             <Wrench className="w-4 h-4 text-amber-500" />
-            <span className="text-xs font-medium text-gray-500">Open Issues</span>
+            <span className="text-xs font-medium text-gray-500">{t.maintenance.openIssues}</span>
           </div>
           <span className="text-2xl font-bold text-gray-900">{stats.open}</span>
           {stats.urgent > 0 && (
@@ -324,21 +326,21 @@ export default function MaintenancePage() {
         <div className="stat-card">
           <div className="flex items-center gap-2 mb-1">
             <Hammer className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-medium text-gray-500">In Progress</span>
+            <span className="text-xs font-medium text-gray-500">{t.maintenance.inProgressIssues}</span>
           </div>
           <span className="text-2xl font-bold text-gray-900">{stats.inProgress}</span>
         </div>
         <div className="stat-card">
           <div className="flex items-center gap-2 mb-1">
             <ClipboardCheck className="w-4 h-4 text-emerald-500" />
-            <span className="text-xs font-medium text-gray-500">Resolved This Month</span>
+            <span className="text-xs font-medium text-gray-500">{t.maintenance.resolvedThisMonth}</span>
           </div>
           <span className="text-2xl font-bold text-gray-900">{stats.completedMonth}</span>
         </div>
         <div className="stat-card">
           <div className="flex items-center gap-2 mb-1">
             <Euro className="w-4 h-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-500">Total Repair Cost</span>
+            <span className="text-xs font-medium text-gray-500">{t.maintenance.totalRepairCost}</span>
           </div>
           <span className="text-2xl font-bold text-gray-900">{currentHotel.currency} {stats.totalCost.toFixed(0)}</span>
         </div>
@@ -365,7 +367,7 @@ export default function MaintenancePage() {
           className={`btn-secondary relative ${activeFiltersCount > 0 ? 'ring-2 ring-brand-300' : ''}`}
         >
           <Filter className="w-4 h-4" />
-          Filters
+          {t.maintenance.filters}
           {activeFiltersCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-brand-600 text-white text-[10px] flex items-center justify-center font-bold">
               {activeFiltersCount}
@@ -377,13 +379,13 @@ export default function MaintenancePage() {
             onClick={() => setViewTab('kanban')}
             className={`px-4 py-2 text-sm font-medium transition-colors ${viewTab === 'kanban' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
           >
-            Board
+            {t.maintenance.board}
           </button>
           <button
             onClick={() => setViewTab('list')}
             className={`px-4 py-2 text-sm font-medium transition-colors ${viewTab === 'list' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
           >
-            List
+            {t.maintenance.list}
           </button>
         </div>
       </div>
