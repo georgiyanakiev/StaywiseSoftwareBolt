@@ -40,7 +40,7 @@ export const translations = {
       av: 'Av.', med: 'Med.', high: 'High', low: 'Low', full: 'Full',
     },
     reservations: {
-      title: 'Reservations', newReservation: 'New Reservation',
+      title: 'Reservations', subtitle: 'Manage bookings and guest stays', newReservation: 'New Reservation',
       confirmationCode: 'Confirmation Code', guest: 'Guest',
       room: 'Room', checkIn: 'Check In', checkOut: 'Check Out',
       status: 'Status', amount: 'Amount', paymentStatus: 'Payment Status',
@@ -187,7 +187,7 @@ export const translations = {
       av: 'Сред.', med: 'Среди.', high: 'Висок', low: 'Нисък', full: 'Пълна',
     },
     reservations: {
-      title: 'Резервации', newReservation: 'Нова резервация',
+      title: 'Резервации', subtitle: 'Управление на резервации и престой на гостите', newReservation: 'Нова резервация',
       confirmationCode: 'Код за потвърждение', guest: 'Гост',
       room: 'Стая', checkIn: 'Настаняване', checkOut: 'Напускане',
       status: 'Статус', amount: 'Сума', paymentStatus: 'Статус плащане',
