@@ -1,5 +1,6 @@
 import { Download } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useLanguage } from '../../contexts/LanguageContext';
 import type { LeadTimeBucket, BookingSourcePie, DailyCancellationRate, AvgStayTrend, NationalityRow } from './types';
 
 const TOOLTIP_STYLE = { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' };
@@ -15,19 +16,20 @@ interface Props {
 }
 
 export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, cancellationTrend, avgStayTrend, nationalityBreakdown, onExport }: Props) {
+  const { t } = useLanguage();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Booking Analysis</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t.reports.bookingAnalysis}</h2>
         <button onClick={onExport} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-          <Download className="w-4 h-4" /> Export CSV
+          <Download className="w-4 h-4" /> {t.reports.exportCsv}
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Booking Lead Time Distribution</h3>
-          <p className="text-xs text-gray-500 mb-4">Days between booking and check-in</p>
+          <h3 className="text-base font-semibold text-gray-900 mb-1">{t.reports.bookingLeadTimeDistribution}</h3>
+          <p className="text-xs text-gray-500 mb-4">{t.reports.daysBetweenBookingAndCheckin}</p>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={leadTimeBuckets} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
@@ -42,7 +44,7 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-4">Bookings by Source</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.bookingsBySource}</h3>
           {bookingSourcePie.length === 0 ? (
             <div className="flex items-center justify-center h-56">
               <div className="text-center">
@@ -78,8 +80,8 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Cancellation Rate Trend</h3>
-          <p className="text-xs text-gray-400 mb-4">Current year — monthly cancellation rate (%)</p>
+          <h3 className="text-base font-semibold text-gray-900 mb-1">{t.reports.cancellationRateTrend}</h3>
+          <p className="text-xs text-gray-400 mb-4">{t.reports.currentYear} — {t.reports.monthlyCancellationRate}</p>
           {cancellationTrend.length === 0 ? (
             <div className="flex items-center justify-center h-56">
               <div className="text-center">
@@ -103,8 +105,8 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Average Stay Length</h3>
-          <p className="text-xs text-gray-400 mb-4">Current year — average nights per booking by month</p>
+          <h3 className="text-base font-semibold text-gray-900 mb-1">{t.reports.averageStayLength}</h3>
+          <p className="text-xs text-gray-400 mb-4">{t.reports.currentYear} — {t.reports.avgNightsPerBooking}</p>
           {avgStayTrend.length === 0 ? (
             <div className="flex items-center justify-center h-56">
               <div className="text-center">
@@ -130,7 +132,7 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
 
       {nationalityBreakdown.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-4">Guest Nationality Breakdown</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.guestNationalityBreakdown}</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
