@@ -546,41 +546,41 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
 
   const ROW2_GROUPS: NavItem[][] = [
     [
-      { to: '/',             label: t.nav.dashboard,    icon: LayoutDashboard },
-      { to: '/front-desk',   label: t.nav.frontDesk,   icon: ClipboardList },
-      { to: '/reservations', label: t.nav.reservations, icon: CalendarCheck },
-      { to: '/rooms',        label: t.nav.rooms,        icon: BedDouble },
+      { to: '/',             label: t.navigation.dashboard,    icon: LayoutDashboard },
+      { to: '/front-desk',   label: t.navigation.frontDesk,   icon: ClipboardList },
+      { to: '/reservations', label: t.navigation.reservations, icon: CalendarCheck },
+      { to: '/rooms',        label: t.navigation.rooms,        icon: BedDouble },
     ],
     [
-      { to: '/guests', label: t.nav.guests, icon: Users },
+      { to: '/guests', label: t.navigation.guests, icon: Users },
     ],
     [
-      { to: '/housekeeping', label: t.nav.housekeeping, icon: SprayCan },
-      { to: '/maintenance',  label: t.nav.maintenance,  icon: Wrench },
+      { to: '/housekeeping', label: t.navigation.housekeeping, icon: SprayCan },
+      { to: '/maintenance',  label: t.navigation.maintenance,  icon: Wrench },
     ],
     [
-      { to: '/reports', label: t.nav.reports, icon: BarChart3 },
+      { to: '/reports', label: t.navigation.reports, icon: BarChart3 },
     ],
   ];
 
   const ROW3_GROUPS: NavItem[][] = [
     [
-      { to: '/billing',            label: t.nav.billing,   icon: Receipt },
-      { to: '/payment-automation', label: t.nav.payments,  icon: CreditCard },
-      { to: '/invoicing',          label: t.nav.invoicing, icon: FileText },
+      { to: '/billing',            label: t.navigation.billing,   icon: Receipt },
+      { to: '/payment-automation', label: t.navigation.payments,  icon: CreditCard },
+      { to: '/invoicing',          label: t.navigation.invoicing, icon: FileText },
     ],
     [
-      { to: '/channel-manager', label: t.nav.channelManager, icon: GitBranch },
-      { to: '/booking-engine',  label: t.nav.bookingEngine,  icon: Globe },
-      { to: '/dynamic-pricing', label: t.nav.dynamicPricing, icon: Zap },
-      { to: '/upselling',       label: t.nav.upselling,       icon: Gift },
+      { to: '/channel-manager', label: t.navigation.channelManager, icon: GitBranch },
+      { to: '/booking-engine',  label: t.navigation.bookingEngine,  icon: Globe },
+      { to: '/dynamic-pricing', label: t.navigation.dynamicPricing, icon: Zap },
+      { to: '/upselling',       label: t.navigation.upselling,       icon: Gift },
     ],
     [
-      { to: '/guest-portal', label: t.nav.guestPortal, icon: MonitorSmartphone },
+      { to: '/guest-portal', label: t.navigation.guestPortal, icon: MonitorSmartphone },
     ],
     [
-      { to: '/settings', label: t.nav.settings,   icon: Settings },
-      { to: '/guide',    label: t.nav.userGuide, icon: BookOpen },
+      { to: '/settings', label: t.navigation.settings,   icon: Settings },
+      { to: '/guide',    label: t.navigation.userGuide, icon: BookOpen },
     ],
   ];
 
