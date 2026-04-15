@@ -22,121 +22,48 @@ interface SidebarProps {
 interface NavItem {
   to: string;
   icon: React.ElementType;
-  labelKey: string;
+  label: string;
 }
-
-interface NavGroup {
-  labelKey: string;
-  items: NavItem[];
-}
-
-const getNavGroups = (): NavGroup[] => [
-  {
-    labelKey: 'Operations',
-    items: [
-      { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-      { to: '/front-desk', icon: ClipboardList, labelKey: 'nav.frontDesk' },
-      { to: '/reservations', icon: CalendarCheck, labelKey: 'nav.reservations' },
-      { to: '/rooms', icon: BedDouble, labelKey: 'nav.rooms' },
-      { to: '/housekeeping', icon: SprayCan, labelKey: 'nav.housekeeping' },
-      { to: '/maintenance', icon: Wrench, labelKey: 'maintenance.title' },
-      { to: '/guest-portal', icon: QrCode, labelKey: 'guestPortal.title' },
-    ],
-  },
-  {
-    labelKey: 'Revenue',
-    items: [
-      { to: '/channel-manager', icon: GitBranch, labelKey: 'channelManager.title' },
-      { to: '/booking-engine', icon: Globe, labelKey: 'common.add' },
-      { to: '/dynamic-pricing', icon: TrendingUp, labelKey: 'dynamicPricing.title' },
-      { to: '/upselling', icon: ShoppingBag, labelKey: 'upselling.title' },
-    ],
-  },
-  {
-    labelKey: 'Finance',
-    items: [
-      { to: '/payment-automation', icon: CreditCard, labelKey: 'payments.title' },
-      { to: '/billing', icon: FileText, labelKey: 'billing.title' },
-      { to: '/reports', icon: BarChart3, labelKey: 'reports.title' },
-    ],
-  },
-  {
-    labelKey: 'Guests',
-    items: [
-      { to: '/guests', icon: Users, labelKey: 'nav.guests' },
-    ],
-  },
-  {
-    labelKey: 'Integrations',
-    items: [
-      { to: '/booking-com', icon: Link2, labelKey: 'common.add' },
-      { to: '/expedia', icon: Link2, labelKey: 'common.add' },
-      { to: '/cloudbeds', icon: Link2, labelKey: 'common.add' },
-      { to: '/siteminder', icon: Link2, labelKey: 'common.add' },
-      { to: '/lodgify', icon: Link2, labelKey: 'common.add' },
-    ],
-  },
-  {
-    labelKey: 'Settings',
-    items: [
-      { to: '/settings/staff', icon: UserCog, labelKey: 'common.add' },
-      { to: '/owner-portal', icon: KeyRound, labelKey: 'ownerPortal.title' },
-      { to: '/settings', icon: Settings, labelKey: 'nav.settings' },
-      { to: '/guide', icon: BookOpen, labelKey: 'guide.title' },
-    ],
-  },
-];
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { signOut, staff, canAccess } = useAuth();
   const { currentHotel } = useHotel();
-  const { lang, setLang, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { tenant } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
 
   const brandColor = tenant?.primary_color ?? '#1e3a5f';
   const displayName = tenant?.name ?? 'StayWise PMS';
-  const NAV_GROUPS = getNavGroups();
+
+  const navItems: NavItem[] = [
+    { to: '/', icon: LayoutDashboard, label: t.navigation.dashboard },
+    { to: '/front-desk', icon: ClipboardList, label: t.navigation.frontDesk },
+    { to: '/reservations', icon: CalendarCheck, label: t.navigation.reservations },
+    { to: '/rooms', icon: BedDouble, label: t.navigation.rooms },
+    { to: '/housekeeping', icon: SprayCan, label: t.navigation.housekeeping },
+    { to: '/maintenance', icon: Wrench, label: t.navigation.maintenance },
+    { to: '/guest-portal', icon: QrCode, label: t.navigation.guestPortal },
+    { to: '/channel-manager', icon: GitBranch, label: t.navigation.channelManager },
+    { to: '/booking-engine', icon: Globe, label: t.navigation.bookingEngine },
+    { to: '/dynamic-pricing', icon: TrendingUp, label: t.navigation.dynamicPricing },
+    { to: '/upselling', icon: ShoppingBag, label: t.navigation.upselling },
+    { to: '/payment-automation', icon: CreditCard, label: t.navigation.payments },
+    { to: '/billing', icon: FileText, label: t.navigation.billing },
+    { to: '/reports', icon: BarChart3, label: t.navigation.reports },
+    { to: '/guests', icon: Users, label: t.navigation.guests },
+    { to: '/settings/staff', icon: UserCog, label: t.common.add },
+    { to: '/owner-portal', icon: KeyRound, label: t.navigation.superAdmin },
+    { to: '/settings', icon: Settings, label: t.navigation.settings },
+    { to: '/guide', icon: BookOpen, label: t.navigation.userGuide },
+  ];
 
   const isActive = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname === to || location.pathname.startsWith(to + '/');
 
-  const getTranslationValue = (key: string): string => {
-    const parts = key.split('.');
-    let value: any = t;
-    for (const part of parts) {
-      value = value?.[part];
-    }
-    return value || key;
-  };
-
-  const getGroupLabel = (groupKey: string): string => {
-    const labels: Record<string, Record<string, string>> = {
-      'en': {
-        'Operations': 'Operations',
-        'Revenue': 'Revenue',
-        'Finance': 'Finance',
-        'Guests': 'Guests',
-        'Integrations': 'Integrations',
-        'Settings': 'Settings',
-      },
-      'bg': {
-        'Operations': 'Операции',
-        'Revenue': 'Приходи',
-        'Finance': 'Финанси',
-        'Guests': 'Гости',
-        'Integrations': 'Интеграции',
-        'Settings': 'Настройки',
-      },
-    };
-    return labels[lang]?.[groupKey] || groupKey;
-  };
-
   const renderNavItem = (item: NavItem) => {
     if (!canAccess(item.to)) return null;
     const active = isActive(item.to);
-    const label = getTranslationValue(item.labelKey);
     return (
       <NavLink
         key={item.to}
@@ -148,10 +75,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           } ${collapsed ? 'justify-center px-2' : ''}`
         }
         style={active ? { color: brandColor, backgroundColor: `${brandColor}14` } : undefined}
-        title={collapsed ? label : undefined}
+        title={collapsed ? item.label : undefined}
       >
         <item.icon className="w-4 h-4 flex-shrink-0" />
-        {!collapsed && <span className="truncate">{label}</span>}
+        {!collapsed && <span className="truncate">{item.label}</span>}
       </NavLink>
     );
   };
@@ -162,7 +89,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity"
-          title={lang === 'bg' ? 'Обратно към таблото' : 'Back to dashboard'}
+          title={language === 'bg' ? 'Обратно към таблото' : 'Back to dashboard'}
         >
           {tenant?.logo_url ? (
             <img src={tenant.logo_url} alt={displayName} className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
@@ -181,34 +108,38 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {!collapsed && currentHotel && (
         <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{lang === 'bg' ? 'Обект' : 'Property'}</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{language === 'bg' ? 'Обект' : 'Property'}</p>
           <p className="text-sm font-medium text-gray-800 truncate mt-0.5">{currentHotel.name}</p>
         </div>
       )}
 
-      <nav className="flex-1 px-2 py-3 overflow-y-auto">
-        {NAV_GROUPS.map(group => {
-          const visibleItems = group.items.filter(item => canAccess(item.to));
-          if (visibleItems.length === 0) return null;
-          return (
-            <div key={group.labelKey} className="mb-1">
-              {!collapsed && (
-                <p className="px-3 pt-3 pb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-widest">{getGroupLabel(group.labelKey)}</p>
-              )}
-              {collapsed && <div className="my-1.5 border-t border-gray-100" />}
-              <div className="space-y-0.5">
-                {visibleItems.map(renderNavItem)}
-              </div>
-            </div>
-          );
-        })}
+      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-1">
+        {navItems.map(renderNavItem)}
       </nav>
 
       <div className="px-2 pb-4 border-t border-gray-100 pt-3">
         {!collapsed && (
           <div className="flex items-center gap-0.5 mb-3 px-1">
-            <button onClick={() => setLang('en')} className={`flex-1 py-1 text-xs font-semibold rounded-l-md border transition-colors ${lang === 'en' ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>EN</button>
-            <button onClick={() => setLang('bg')} className={`flex-1 py-1 text-xs font-semibold rounded-r-md border-t border-b border-r transition-colors ${lang === 'bg' ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>BG</button>
+            <button
+              onClick={() => setLanguage('en')}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-l-md border transition-colors ${
+                language === 'en'
+                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
+                  : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLanguage('bg')}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-r-md border-t border-b border-r transition-colors ${
+                language === 'bg'
+                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
+                  : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              БГ
+            </button>
           </div>
         )}
         {!collapsed && staff && (
@@ -227,7 +158,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors ${collapsed ? 'justify-center px-2' : ''}`}
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!collapsed && <span>{lang === 'bg' ? 'Изход' : 'Sign Out'}</span>}
+          {!collapsed && <span>{language === 'bg' ? 'Изход' : 'Sign Out'}</span>}
         </button>
       </div>
     </div>

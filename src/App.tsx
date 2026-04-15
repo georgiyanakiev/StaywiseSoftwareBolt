@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import { HotelProvider } from './contexts/HotelContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { ActiveHotelProvider } from './contexts/ActiveHotelContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import AppLayout from './components/layout/AppLayout';
 import RequireHotel from './components/guards/RequireHotel';
 import LoadingSpinner from './components/ui/LoadingSpinner';
@@ -176,8 +177,9 @@ function AppWithAuth() {
 
 export default function App() {
   return (
-    <ActiveHotelProvider>
-      <Suspense fallback={PageFallback}>
+    <LanguageProvider>
+      <ActiveHotelProvider>
+        <Suspense fallback={PageFallback}>
         <Routes>
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -200,8 +202,9 @@ export default function App() {
             }
           />
         </Routes>
-      </Suspense>
-      <CookieConsent />
-    </ActiveHotelProvider>
+        </Suspense>
+        <CookieConsent />
+      </ActiveHotelProvider>
+    </LanguageProvider>
   );
 }
