@@ -153,7 +153,7 @@ function DropdownItem({
 function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { lang, setLang } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   useClickOutside(ref, () => setOpen(false));
 
   return (
@@ -163,7 +163,7 @@ function LanguageSwitcher() {
         className="flex items-center gap-1 px-2 py-1 border border-[#334155] rounded-md text-[12px] text-[#94a3b8] hover:bg-[#334155] transition-colors whitespace-nowrap"
       >
         <Globe className="w-3 h-3 flex-shrink-0" />
-        <span className="font-medium">{lang.toUpperCase()}</span>
+        <span className="font-medium">{language.toUpperCase()}</span>
         <ChevronDown className={`w-3 h-3 text-[#64748b] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
@@ -171,9 +171,9 @@ function LanguageSwitcher() {
           {(['en', 'bg'] as const).map(l => (
             <button
               key={l}
-              onClick={() => { setLang(l); setOpen(false); }}
+              onClick={() => { setLanguage(l); setOpen(false); }}
               className={`flex items-center gap-2 w-[calc(100%-8px)] mx-1 px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
-                lang === l ? 'font-semibold text-[#1e3a5f]' : 'text-[#374151] hover:bg-[#f9fafb]'
+                language === l ? 'font-semibold text-[#1e3a5f]' : 'text-[#374151] hover:bg-[#f9fafb]'
               }`}
             >
               <span className="text-[11px] font-bold w-5">{l.toUpperCase()}</span>
