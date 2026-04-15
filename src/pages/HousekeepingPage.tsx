@@ -52,7 +52,7 @@ export default function HousekeepingPage() {
       supabase.from('maintenance_requests').select('*, room:rooms(id, number)')
         .eq('hotel_id', currentHotel.id)
         .order('created_at', { ascending: false }),
-      supabase.from('housekeeping_staff').select('*')
+      supabase.from('staff_members').select('*')
         .eq('hotel_id', currentHotel.id)
         .order('name'),
       supabase.from('rooms').select('id, number, floor, status, room_type:room_types(name)')

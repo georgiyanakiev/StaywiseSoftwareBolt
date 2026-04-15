@@ -34,7 +34,7 @@ export default function StaffTab({ staff, tasks, hotelId, tenantId, onChanged }:
 
   const toggleActive = async (s: HKStaff) => {
     setTogglingId(s.id);
-    await supabase.from('housekeeping_staff').update({ active: !s.active }).eq('id', s.id);
+    await supabase.from('staff_members').update({ active: !s.active }).eq('id', s.id);
     setTogglingId(null);
     onChanged();
     toast('success', `${s.name} ${!s.active ? 'activated' : 'deactivated'}`);
@@ -173,9 +173,9 @@ function StaffModal({ existing, hotelId, tenantId, onClose, onSaved }: {
   const handleSave = async () => {
     setSaving(true);
     if (existing) {
-      await supabase.from('housekeeping_staff').update(form).eq('id', existing.id);
+      await supabase.from('staff_members').update(form).eq('id', existing.id);
     } else {
-      await supabase.from('housekeeping_staff').insert({
+      await supabase.from('staff_members').insert({
         hotel_id: hotelId,
         ...(tenantId ? { tenant_id: tenantId } : {}),
         ...form,

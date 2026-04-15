@@ -194,7 +194,7 @@ export default function FrontDeskPage() {
               <RoomStatusBar label={fd.occupied} value={kpis.occupiedRooms} total={kpis.totalRooms} color="bg-blue-500" textColor="text-blue-700" />
               <RoomStatusBar label={fd.available} value={kpis.availableRooms} total={kpis.totalRooms} color="bg-emerald-500" textColor="text-emerald-700" />
               <RoomStatusBar label={fd.dirty} value={kpis.dirtyRooms} total={kpis.totalRooms} color="bg-orange-400" textColor="text-orange-700" />
-              <RoomStatusBar label={fd.clean[0].toUpperCase() + fd.clean.slice(1)} value={kpis.cleanRooms} total={kpis.totalRooms} color="bg-teal-400" textColor="text-teal-700" />
+              <RoomStatusBar label={fd.clean} value={kpis.cleanRooms} total={kpis.totalRooms} color="bg-teal-400" textColor="text-teal-700" />
               <RoomStatusBar label={fd.maintenance} value={kpis.maintenanceRooms} total={kpis.totalRooms} color="bg-gray-400" textColor="text-gray-600" />
             </div>
             <Link to="/rooms" className="mt-4 flex items-center gap-1 text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium">
