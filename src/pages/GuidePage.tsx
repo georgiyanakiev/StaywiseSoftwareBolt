@@ -330,7 +330,7 @@ Export Options
   {
     id: 'settings',
     title: '10. Settings',
-    content: `The Settings page allows authorised staff to configure all aspects of the hotel system. It is organised into eight tabs.
+    content: `The Settings page allows authorised staff to configure all aspects of the hotel system. It is organised into multiple tabs.
 
 1. Hotel Settings
 Configure the hotel's basic profile: name, star rating, address, city, country, phone, email, website, check-in/check-out times, currency, timezone, cancellation policy, and payment policy.
@@ -371,7 +371,14 @@ Toggle email, SMS, and in-app notifications for events:
 • Payment received alerts
 • Housekeeping task assignments
 
-8. Preferences
+8. Digital Check-In Configuration
+Configure digital check-in settings (see Section 11 for full details):
+• Enable/disable data collection fields (ID documents, preferences, digital signature)
+• Set up upsell options with descriptions and pricing
+• Configure automated link delivery timing
+• Customise Terms & Conditions text
+
+9. Preferences
 Personalise the interface:
 • Language (8 languages including English, Spanish, French, German, etc.)
 • Date format (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, DD.MM.YYYY)
@@ -380,8 +387,97 @@ Personalise the interface:
 • Theme (Light, Dark, Auto/System)`,
   },
   {
+    id: 'digital-checkin',
+    title: '11. Digital Check-In',
+    content: `Digital Check-In enables guests to complete their arrival process remotely, before or upon arrival, through a secure online portal. This streamlines front-desk operations and improves the guest experience.
+
+Overview
+The Digital Check-In module manages pre-arrival check-in links, guest form submissions, and customisable check-in workflows. All guest data collected is secure and compliant.
+
+Dashboard Statistics
+Four metric cards display:
+• Arrivals Today & Tomorrow — guests expected to arrive in the next 48 hours
+• Links Sent — number of check-in invitations dispatched
+• Forms Completed — guests who have completed digital check-in
+• Pending Check-ins — guests who have not yet submitted their form
+
+Three Main Tabs
+
+1. Pending Check-Ins
+Lists all arrivals for today and tomorrow with:
+• Guest name and email
+• Booking reference (confirmation code)
+• Room assignment
+• Check-in date
+• Portal status (Not Sent, Link Sent, Partial, Completed)
+• Action buttons
+
+Actions
+• Send Link — generates a unique check-in URL and copies it to clipboard (appears for guests with no link sent yet)
+• Copy Link — re-copies an existing check-in URL (appears for guests who already have a link)
+• View — opens the guest's submitted form data (appears only if guest has begun or completed submission)
+
+2. Completed Submissions
+Displays all guests who have finished their digital check-in, with:
+• Guest name and email
+• Completion date and time
+• Step completion tracker (5 visual steps)
+• View button to review their submission
+
+3. Settings
+Configure all aspects of the digital check-in experience.
+
+Fields to Collect
+Three toggles to enable/disable collection of:
+• ID Document Details — document type, number, nationality, expiration dates
+• Preferences & Special Requests — arrival time preferences, room preferences, dietary restrictions
+• Digital Signature — consent to terms and conditions
+
+Upsell Options (shown on confirmation page)
+After completing check-in, guests see optional add-ons they can purchase:
+• Late Check-Out — set custom checkout time (e.g. "until 14:00") with price
+• Breakfast — meal plan option with price
+• Parking — parking service with price
+
+Configure each by:
+1. Toggling to enable/disable the option
+2. Setting the service description
+3. Entering the price in euros (€)
+
+Automated Send
+Configure automatic check-in link delivery:
+• Set number of days before arrival to send (1–14 days)
+• Select the day and time for automatic sending
+• Requires email integration to be configured in Settings
+
+Note: Automated sending is optional. Links can always be sent manually.
+
+Terms & Conditions
+Customise the legal text guests must accept. Variables such as {hotel_name}, {check_in_time}, {check_out_time} can be inserted and will be replaced dynamically when displayed to guests.
+
+Workflow
+1. Guest arrives in StayWise database as a reservation
+2. Receptionist (or automated task) sends check-in link to guest email
+3. Guest clicks link, accesses secure portal with unique token
+4. Guest completes multi-step form:
+   - Step 1: ID document upload and details
+   - Step 2: Preferences and special requests
+   - Step 3: Digital signature and T&Cs acceptance
+   - Step 4: Upsell review and optional purchases
+   - Step 5: Confirmation and receipt
+5. Data is stored securely in StayWise database
+6. Staff can view completed forms from the "Completed Submissions" tab
+
+Best Practices
+• Enable digital check-in 3–5 days before arrival for best completion rates
+• Customise the Terms & Conditions to reflect your specific hotel policies
+• Use upsell options to increase ancillary revenue (parking, late checkout, breakfast)
+• Review completed submissions daily to flag any incomplete or flagged documents
+• Link data automatically updates guest profiles in the CRM when submitted`,
+  },
+  {
     id: 'roles',
-    title: '11. Roles & Permissions',
+    title: '12. Roles & Permissions',
     content: `StayWise uses four staff roles to control access to features.
 
 Admin
@@ -401,7 +497,7 @@ Roles are assigned when a staff account is created in Settings > Users & Permiss
   },
   {
     id: 'tips',
-    title: '12. Tips & Best Practices',
+    title: '13. Tips & Best Practices',
     content: `Daily Operations Checklist
 • Check the Dashboard each morning for arrivals, departures, and room status
 • Use the Arrivals tile to quickly confirm expected check-ins
@@ -435,11 +531,18 @@ Reports
 Settings
 • Review and update email templates seasonally or for special promotions
 • Keep tax rates current to ensure invoices are accurate
-• Deactivate staff accounts immediately when an employee leaves`,
+• Deactivate staff accounts immediately when an employee leaves
+
+Digital Check-In
+• Send digital check-in links 3–5 days before arrival for best completion rates
+• Customise your Terms & Conditions to match your specific hotel policies
+• Enable upsell options to generate extra revenue from ancillary services
+• Check completed submissions daily to verify all required documents are valid
+• Use the Pending Check-ins tab to manually send links to guests who haven't received them automatically`,
   },
   {
     id: 'glossary',
-    title: '13. Glossary',
+    title: '14. Glossary',
     content: `ADR (Average Daily Rate) — Total room revenue divided by the number of rooms sold. Indicates the average price achieved per occupied room.
 
 RevPAR (Revenue Per Available Room) — Total room revenue divided by total available rooms. A key performance metric combining both occupancy and rate.
@@ -464,7 +567,17 @@ RevPAR Index — A comparison of a hotel's RevPAR against a competitive set benc
 
 Dirty Room — A room that has been vacated and requires cleaning before it can be assigned to a new guest.
 
-Checklist — A structured list of tasks within a housekeeping job, used to ensure quality and consistency.`,
+Checklist — A structured list of tasks within a housekeeping job, used to ensure quality and consistency.
+
+Digital Check-In — A secure online form process allowing guests to complete pre-arrival registration, document submission, and preferences collection before arrival.
+
+Portal — The guest-facing web interface where guests complete digital check-in forms using a unique secure token/link.
+
+Token — A unique, time-limited security identifier used to grant guests access to their specific digital check-in form.
+
+Upsell — Optional add-on services (parking, late checkout, breakfast) offered to guests after completing digital check-in.
+
+Ancillary Revenue — Income generated from optional services and add-ons beyond the base room rate.`,
   },
 ];
 
