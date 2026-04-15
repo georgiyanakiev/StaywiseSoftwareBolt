@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday, addMonths } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
@@ -50,6 +51,7 @@ function occLabel(pct: number): string {
 
 export default function OccupancyHeatmap() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const [monthOffset, setMonthOffset] = useState(0);
   const [occupancy, setOccupancy] = useState<Record<string, OccupancyData>>({});
   const [loading, setLoading] = useState(true);
@@ -140,14 +142,14 @@ export default function OccupancyHeatmap() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-6 text-xs flex-wrap">
-        <span className="font-medium text-gray-600">Occupancy:</span>
+        <span className="font-medium text-gray-600">{t.dynamicPricing.occupancy}</span>
         {[
-          { label: '≥ 90%', color: 'bg-emerald-600' },
-          { label: '75–89%', color: 'bg-emerald-400' },
-          { label: '55–74%', color: 'bg-amber-400' },
-          { label: '35–54%', color: 'bg-orange-400' },
-          { label: '1–34%', color: 'bg-red-400' },
-          { label: '0%', color: 'bg-gray-200' },
+          { label: t.dynamicPricing.occupancyAbove90, color: 'bg-emerald-600' },
+          { label: t.dynamicPricing.occupancy75To89, color: 'bg-emerald-400' },
+          { label: t.dynamicPricing.occupancy55To74, color: 'bg-amber-400' },
+          { label: t.dynamicPricing.occupancy35To54, color: 'bg-orange-400' },
+          { label: t.dynamicPricing.occupancy1To34, color: 'bg-red-400' },
+          { label: t.dynamicPricing.occupancyNone, color: 'bg-gray-200' },
         ].map(item => (
           <div key={item.label} className="flex items-center gap-1.5">
             <div className={`w-3 h-3 rounded-sm ${item.color}`} />

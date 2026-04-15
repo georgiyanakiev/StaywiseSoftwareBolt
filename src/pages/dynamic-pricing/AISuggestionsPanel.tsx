@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Sparkles, CheckCircle, CheckCheck, TrendingUp, TrendingDown, Loader2, RefreshCw, Zap, Clock, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useTenantId } from '../../hooks/useTenantQuery';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate } from '../../lib/utils';
@@ -33,6 +34,7 @@ const PICKUP_COLORS: Record<string, string> = {
 
 export default function AISuggestionsPanel({ suggestions, roomTypes, loading, onRefresh }: Props) {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const tenantId = useTenantId();
   const { toast } = useToast();
   const [generating, setGenerating] = useState(false);
@@ -131,7 +133,7 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
             )}
           </div>
           <p className="text-xs text-gray-500 mt-0.5">
-            {suggestions.length} pending — occupancy, booking pace &amp; lead-time signals
+            {suggestions.length} {t.dynamicPricing.noPendingSuggestions}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -152,7 +154,7 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
           >
             {generating
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Analysing...</>
-              : <><Sparkles className="w-4 h-4" /> Generate Suggestions</>
+              : <><Sparkles className="w-4 h-4" /> {t.dynamicPricing.generateSuggestions}</>
             }
           </button>
           <button onClick={onRefresh} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -174,12 +176,12 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
       {!generating && !loading && suggestions.length === 0 && (
         <div className="text-center py-14 border-2 border-dashed border-gray-200 rounded-xl">
           <Sparkles className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-700">No pending suggestions</p>
+          <p className="text-sm font-medium text-gray-700">{t.dynamicPricing.noSuggestionsYet}</p>
           <p className="text-sm text-gray-400 mt-1 mb-4">
-            The yield engine analyses real-time occupancy, pickup velocity, and lead-time signals to compute optimal rates.
+            {t.dynamicPricing.yieldEngineAnalyzes}
           </p>
           <button onClick={generateSuggestions} className="btn-primary text-sm flex items-center gap-2 mx-auto">
-            <Sparkles className="w-4 h-4" /> Run Yield Analysis
+            <Sparkles className="w-4 h-4" /> {t.dynamicPricing.runYieldAnalysis}
           </button>
         </div>
       )}

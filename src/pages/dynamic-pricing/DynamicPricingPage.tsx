@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CalendarDays, Sparkles, SlidersHorizontal, BarChart2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import RateCalendar90Day from './RateCalendar90Day';
 import AISuggestionsPanel from './AISuggestionsPanel';
@@ -13,6 +14,7 @@ type Tab = 'calendar' | 'ai' | 'rules' | 'heatmap';
 
 export default function DynamicPricingPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('calendar');
   const [roomTypes, setRoomTypes] = useState<RoomTypeRate[]>([]);
   const [suggestions, setSuggestions] = useState<AIPriceSuggestion[]>([]);
@@ -46,17 +48,17 @@ export default function DynamicPricingPage() {
   }, [currentHotel, loadSuggestions]);
 
   const tabs: { key: Tab; label: string; icon: React.ElementType; badge?: number }[] = [
-    { key: 'calendar', label: 'Rate Calendar', icon: CalendarDays },
-    { key: 'ai', label: 'AI Suggestions', icon: Sparkles, badge: suggestions.length },
-    { key: 'rules', label: 'Pricing Rules', icon: SlidersHorizontal },
-    { key: 'heatmap', label: 'Occupancy Heatmap', icon: BarChart2 },
+    { key: 'calendar', label: t.dynamicPricing.rateCalendar, icon: CalendarDays },
+    { key: 'ai', label: t.dynamicPricing.aiSuggestions, icon: Sparkles, badge: suggestions.length },
+    { key: 'rules', label: t.dynamicPricing.pricingRules, icon: SlidersHorizontal },
+    { key: 'heatmap', label: t.dynamicPricing.occupancyHeatmap, icon: BarChart2 },
   ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Dynamic Pricing</h1>
-        <p className="text-sm text-gray-500 mt-0.5">AI-powered revenue management — optimise rates across all room types</p>
+        <h1 className="text-2xl font-semibold text-gray-900">{t.dynamicPricing.title}</h1>
+        <p className="text-sm text-gray-500 mt-0.5">{t.dynamicPricing.subtitle}</p>
       </div>
 
       <div className="border-b border-gray-200">

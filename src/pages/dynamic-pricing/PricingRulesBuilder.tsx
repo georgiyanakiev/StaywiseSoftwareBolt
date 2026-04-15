@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Pencil, Trash2, Play, ChevronUp, ChevronDown, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -105,6 +106,7 @@ function applyRules(rules: PricingRule[], roomTypes: RoomTypeRate[], days = 30):
 
 export default function PricingRulesBuilder({ roomTypes }: { roomTypes: RoomTypeRate[] }) {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [rules, setRules] = useState<PricingRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,8 +163,8 @@ export default function PricingRulesBuilder({ roomTypes }: { roomTypes: RoomType
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-700">Pricing Rules</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Rules are applied in priority order (highest first)</p>
+          <h3 className="text-sm font-semibold text-gray-700">{t.dynamicPricing.pricingRules}</h3>
+          <p className="text-xs text-gray-500 mt-0.5">{t.dynamicPricing.rulesAppliedInOrder}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -171,20 +173,20 @@ export default function PricingRulesBuilder({ roomTypes }: { roomTypes: RoomType
             className="btn-secondary flex items-center gap-2 text-sm"
           >
             {simLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            Simulate 14 Days
+            {t.dynamicPricing.simulate} 14 {t.dynamicPricing.days}
           </button>
           <button onClick={() => setAddOpen(true)} className="btn-primary flex items-center gap-2 text-sm">
             <Plus className="w-4 h-4" />
-            Add Rule
+            {t.dynamicPricing.addRule}
           </button>
         </div>
       </div>
 
       {rules.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl">
-          <p className="text-sm text-gray-500 mb-3">No pricing rules yet</p>
+          <p className="text-sm text-gray-500 mb-3">{t.dynamicPricing.noPricingRulesYet}</p>
           <button onClick={() => setAddOpen(true)} className="btn-primary text-sm flex items-center gap-2 mx-auto">
-            <Plus className="w-4 h-4" /> Add your first rule
+            <Plus className="w-4 h-4" /> {t.dynamicPricing.addFirstRule}
           </button>
         </div>
       ) : (

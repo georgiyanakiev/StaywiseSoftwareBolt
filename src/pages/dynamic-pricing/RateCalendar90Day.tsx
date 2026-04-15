@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, Save, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useTenantId } from '../../hooks/useTenantQuery';
 import { useToast } from '../../components/ui/Toast';
 import { formatDate, formatCurrency } from '../../lib/utils';
@@ -23,6 +24,7 @@ interface OccupancyCell {
 
 export default function RateCalendar90Day() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const tenantId = useTenantId();
   const { toast } = useToast();
   const [roomTypes, setRoomTypes] = useState<RoomTypeRate[]>([]);
@@ -173,9 +175,9 @@ export default function RateCalendar90Day() {
           </button>
         </div>
         <div className="flex items-center gap-4 text-xs text-gray-500">
-          <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-teal-500" /> AI suggested higher</span>
-          <span className="flex items-center gap-1"><TrendingDown className="w-3 h-3 text-rose-500" /> AI suggested lower</span>
-          <span className="flex items-center gap-1"><Minus className="w-3 h-3 text-gray-400" /> Base rate</span>
+          <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-teal-500" /> {t.dynamicPricing.aiSuggestedHigher}</span>
+          <span className="flex items-center gap-1"><TrendingDown className="w-3 h-3 text-rose-500" /> {t.dynamicPricing.aiSuggestedLower}</span>
+          <span className="flex items-center gap-1"><Minus className="w-3 h-3 text-gray-400" /> {t.dynamicPricing.baseRate}</span>
         </div>
       </div>
 
@@ -184,7 +186,7 @@ export default function RateCalendar90Day() {
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 min-w-[120px]">
-                Room Type
+                {t.dynamicPricing.roomType}
               </th>
               {dates.map(d => {
                 const dow = new Date(d + 'T12:00:00').getDay();
