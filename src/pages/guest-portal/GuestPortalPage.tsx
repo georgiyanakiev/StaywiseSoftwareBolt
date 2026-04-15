@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatDate } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -33,15 +34,16 @@ interface PortalSession {
   expires_at: string;
 }
 
-const PORTAL_STATUS = (session?: PortalSession) => {
-  if (!session) return { label: 'Not Sent', color: 'bg-gray-100 text-gray-500', icon: Clock };
-  if (session.completed_at) return { label: 'Completed', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 };
-  if (session.step_completed > 0) return { label: `Partial (step ${session.step_completed})`, color: 'bg-amber-100 text-amber-700', icon: Clock };
-  return { label: 'Link Sent', color: 'bg-blue-100 text-blue-700', icon: Send };
+const PORTAL_STATUS = (session?: PortalSession, t?: any) => {
+  if (!session) return { label: t?.digitalCheckin?.notSent || 'Not Sent', color: 'bg-gray-100 text-gray-500', icon: Clock };
+  if (session.completed_at) return { label: t?.digitalCheckin?.completed || 'Completed', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 };
+  if (session.step_completed > 0) return { label: `${t?.digitalCheckin?.partial || 'Partial'} (${t?.digitalCheckin?.step || 'step'} ${session.step_completed})`, color: 'bg-amber-100 text-amber-700', icon: Clock };
+  return { label: t?.digitalCheckin?.linkSent || 'Link Sent', color: 'bg-blue-100 text-blue-700', icon: Send };
 };
 
 export default function GuestPortalPage() {
   const { currentHotel } = useHotel();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [tab, setTab] = useState<'checkins' | 'submissions' | 'settings'>('checkins');
   const [arrivals, setArrivals] = useState<Reservation[]>([]);
@@ -110,7 +112,7 @@ export default function GuestPortalPage() {
     if (token) {
       const url = `${window.location.origin}/portal?token=${token}`;
       await navigator.clipboard.writeText(url).catch(() => {});
-      toast('success', 'Check-in link copied to clipboard');
+      toast('success', t.common.success);
     }
   };
 
@@ -119,7 +121,7 @@ export default function GuestPortalPage() {
     await navigator.clipboard.writeText(url).catch(() => {});
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
-    toast('success', 'Link copied');
+    toast('success', t.digitalCheckin.copyLink);
   };
 
   const completedSessions = sessions.filter(s => s.completed_at);
@@ -131,16 +133,16 @@ export default function GuestPortalPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
           <QrCode className="w-6 h-6 text-blue-600" />
-          Digital Check-in
+          {t.digitalCheckin.title}
         </h1>
-        <p className="text-gray-500 text-sm mt-1">Manage pre-arrival check-in links and guest submissions</p>
+        <p className="text-gray-500 text-sm mt-1">{t.digitalCheckin.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Arrivals Today & Tomorrow', value: arrivals.length, color: 'text-blue-600', bg: 'bg-blue-50', icon: CalendarDays },
-          { label: 'Links Sent', value: sessions.length, color: 'text-amber-600', bg: 'bg-amber-50', icon: Send },
-          { label: 'Forms Completed', value: completedSessions.length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle2 },
+          { label: t.digitalCheckin.arrivalsToday, value: arrivals.length, color: 'text-blue-600', bg: 'bg-blue-50', icon: CalendarDays },
+          { label: t.digitalCheckin.linksSent, value: sessions.length, color: 'text-amber-600', bg: 'bg-amber-50', icon: Send },
+          { label: t.digitalCheckin.formsCompleted, value: completedSessions.length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle2 },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -156,20 +158,20 @@ export default function GuestPortalPage() {
 
       <div className="flex gap-1 border-b border-gray-200">
         {([
-          { id: 'checkins', label: 'Pending Check-ins', icon: CalendarDays },
-          { id: 'submissions', label: 'Completed Submissions', icon: Users, badge: completedSessions.length },
-          { id: 'settings', label: 'Settings', icon: Settings },
-        ] as const).map(t => (
+          { id: 'checkins', label: t.digitalCheckin.pendingCheckins, icon: CalendarDays },
+          { id: 'submissions', label: t.digitalCheckin.completedSubmissions, icon: Users, badge: completedSessions.length },
+          { id: 'settings', label: t.digitalCheckin.settings, icon: Settings },
+        ] as const).map(tabItem => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={tabItem.id}
+            onClick={() => setTab(tabItem.id)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              tab === t.id ? 'border-[#1e3a5f] text-[#1e3a5f]' : 'border-transparent text-gray-500 hover:text-gray-700'
+              tab === tabItem.id ? 'border-[#1e3a5f] text-[#1e3a5f]' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            <t.icon className="w-4 h-4" />
-            {t.label}
-            {t.badge ? <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span> : null}
+            <tabItem.icon className="w-4 h-4" />
+            {tabItem.label}
+            {tabItem.badge ? <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full">{tabItem.badge}</span> : null}
           </button>
         ))}
       </div>
@@ -179,24 +181,24 @@ export default function GuestPortalPage() {
           {arrivals.length === 0 ? (
             <div className="py-16 text-center text-gray-400">
               <CalendarDays className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-              <p className="font-medium">No arrivals today or tomorrow</p>
+              <p className="font-medium">{t.digitalCheckin.noArrivals}</p>
             </div>
           ) : (
             <table className="w-full">
               <thead className="border-b border-gray-100">
                 <tr>
-                  <th className="table-header">Guest</th>
-                  <th className="table-header">Booking Ref</th>
-                  <th className="table-header">Room</th>
-                  <th className="table-header">Check-in</th>
-                  <th className="table-header">Portal Status</th>
-                  <th className="table-header">Actions</th>
+                  <th className="table-header">{t.digitalCheckin.guest}</th>
+                  <th className="table-header">{t.digitalCheckin.bookingRef}</th>
+                  <th className="table-header">{t.digitalCheckin.room}</th>
+                  <th className="table-header">{t.digitalCheckin.checkin}</th>
+                  <th className="table-header">{t.digitalCheckin.portalStatus}</th>
+                  <th className="table-header">{t.digitalCheckin.actions}</th>
                 </tr>
               </thead>
               <tbody>
                 {arrivals.map(res => {
                   const session = sessionByReservation(res.id);
-                  const status = PORTAL_STATUS(session);
+                  const status = PORTAL_STATUS(session, t);
                   return (
                     <tr key={res.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
                       <td className="table-cell">
@@ -225,7 +227,7 @@ export default function GuestPortalPage() {
                                 className="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
                               >
                                 {copiedToken === session.token ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                                Copy Link
+                                {t.digitalCheckin.copyLink}
                               </button>
                               {session.step_completed > 0 && (
                                 <button
@@ -233,7 +235,7 @@ export default function GuestPortalPage() {
                                   className="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
-                                  View
+                                  {t.digitalCheckin.view}
                                 </button>
                               )}
                             </>
@@ -244,7 +246,7 @@ export default function GuestPortalPage() {
                               className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#172e4c] transition-colors disabled:opacity-70"
                             >
                               {sendingId === res.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
-                              Send Link
+                              {t.digitalCheckin.sendLink}
                             </button>
                           )}
                         </div>
@@ -259,7 +261,7 @@ export default function GuestPortalPage() {
       )}
 
       {tab === 'submissions' && (
-        <SubmissionsTab sessions={completedSessions} onView={setViewSession} />
+        <SubmissionsTab sessions={completedSessions} onView={setViewSession} t={t} />
       )}
 
       {tab === 'settings' && (
@@ -273,13 +275,13 @@ export default function GuestPortalPage() {
   );
 }
 
-function SubmissionsTab({ sessions, onView }: { sessions: PortalSession[]; onView: (s: PortalSession) => void }) {
+function SubmissionsTab({ sessions, onView, t }: { sessions: PortalSession[]; onView: (s: PortalSession) => void; t: any }) {
   if (sessions.length === 0) {
     return (
       <div className="py-16 text-center text-gray-400 bg-white rounded-xl border border-gray-100">
         <Users className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-        <p className="font-medium">No completed submissions yet</p>
-        <p className="text-sm mt-1">Guests who complete their digital check-in will appear here</p>
+        <p className="font-medium">{t.digitalCheckin.noSubmissions}</p>
+        <p className="text-sm mt-1">{t.digitalCheckin.guestsAppear}</p>
       </div>
     );
   }
@@ -288,10 +290,10 @@ function SubmissionsTab({ sessions, onView }: { sessions: PortalSession[]; onVie
       <table className="w-full">
         <thead className="border-b border-gray-100">
           <tr>
-            <th className="table-header">Guest</th>
-            <th className="table-header">Email</th>
-            <th className="table-header">Completed</th>
-            <th className="table-header">Steps</th>
+            <th className="table-header">{t.digitalCheckin.guest}</th>
+            <th className="table-header">{t.digitalCheckin.email}</th>
+            <th className="table-header">{t.digitalCheckin.completedDate}</th>
+            <th className="table-header">{t.digitalCheckin.steps}</th>
             <th className="table-header"></th>
           </tr>
         </thead>
@@ -312,7 +314,7 @@ function SubmissionsTab({ sessions, onView }: { sessions: PortalSession[]; onVie
               </td>
               <td className="table-cell">
                 <button onClick={() => onView(s)} className="flex items-center gap-1 text-xs px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-                  <Eye className="w-3.5 h-3.5" /> View
+                  <Eye className="w-3.5 h-3.5" /> {t.digitalCheckin.view}
                 </button>
               </td>
             </tr>
