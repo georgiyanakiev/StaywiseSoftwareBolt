@@ -85,6 +85,16 @@ export const translations = {
       open: 'Open', inProgress: 'In Progress', resolved: 'Resolved',
       noIssues: 'No issues reported',
     },
+    frontDesk: {
+      title: 'Front Desk', arrivals: 'Arrivals', departures: 'Departures',
+      stayovers: 'Stayovers', occupancy: 'Occupancy', available: 'Available',
+      inHouse: 'In House', noHotel: 'No Hotel Selected',
+      noHotelSub: 'Please select a hotel to continue',
+      failedToLoad: 'Failed to load data', tryAgain: 'Try Again',
+      newBooking: 'New Booking', refresh: 'Refresh',
+      updated: 'Last updated:', inLabel: 'checked in',
+      outLabel: 'checked out', free: 'Free rooms',
+    },
     reports: {
       title: 'Reports', occupancy: 'Occupancy', revenue: 'Revenue',
       guests: 'Guests', channels: 'Channels', dateFrom: 'From',
@@ -206,6 +216,16 @@ export const translations = {
       assignTo: 'Назначи на', priority: 'Приоритет', status: 'Статус',
       open: 'Отворен', inProgress: 'В процес', resolved: 'Решен',
       noIssues: 'Няма докладвани проблеми',
+    },
+    frontDesk: {
+      title: 'Рецепция', arrivals: 'Пристигащи', departures: 'Заминаващи',
+      stayovers: 'Останали', occupancy: 'Заетост', available: 'Свободни',
+      inHouse: 'В хотела', noHotel: 'Хотел не е избран',
+      noHotelSub: 'Изберете хотел за продължение',
+      failedToLoad: 'Грешка при зареждане', tryAgain: 'Опитай отново',
+      newBooking: 'Нова резервация', refresh: 'Обновяване',
+      updated: 'Последно обновено:', inLabel: 'настанени',
+      outLabel: 'напуснали', free: 'Свободни стаи',
     },
     reports: {
       title: 'Справки', occupancy: 'Заетост', revenue: 'Приходи',
