@@ -65,7 +65,7 @@ export function useLobbyData() {
       const [staffResult, assignmentResult] = await Promise.all([
         supabase
           .from('staff_members')
-          .select('hotel_id, role')
+          .select('hotel_id, role, approval_status')
           .eq('user_id', user!.id)
           .eq('is_active', true),
         supabase
@@ -77,17 +77,26 @@ export function useLobbyData() {
 
       if (staffResult.error) throw staffResult.error;
 
+      // PRIMARY SOURCE OF TRUTH: Direct hotel assignments from staff_members
+      // Only approved or pending staff can see their hotel
       const directRoleMap: Record<string, string> = {};
-      (staffResult.data ?? []).forEach(s => { directRoleMap[s.hotel_id] = s.role; });
+      (staffResult.data ?? [])
+        .filter(s => s.approval_status === 'approved' || s.approval_status === 'pending')
+        .forEach(s => { directRoleMap[s.hotel_id] = s.role; });
       const directHotelIds = Object.keys(directRoleMap);
 
+      // SECONDARY: Check if user is a global super admin (no tenant_id)
+      const isSuperAdminRole = (assignmentResult.data ?? [])
+        .some(a => a.role === 'super_admin' && !a.tenant_id);
+
+      // Tenant-level assignments only count for tenant-specific access (when staff has no direct hotel)
       const tenantRoleMap: Record<string, string> = {};
-      const isSuperAdminRole = (assignmentResult.data ?? []).some(a => a.role === 'super_admin' && !a.tenant_id);
-      (assignmentResult.data ?? []).forEach(a => {
-        if (a.tenant_id) tenantRoleMap[a.tenant_id] = a.role;
-      });
+      (assignmentResult.data ?? [])
+        .filter(a => a.tenant_id && a.role !== 'super_admin')
+        .forEach(a => { tenantRoleMap[a.tenant_id] = a.role; });
       const assignedTenantIds = Object.keys(tenantRoleMap);
 
+      // If not super admin and has no assignments at all, show empty
       if (!isSuperAdminRole && directHotelIds.length === 0 && assignedTenantIds.length === 0) {
         setHotels([]);
         setLoading(false);
@@ -100,13 +109,17 @@ export function useLobbyData() {
         .order('name');
 
       if (!isSuperAdminRole) {
+        // Non-super-admins see only their assigned hotels
         if (directHotelIds.length > 0 && assignedTenantIds.length > 0) {
+          // Has both direct and tenant assignments - show both
           query = query.or(
             `id.in.(${directHotelIds.join(',')}),tenant_id.in.(${assignedTenantIds.join(',')})`
           );
         } else if (directHotelIds.length > 0) {
+          // Only direct hotel assignments
           query = query.in('id', directHotelIds);
-        } else {
+        } else if (assignedTenantIds.length > 0) {
+          // Only tenant-level assignments
           query = query.in('tenant_id', assignedTenantIds);
         }
       }

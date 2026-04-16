@@ -80,15 +80,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select('*')
           .eq('user_id', userId)
           .eq('hotel_id', activeHotelId)
+          .eq('is_active', true)
+          .in('approval_status', ['approved', 'pending'])
           .maybeSingle();
         if (data) return data as StaffMember;
       }
 
+      // Fetch first approved or pending staff record (primary assignment)
       const { data } = await supabase
         .from('staff_members')
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
+        .in('approval_status', ['approved', 'pending'])
+        .order('created_at')
         .limit(1)
         .maybeSingle();
       return data as StaffMember | null;
