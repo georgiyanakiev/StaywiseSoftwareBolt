@@ -11,8 +11,8 @@ interface LanguageContextType {
 }
 
 const LanguageContext = createContext<LanguageContextType>({
-  language: 'bg',
-  t: translations.bg,
+  language: 'en',
+  t: translations.en,
   setLanguage: () => {},
   toggleLanguage: () => {},
 });
@@ -23,7 +23,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY) as Language;
       if (saved === 'bg' || saved === 'en') return saved;
     } catch {}
-    return 'bg';
+    return 'en';
   });
 
   const setLanguage = useCallback((lang: Language) => {
