@@ -8,7 +8,7 @@ import LegalFooter from '../components/legal/LegalFooter';
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
-  const { t, lang, setLang } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -237,14 +237,14 @@ export default function LoginPage() {
                 </div>
                 <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
                   <button
-                    onClick={() => setLang('en')}
-                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'en' ? 'bg-[#1e3a5f] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    onClick={() => setLanguage('en')}
+                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${language === 'en' ? 'bg-[#1e3a5f] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                   >
                     EN
                   </button>
                   <button
-                    onClick={() => setLang('bg')}
-                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${lang === 'bg' ? 'bg-[#1e3a5f] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                    onClick={() => setLanguage('bg')}
+                    className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${language === 'bg' ? 'bg-[#1e3a5f] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                   >
                     BG
                   </button>
