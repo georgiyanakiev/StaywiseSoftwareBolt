@@ -644,7 +644,13 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
 
           {/* Left: logo + hotel identity */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            <img src="/staywisesoftware_logo_dark_v2.png" alt="StayWise Software" className="h-8 w-auto flex-shrink-0" />
+            <button
+              onClick={() => navigate('/')}
+              className="flex-shrink-0 rounded transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-white/40"
+              aria-label="Back to Dashboard"
+            >
+              <img src="/staywisesoftware_logo_dark_v2.png" alt="StayWise Software" className="h-8 w-auto flex-shrink-0" />
+            </button>
           </div>
           <NavLink to="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0 group">
             {hotelLogo ? (
