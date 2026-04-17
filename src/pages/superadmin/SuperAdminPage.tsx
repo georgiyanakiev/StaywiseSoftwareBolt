@@ -202,15 +202,19 @@ export default function SuperAdminPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-gray-950 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#1e3a5f] rounded-lg flex items-center justify-center">
+          <button
+            onClick={() => navigate('/lobby')}
+            className="flex items-center gap-3 group transition-opacity hover:opacity-80 cursor-pointer"
+            aria-label="Back to Dashboard"
+          >
+            <div className="w-8 h-8 bg-[#1e3a5f] rounded-lg flex items-center justify-center group-hover:bg-[#2a4d7a] transition-colors">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
-              <span className="text-white font-semibold">StayWise</span>
+              <span className="text-white font-semibold group-hover:text-blue-200 transition-colors">StayWise</span>
               <span className="text-gray-400 text-sm ml-2">Super Admin</span>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/lobby')}
