@@ -40,9 +40,13 @@ export interface MaintenanceIssue {
 export interface HKStaff {
   id: string;
   hotel_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
   name: string;
   role: string;
   phone: string;
+  is_active: boolean;
   active: boolean;
   created_at: string;
 }
