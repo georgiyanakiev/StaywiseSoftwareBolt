@@ -178,6 +178,7 @@ export default function HousekeepingPage() {
           tenantId={tenantId}
           upsellByRoom={upsellByRoom}
           onTasksChanged={load}
+          rooms={rooms.map(r => ({ id: r.id, number: r.number, floor: r.floor }))}
         />
       )}
 
