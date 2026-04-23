@@ -188,6 +188,13 @@ export default function DashboardPage() {
               bg="bg-gray-50"
               guestsExpected={t.dashboard.guestsExpected}
             />
+            <ArrivalRow
+              label="Tomorrow"
+              rooms={stats.tomorrowArrivals}
+              color="text-blue-700"
+              bg="bg-blue-50"
+              guestsExpected={t.dashboard.guestsExpected}
+            />
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
             <span className="text-xs text-gray-500">{t.dashboard.totalToday}</span>
