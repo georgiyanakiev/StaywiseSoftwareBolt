@@ -129,15 +129,18 @@ export function useDashboardData(currentHotel: Hotel | null) {
 
   async function fetchAll() {
     if (!currentHotel) return;
-    try {
-      setLoading(true);
-      setError(null);
-      await Promise.all([fetchStats(), fetchRevenue(), fetchActivity(), fetchAvailability()]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    setError(null);
+    const safe = async (label: string, fn: () => Promise<void>) => {
+      try { await fn(); } catch (e) { console.warn(`[dashboard] ${label} failed`, e); }
+    };
+    await Promise.all([
+      safe('stats', fetchStats),
+      safe('revenue', fetchRevenue),
+      safe('activity', fetchActivity),
+      safe('availability', fetchAvailability),
+    ]);
+    setLoading(false);
   }
 
   async function fetchStats() {
@@ -155,7 +158,9 @@ export function useDashboardData(currentHotel: Hotel | null) {
       supabase.from('payments').select('amount, payment_date').eq('hotel_id', currentHotel.id).gte('payment_date', yearStart),
     ]);
 
-    if (roomsRes.error) throw roomsRes.error;
+    if (roomsRes.error) {
+      console.warn('[dashboard] rooms query failed', roomsRes.error);
+    }
 
     const rooms = roomsRes.data || [];
     const totalRooms = rooms.length;
