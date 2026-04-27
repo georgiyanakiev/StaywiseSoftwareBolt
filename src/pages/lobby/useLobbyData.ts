@@ -76,6 +76,9 @@ export function useLobbyData() {
         currency: string;
         tenant_id: string | null;
         user_role: string | null;
+        rooms_count: number | null;
+        todays_arrivals: number | null;
+        occupancy_pct: number | null;
       }>;
 
       if (hotelRows.length === 0) {
@@ -95,43 +98,22 @@ export function useLobbyData() {
         (tenantRows ?? []).forEach(t => { tenantMap[t.id] = t; });
       }
 
-      const today = new Date().toISOString().slice(0, 10);
-
-      const enriched: LobbyHotel[] = await Promise.all(
-        hotelRows.map(async hotel => {
-          const [roomsRes, arrivalsRes, occupiedRes] = await Promise.all([
-            supabase.from('rooms').select('id', { count: 'exact', head: true }).eq('hotel_id', hotel.id),
-            supabase.from('reservations').select('id', { count: 'exact', head: true })
-              .eq('hotel_id', hotel.id)
-              .eq('check_in', today)
-              .in('status', ['confirmed', 'checked_in']),
-            supabase.from('rooms').select('id', { count: 'exact', head: true })
-              .eq('hotel_id', hotel.id)
-              .eq('status', 'occupied'),
-          ]);
-
-          const totalRooms = roomsRes.count ?? 0;
-          const occupiedRooms = occupiedRes.count ?? 0;
-          const occupancyPct = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
-
-          return {
-            id: hotel.id,
-            name: hotel.name,
-            address: hotel.address,
-            city: hotel.city,
-            country: hotel.country,
-            logo_url: hotel.logo_url,
-            star_rating: hotel.star_rating,
-            currency: hotel.currency,
-            tenant_id: hotel.tenant_id,
-            tenant: hotel.tenant_id ? (tenantMap[hotel.tenant_id] ?? null) : null,
-            staff_role: normalizeRole(hotel.user_role),
-            rooms_count: totalRooms,
-            todays_arrivals: arrivalsRes.count ?? 0,
-            occupancy_pct: occupancyPct,
-          };
-        })
-      );
+      const enriched: LobbyHotel[] = hotelRows.map(hotel => ({
+        id: hotel.id,
+        name: hotel.name,
+        address: hotel.address,
+        city: hotel.city,
+        country: hotel.country,
+        logo_url: hotel.logo_url,
+        star_rating: hotel.star_rating,
+        currency: hotel.currency,
+        tenant_id: hotel.tenant_id,
+        tenant: hotel.tenant_id ? (tenantMap[hotel.tenant_id] ?? null) : null,
+        staff_role: normalizeRole(hotel.user_role),
+        rooms_count: hotel.rooms_count ?? 0,
+        todays_arrivals: hotel.todays_arrivals ?? 0,
+        occupancy_pct: hotel.occupancy_pct ?? 0,
+      }));
 
       const seen = new Set<string>();
       const deduped = enriched.filter(h => {
