@@ -116,6 +116,22 @@ export function useLobbyData() {
 
       let hotelRows: any[] = [];
 
+      // Primary path: SECURITY DEFINER RPC bypasses RLS and authoritatively
+      // returns the hotels this user is allowed to see.
+      try {
+        const { data: rpcRows, error: rpcErr } = await supabase.rpc('lobby_get_my_hotels');
+        if (!rpcErr && Array.isArray(rpcRows) && rpcRows.length > 0) {
+          hotelRows = rpcRows;
+          rpcRows.forEach((r: any) => {
+            if (r.user_role && !directRoleMap[r.id]) directRoleMap[r.id] = r.user_role;
+          });
+        } else if (rpcErr) {
+          console.warn('[lobby] lobby_get_my_hotels rpc failed', rpcErr);
+        }
+      } catch (e) {
+        console.warn('[lobby] lobby_get_my_hotels rpc threw', e);
+      }
+
       const runQuery = async (build: (q: any) => any) => {
         const q = build(
           supabase
@@ -131,7 +147,9 @@ export function useLobbyData() {
         return data ?? [];
       };
 
-      if (isSuperAdminRole) {
+      if (hotelRows.length > 0) {
+        // RPC already returned authoritative list
+      } else if (isSuperAdminRole) {
         hotelRows = await runQuery(q => q);
       } else if (directHotelIds.length > 0 && assignedTenantIds.length > 0) {
         hotelRows = await runQuery(q =>

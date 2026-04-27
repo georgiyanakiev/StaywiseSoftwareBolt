@@ -42,6 +42,25 @@ export function HotelProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    try {
+      const { data: rpcRows, error: rpcErr } = await supabase.rpc('lobby_get_my_hotels');
+      if (!rpcErr && Array.isArray(rpcRows) && rpcRows.length > 0) {
+        const hotelList = rpcRows.map((r: any) => ({
+          id: r.id, name: r.name, address: r.address, city: r.city,
+          country: r.country, logo_url: r.logo_url, star_rating: r.star_rating,
+          currency: r.currency, tenant_id: r.tenant_id,
+        })) as Hotel[];
+        setHotels(hotelList);
+        const savedId = localStorage.getItem('staywise_current_hotel');
+        const found = savedId ? hotelList.find(h => h.id === savedId) : null;
+        setCurrentHotel(found || hotelList[0]);
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('[hotelctx] rpc lobby_get_my_hotels failed', e);
+    }
+
     const [staffResult, assignmentResult] = await Promise.all([
       supabase
         .from('staff_members')
