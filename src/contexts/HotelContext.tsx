@@ -32,9 +32,12 @@ export function HotelProvider({ children }: { children: ReactNode }) {
     const targetHotelId = activeHotel?.hotel_id || null;
 
     if (targetHotelId) {
-      const { data } = await supabase.from('hotels').select('*').eq('id', targetHotelId).maybeSingle();
-      if (data) {
-        const hotel = data as Hotel;
+      const { data: rpcData } = await supabase.rpc('get_hotel_for_user', { p_hotel_id: targetHotelId });
+      const rpcRow = Array.isArray(rpcData) && rpcData.length > 0 ? (rpcData[0] as Hotel) : null;
+      const hotel = rpcRow
+        ?? (await supabase.from('hotels').select('*').eq('id', targetHotelId).maybeSingle()).data as Hotel | null;
+
+      if (hotel) {
         setHotels([hotel]);
         setCurrentHotel(hotel);
         setLoading(false);
