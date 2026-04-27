@@ -42,84 +42,13 @@ export function HotelProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    try {
-      const { data: rpcRows, error: rpcErr } = await supabase.rpc('lobby_get_my_hotels');
-      if (!rpcErr && Array.isArray(rpcRows) && rpcRows.length > 0) {
-        const hotelList = rpcRows.map((r: any) => ({
-          id: r.id, name: r.name, address: r.address, city: r.city,
-          country: r.country, logo_url: r.logo_url, star_rating: r.star_rating,
-          currency: r.currency, tenant_id: r.tenant_id,
-        })) as Hotel[];
-        setHotels(hotelList);
-        const savedId = localStorage.getItem('staywise_current_hotel');
-        const found = savedId ? hotelList.find(h => h.id === savedId) : null;
-        setCurrentHotel(found || hotelList[0]);
-        setLoading(false);
-        return;
-      }
-    } catch (e) {
-      console.warn('[hotelctx] rpc lobby_get_my_hotels failed', e);
-    }
-
-    const [staffResult, assignmentResult] = await Promise.all([
-      supabase
-        .from('staff_members')
-        .select('hotel_id, approval_status')
-        .eq('user_id', user.id)
-        .eq('is_active', true),
-      supabase
-        .from('user_hotel_assignments')
-        .select('tenant_id, role')
-        .eq('user_id', user.id)
-        .eq('active', true),
-    ]);
-
-    const directHotelIds = (staffResult.data ?? [])
-      .filter(s => s.approval_status === 'approved' || s.approval_status === 'pending')
-      .map(s => s.hotel_id);
-
-    const isSuperAdmin = (assignmentResult.data ?? [])
-      .some(a => a.role === 'super_admin' && !a.tenant_id);
-
-    const assignedTenantIds = (assignmentResult.data ?? [])
-      .filter(a => a.tenant_id && a.role !== 'super_admin')
-      .map(a => a.tenant_id as string);
-
-    if (!isSuperAdmin && directHotelIds.length === 0 && assignedTenantIds.length === 0) {
-      setHotels([]);
-      setCurrentHotel(null);
-      setLoading(false);
-      return;
-    }
-
-    let query = supabase.from('hotels').select('*').order('name');
-
-    if (!isSuperAdmin) {
-      if (directHotelIds.length > 0 && assignedTenantIds.length > 0) {
-        query = query.or(
-          `id.in.(${directHotelIds.join(',')}),tenant_id.in.(${assignedTenantIds.join(',')})`
-        );
-      } else if (directHotelIds.length > 0) {
-        query = query.in('id', directHotelIds);
-      } else {
-        query = query.in('tenant_id', assignedTenantIds);
-      }
-    }
-
-    const { data } = await query;
-    const seen = new Set<string>();
-    const hotelList = ((data || []) as Hotel[]).filter(h => {
-      if (seen.has(h.id)) return false;
-      seen.add(h.id);
-      return true;
-    });
+    const { data } = await supabase.from('hotels').select('*').order('name');
+    const hotelList = (data || []) as Hotel[];
     setHotels(hotelList);
     if (hotelList.length > 0) {
       const savedId = localStorage.getItem('staywise_current_hotel');
       const found = savedId ? hotelList.find(h => h.id === savedId) : null;
       setCurrentHotel(found || hotelList[0]);
-    } else {
-      setCurrentHotel(null);
     }
     setLoading(false);
   };

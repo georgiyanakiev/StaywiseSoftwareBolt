@@ -407,7 +407,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin, 
 
         {/* Nav */}
         <nav className="flex-1 bg-white overflow-y-auto">
-          {drawerSections.map(section => {
+          {DRAWER_SECTIONS.map(section => {
             const visible = section.items.filter(i => canAccess(i.to));
             const drawerChannels = section.label === 'CHANNELS & REVENUE' ? liveChannels : [];
 

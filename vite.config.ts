@@ -30,12 +30,6 @@ export default defineConfig({
             id.includes('node_modules/decimal.js')
           ) return 'vendor-charts';
           if (id.includes('lucide-react')) return 'vendor-icons';
-          if (id.includes('node_modules/jspdf')) return 'vendor-pdf';
-          if (id.includes('node_modules/date-fns')) return 'vendor-date';
-          if (
-            id.includes('node_modules/react-router') ||
-            id.includes('node_modules/@remix-run')
-          ) return 'vendor-router';
           return 'vendor';
         },
       },
