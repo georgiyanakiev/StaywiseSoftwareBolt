@@ -15,7 +15,6 @@ export interface DashboardStats {
   todayCheckOuts: number;
   pendingCheckIns: number;
   pendingCheckOuts: number;
-  tomorrowArrivals: number;
   occupancyRate: number;
   todayRevenue: number;
   weekRevenue: number;
@@ -111,7 +110,7 @@ export function useDashboardData(currentHotel: Hotel | null) {
     totalRooms: 0, availableRooms: 0, occupiedRooms: 0, dirtyRooms: 0,
     cleanRooms: 0, maintenanceRooms: 0, outOfServiceRooms: 0,
     todayCheckIns: 0, todayCheckOuts: 0,
-    pendingCheckIns: 0, pendingCheckOuts: 0, tomorrowArrivals: 0, occupancyRate: 0,
+    pendingCheckIns: 0, pendingCheckOuts: 0, occupancyRate: 0,
     todayRevenue: 0, weekRevenue: 0, monthRevenue: 0, ytdRevenue: 0,
     activeReservations: 0, statusBreakdown: {},
   });
@@ -146,9 +145,7 @@ export function useDashboardData(currentHotel: Hotel | null) {
     const today = isoToday();
     const yearStart = startOfYear();
 
-    const tomorrowStr = tomorrow();
-
-    const [roomsRes, resStatusRes, checkInsRes, checkOutsRes, pendingCIRes, pendingCORes, paymentsRes, tomorrowRes] = await Promise.all([
+    const [roomsRes, resStatusRes, checkInsRes, checkOutsRes, pendingCIRes, pendingCORes, paymentsRes] = await Promise.all([
       supabase.from('rooms').select('status').eq('hotel_id', currentHotel.id),
       supabase.from('reservations').select('status').eq('hotel_id', currentHotel.id),
       supabase.from('reservations').select('id', { count: 'exact' }).eq('hotel_id', currentHotel.id).eq('check_in', today).eq('status', 'checked_in'),
@@ -156,7 +153,6 @@ export function useDashboardData(currentHotel: Hotel | null) {
       supabase.from('reservations').select('id', { count: 'exact' }).eq('hotel_id', currentHotel.id).eq('check_in', today).eq('status', 'confirmed'),
       supabase.from('reservations').select('id', { count: 'exact' }).eq('hotel_id', currentHotel.id).eq('check_out', today).eq('status', 'checked_in'),
       supabase.from('payments').select('amount, payment_date').eq('hotel_id', currentHotel.id).gte('payment_date', yearStart),
-      supabase.from('reservations').select('id', { count: 'exact' }).eq('hotel_id', currentHotel.id).eq('check_in', tomorrowStr).in('status', ['confirmed', 'checked_in']),
     ]);
 
     if (roomsRes.error) throw roomsRes.error;
@@ -211,7 +207,6 @@ export function useDashboardData(currentHotel: Hotel | null) {
       todayCheckOuts: checkOutsRes.count || 0,
       pendingCheckIns: pendingCIRes.count || 0,
       pendingCheckOuts: pendingCORes.count || 0,
-      tomorrowArrivals: tomorrowRes.count || 0,
       occupancyRate, todayRevenue, weekRevenue, monthRevenue, ytdRevenue,
       activeReservations, statusBreakdown,
     });

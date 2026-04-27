@@ -339,15 +339,9 @@ function ArrivalsTable({ items, fd }: { items: ArrivalItem[]; fd: FdTranslations
             {items.map(item => (
               <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-gray-900 flex items-center gap-2">
-                    {item.guestName}
-                    {item.isTomorrow && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">Tomorrow</span>
-                    )}
-                  </div>
+                  <div className="font-medium text-gray-900">{item.guestName}</div>
                   <div className="text-xs text-gray-400 flex items-center gap-1">
                     <Tag className="w-3 h-3" /> {item.confirmationCode}
-                    <span className="ml-1">· {formatDate(item.checkIn, 'MMM d')}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -388,13 +382,8 @@ function ArrivalsTable({ items, fd }: { items: ArrivalItem[]; fd: FdTranslations
           <Link key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <div className="min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate flex items-center gap-2">
-                  {item.guestName}
-                  {item.isTomorrow && (
-                    <span className="text-[9px] font-semibold uppercase bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">Tomorrow</span>
-                  )}
-                </p>
-                <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode} · {formatDate(item.checkIn, 'MMM d')}</p>
+                <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{item.confirmationCode}</p>
               </div>
               <StatusBadge status={item.status} fd={fd} />
             </div>

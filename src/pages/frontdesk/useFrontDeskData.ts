@@ -36,7 +36,6 @@ export interface ArrivalItem {
   totalAmount: number;
   notes: string | null;
   source: string | null;
-  isTomorrow: boolean;
 }
 
 export interface DepartureItem {
@@ -129,9 +128,6 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
   async function fetchReservations() {
     if (!currentHotel) return;
     const today = isoToday();
-    const tomorrowDate = new Date();
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrow = tomorrowDate.toISOString().split('T')[0];
 
     const [roomsRes, arrivalsRes, departuresRes, stayoversRes] = await Promise.all([
       supabase.from('rooms').select('status').eq('hotel_id', currentHotel.id),
@@ -139,8 +135,7 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
         .from('reservations')
         .select('id, confirmation_code, check_in, check_out, status, total_amount, adults, children, notes, source, created_at, guest:guests(first_name, last_name), room:rooms(number, room_type:room_types(name))')
         .eq('hotel_id', currentHotel.id)
-        .gte('check_in', today)
-        .lte('check_in', tomorrow)
+        .eq('check_in', today)
         .in('status', ['confirmed', 'checked_in', 'no_show'])
         .order('check_in', { ascending: true }),
       supabase
@@ -180,22 +175,21 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
     const departureList = (departuresRes.data || []) as any[];
     const stayoverList = (stayoversRes.data || []) as any[];
 
-    const todayArrivals = arrivalList.filter(r => r.check_in === today);
-    const arrivalsExpected = todayArrivals.filter(r => r.status === 'confirmed').length;
-    const arrivalsCheckedIn = todayArrivals.filter(r => r.status === 'checked_in').length;
-    const noShows = todayArrivals.filter(r => r.status === 'no_show').length;
-    const walkins = todayArrivals.filter(r =>
+    const arrivalsExpected = arrivalList.filter(r => r.status === 'confirmed').length;
+    const arrivalsCheckedIn = arrivalList.filter(r => r.status === 'checked_in').length;
+    const noShows = arrivalList.filter(r => r.status === 'no_show').length;
+    const walkins = arrivalList.filter(r =>
       r.source === 'walk_in' ||
       (r.created_at && r.created_at.split('T')[0] === today && r.source !== 'booking_com' && r.source !== 'expedia' && r.source !== 'airbnb')
     ).length;
     const departuresExpected = departureList.filter(r => r.status === 'checked_in').length;
     const departuresCheckedOut = departureList.filter(r => r.status === 'checked_out').length;
 
-    const arrivedRevenue = todayArrivals.filter(r => r.status === 'checked_in').reduce((s: number, r: any) => s + (r.total_amount || 0), 0);
+    const arrivedRevenue = arrivalList.filter(r => r.status === 'checked_in').reduce((s: number, r: any) => s + (r.total_amount || 0), 0);
     const departedRevenue = departureList.filter(r => r.status === 'checked_out').reduce((s: number, r: any) => s + (r.total_amount || 0), 0);
     const todayRevenue = arrivedRevenue + departedRevenue;
 
-    const allOccupied = [...todayArrivals.filter(r => r.status === 'checked_in'), ...stayoverList];
+    const allOccupied = [...arrivalList.filter(r => r.status === 'checked_in'), ...stayoverList];
     const avgRoomRate = allOccupied.length > 0
       ? Math.round(allOccupied.reduce((s: number, r: any) => {
           const nights = nightsBetween(r.check_in, r.check_out);
@@ -228,7 +222,6 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
       totalAmount: r.total_amount || 0,
       notes: r.notes,
       source: r.source,
-      isTomorrow: r.check_in === tomorrow,
     })));
 
     setDepartures(departureList.map((r: any) => ({

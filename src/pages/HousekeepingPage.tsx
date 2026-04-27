@@ -56,18 +56,14 @@ export default function HousekeepingPage() {
         .order('created_at', { ascending: false }),
       supabase.from('staff_members').select('*')
         .eq('hotel_id', currentHotel.id)
-        .order('first_name'),
+        .order('name'),
       supabase.from('rooms').select('id, number, floor, status, room_type:room_types(name)')
         .eq('hotel_id', currentHotel.id)
         .order('floor').order('number'),
     ]);
     setTasks((t ?? []) as HKTask[]);
     setIssues((i ?? []) as MaintenanceRequest[]);
-    setStaff((s ?? []).map((row: any) => ({
-      ...row,
-      name: `${row.first_name ?? ''} ${row.last_name ?? ''}`.trim(),
-      active: row.is_active,
-    })) as HKStaff[]);
+    setStaff((s ?? []) as HKStaff[]);
     setRooms((r ?? []) as Room[]);
 
     const { data: upsellOrders } = await supabase
@@ -178,7 +174,6 @@ export default function HousekeepingPage() {
           tenantId={tenantId}
           upsellByRoom={upsellByRoom}
           onTasksChanged={load}
-          rooms={rooms.map(r => ({ id: r.id, number: r.number, floor: r.floor }))}
         />
       )}
 

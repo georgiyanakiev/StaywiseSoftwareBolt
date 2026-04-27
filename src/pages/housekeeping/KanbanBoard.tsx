@@ -1,21 +1,14 @@
 import { useState } from 'react';
-import { Plus, RefreshCw, Loader2, ChevronRight, User, AlertTriangle, X } from 'lucide-react';
+import { Plus, RefreshCw, Loader2, ChevronRight, User, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
-import Modal from '../../components/ui/Modal';
 import {
   HKTask, HKStaff,
   TASK_TYPE_LABELS, TASK_TYPE_COLORS, PRIORITY_COLORS,
   KANBAN_COLUMNS, NEXT_STATUS, STATUS_LABELS,
 } from './types';
 import TaskDetailPanel from './TaskDetailPanel';
-
-interface RoomLite {
-  id: string;
-  number: string;
-  floor: number;
-}
 
 interface Props {
   tasks: HKTask[];
@@ -24,10 +17,9 @@ interface Props {
   tenantId: string | null;
   upsellByRoom?: Record<string, string[]>;
   onTasksChanged: () => void;
-  rooms?: RoomLite[];
 }
 
-export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByRoom = {}, onTasksChanged, rooms = [] }: Props) {
+export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByRoom = {}, onTasksChanged }: Props) {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [selectedTask, setSelectedTask] = useState<HKTask | null>(null);
@@ -36,7 +28,6 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
   const [filterPriority, setFilterPriority] = useState('');
   const [filterFloor, setFilterFloor] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
 
   const staffNames = [...new Set(tasks.map(t => t.assigned_to).filter(Boolean))];
   const floors = [...new Set(tasks.map(t => t.floor).filter(f => f != null))].sort((a, b) => a - b);
@@ -163,19 +154,11 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
             {floors.map(f => <option key={f} value={String(f)}>Floor {f}</option>)}
           </select>
         </div>
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center justify-center gap-2 flex-1 sm:flex-none px-3 py-1.5 bg-white text-[#1e3a5f] border border-[#1e3a5f]/20 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Create Task</span>
-            <span className="sm:hidden">New</span>
-          </button>
+        <div className="sm:ml-auto">
           <button
             onClick={generateTasks}
             disabled={generating}
-            className="flex items-center justify-center gap-2 flex-1 sm:flex-none px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors disabled:opacity-70"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto px-3 py-1.5 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#172e4c] transition-colors disabled:opacity-70"
           >
             {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{t.housekeeping.generateTodaysTasks}</span>
@@ -225,135 +208,7 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
           }}
         />
       )}
-
-      {showCreate && (
-        <CreateTaskModal
-          rooms={rooms}
-          staff={staff}
-          hotelId={hotelId}
-          tenantId={tenantId}
-          onClose={() => setShowCreate(false)}
-          onCreated={() => {
-            setShowCreate(false);
-            onTasksChanged();
-            toast('success', 'Cleaning task created');
-          }}
-        />
-      )}
     </div>
-  );
-}
-
-function CreateTaskModal({ rooms, staff, hotelId, tenantId, onClose, onCreated }: {
-  rooms: RoomLite[];
-  staff: HKStaff[];
-  hotelId: string;
-  tenantId: string | null;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const today = new Date().toISOString().split('T')[0];
-  const [form, setForm] = useState({
-    room_id: rooms[0]?.id ?? '',
-    task_type: 'checkout_clean',
-    priority: 'normal',
-    assigned_to: '',
-    scheduled_date: today,
-    notes: '',
-  });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
-
-  const handleCreate = async () => {
-    setError(null);
-    if (!form.room_id) { setError('Select a room'); return; }
-    const room = rooms.find(r => r.id === form.room_id);
-    if (!room) { setError('Invalid room'); return; }
-    setSaving(true);
-    const { error: err } = await supabase.from('housekeeping_tasks').insert({
-      hotel_id: hotelId,
-      ...(tenantId ? { tenant_id: tenantId } : {}),
-      room_id: form.room_id,
-      room_number: room.number,
-      floor: room.floor ?? 1,
-      task_type: form.task_type,
-      priority: form.priority,
-      assigned_to: form.assigned_to,
-      scheduled_date: form.scheduled_date,
-      notes: form.notes,
-      status: 'pending',
-    });
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    onCreated();
-  };
-
-  const activeStaff = staff.filter(s => s.active);
-
-  return (
-    <Modal open onClose={onClose} title="Create Cleaning Task" size="sm">
-      <div className="space-y-4 p-1">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Room</label>
-          <select value={form.room_id} onChange={e => set('room_id', e.target.value)} className="input-field">
-            {rooms.length === 0 && <option value="">No rooms available</option>}
-            {rooms.map(r => (
-              <option key={r.id} value={r.id}>Room {r.number} · Floor {r.floor}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Task Type</label>
-            <select value={form.task_type} onChange={e => set('task_type', e.target.value)} className="input-field">
-              {Object.entries(TASK_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
-            <select value={form.priority} onChange={e => set('priority', e.target.value)} className="input-field">
-              <option value="low">Low</option>
-              <option value="normal">Normal</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Assign To</label>
-            <select value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)} className="input-field">
-              <option value="">Unassigned</option>
-              {activeStaff.map(s => (
-                <option key={s.id} value={s.name}>{s.name} ({s.role})</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Date</label>
-            <input type="date" value={form.scheduled_date} onChange={e => set('scheduled_date', e.target.value)} className="input-field" />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
-          <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className="input-field resize-none" placeholder="Optional instructions..." />
-        </div>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-          <button onClick={onClose} className="btn-secondary">Cancel</button>
-          <button onClick={handleCreate} disabled={saving || !form.room_id} className="btn-primary flex items-center gap-2">
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Create Task
-          </button>
-        </div>
-      </div>
-    </Modal>
   );
 }
 

@@ -34,7 +34,7 @@ export default function StaffTab({ staff, tasks, hotelId, tenantId, onChanged }:
 
   const toggleActive = async (s: HKStaff) => {
     setTogglingId(s.id);
-    await supabase.from('staff_members').update({ is_active: !s.active }).eq('id', s.id);
+    await supabase.from('staff_members').update({ active: !s.active }).eq('id', s.id);
     setTogglingId(null);
     onChanged();
     toast('success', `${s.name} ${!s.active ? 'activated' : 'deactivated'}`);
@@ -163,58 +163,34 @@ function StaffModal({ existing, hotelId, tenantId, onClose, onSaved }: {
   onSaved: () => void;
 }) {
   const [form, setForm] = useState({
-    first_name: existing?.first_name ?? '',
-    last_name:  existing?.last_name  ?? '',
-    email:      existing?.email      ?? '',
-    role:       existing?.role       ?? 'housekeeper',
-    phone:      existing?.phone      ?? '',
+    name:  existing?.name  ?? '',
+    role:  existing?.role  ?? 'housekeeper',
+    phone: existing?.phone ?? '',
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => {
-    setError(null);
-    if (!form.first_name.trim() || !form.last_name.trim() || !form.email.trim()) {
-      setError('First name, last name and email are required');
-      return;
-    }
     setSaving(true);
-    const payload = {
-      first_name: form.first_name.trim(),
-      last_name:  form.last_name.trim(),
-      email:      form.email.trim(),
-      role:       form.role,
-      phone:      form.phone,
-    };
-    const { error: err } = existing
-      ? await supabase.from('staff_members').update(payload).eq('id', existing.id)
-      : await supabase.from('staff_members').insert({
-          hotel_id: hotelId,
-          ...(tenantId ? { tenant_id: tenantId } : {}),
-          ...payload,
-        });
+    if (existing) {
+      await supabase.from('staff_members').update(form).eq('id', existing.id);
+    } else {
+      await supabase.from('staff_members').insert({
+        hotel_id: hotelId,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
+        ...form,
+      });
+    }
     setSaving(false);
-    if (err) { setError(err.message); return; }
     onSaved();
   };
 
   return (
     <Modal open onClose={onClose} title={existing ? 'Edit Staff Member' : 'Add Staff Member'} size="sm">
       <div className="space-y-4 p-1">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
-            <input value={form.first_name} onChange={e => set('first_name', e.target.value)} className="input-field" placeholder="First name" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
-            <input value={form.last_name} onChange={e => set('last_name', e.target.value)} className="input-field" placeholder="Last name" />
-          </div>
-        </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-          <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className="input-field" placeholder="name@hotel.com" />
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+          <input value={form.name} onChange={e => set('name', e.target.value)} className="input-field" placeholder="Full name" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
@@ -229,10 +205,9 @@ function StaffModal({ existing, hotelId, tenantId, onClose, onSaved }: {
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
           <input value={form.phone} onChange={e => set('phone', e.target.value)} className="input-field" placeholder="+351 912 345 678" />
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
           <button onClick={onClose} className="btn-secondary">Cancel</button>
-          <button onClick={handleSave} disabled={saving || !form.first_name || !form.last_name || !form.email} className="btn-primary flex items-center gap-2">
+          <button onClick={handleSave} disabled={saving || !form.name} className="btn-primary flex items-center gap-2">
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {existing ? 'Save Changes' : 'Add Staff'}
           </button>
