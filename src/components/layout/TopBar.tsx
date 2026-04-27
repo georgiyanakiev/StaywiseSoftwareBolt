@@ -527,11 +527,29 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
 
   useEffect(() => {
     if (!user) return;
+
+    const email = user.email ?? '';
+    const envList = (import.meta.env.VITE_SUPERADMIN_EMAILS ?? '')
+      .split(',')
+      .map((e: string) => e.trim())
+      .filter(Boolean);
+    const emailMatch =
+      envList.includes(email) ||
+      email.endsWith('@staywisesoftware.com') ||
+      email === 'staywisesoftware@gmail.com';
+
+    if (emailMatch) {
+      setIsSuperAdmin(true);
+      return;
+    }
+
     supabase
       .from('user_hotel_assignments')
       .select('role')
       .eq('user_id', user.id)
       .eq('role', 'super_admin')
+      .eq('active', true)
+      .is('tenant_id', null)
       .limit(1)
       .then(({ data }) => {
         setIsSuperAdmin((data?.length ?? 0) > 0);
@@ -719,7 +737,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
         )}
 
         {/* ── ROW 3 — 38px light gray secondary nav ── */}
-        {hasRow3 && (
+        {(hasRow3 || isSuperAdmin) && (
           <div className="hidden lg:block bg-[#f8fafc] border-b border-[#e2e8f0] h-[38px]">
             <div
               className="h-full flex items-center px-6"
