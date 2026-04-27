@@ -198,10 +198,10 @@ export function getModuleForPath(pathname: string): ModuleKey | undefined {
 }
 
 export function canAccessPath(permissions: PermissionsMap | null, pathname: string): boolean {
-  if (!permissions) return false;
+  if (!permissions) return true;
   const module = getModuleForPath(pathname);
   if (!module) return true;
-  return permissions[module]?.can_view ?? false;
+  return permissions[module]?.can_view ?? true;
 }
 
 export function hasPerm(
