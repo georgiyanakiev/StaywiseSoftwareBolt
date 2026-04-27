@@ -198,7 +198,9 @@ export function getModuleForPath(pathname: string): ModuleKey | undefined {
 }
 
 export function canAccessPath(permissions: PermissionsMap | null, pathname: string): boolean {
-  if (!permissions) return false;
+  // When permissions haven't loaded (e.g. super-admin without a staff_members row),
+  // fall back to permissive nav. RLS still controls access to underlying data.
+  if (!permissions) return true;
   const module = getModuleForPath(pathname);
   if (!module) return true;
   return permissions[module]?.can_view ?? false;
