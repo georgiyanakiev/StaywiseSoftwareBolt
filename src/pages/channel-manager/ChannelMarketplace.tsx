@@ -4,6 +4,7 @@ import {
   Settings, X, Zap, Users, Code2, Wrench, FileText, Eye, EyeOff,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { storeChannelSecret } from '../../lib/channelSecrets';
 import type { Channel } from './ChannelCard';
 import { getChannelIcon } from '../../utils/channelCatalog';
 
@@ -160,10 +161,10 @@ export default function ChannelCatalog({
         .single();
 
       if (!error && data?.id && credentials.client_secret) {
-        const { data: vaultId } = await supabase.rpc('store_channel_secret', {
-          p_vault_id: null,
-          p_name: `channel_client_secret_${data.id}_${hotelId}`,
-          p_value: credentials.client_secret,
+        const vaultId = await storeChannelSecret({
+          vaultId: null,
+          name: `channel_client_secret_${data.id}_${hotelId}`,
+          value: credentials.client_secret,
         });
         if (vaultId) {
           await supabase.from('channels')

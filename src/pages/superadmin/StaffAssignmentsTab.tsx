@@ -257,8 +257,23 @@ export default function StaffAssignmentsTab({ tenants }: Props) {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await dbClient.rpc('admin_list_users');
-    if (!error && data) {
+    const { data: sessionData } = await dbClient.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-list-users`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
       setUsers(data as AdminUser[]);
     }
     setLoading(false);

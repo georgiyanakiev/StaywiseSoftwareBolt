@@ -4,6 +4,7 @@ import {
   BookOpen, Settings, FlaskConical,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { storeChannelSecret } from '../../lib/channelSecrets';
 import { useHotel } from '../../contexts/HotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
@@ -145,23 +146,19 @@ export default function ChannelManagerPage() {
     let clientSecretVaultId = channelModal.channel?.client_secret_vault_id ?? null;
 
     if (formData.api_key) {
-      const { data: vaultId, error: vaultErr } = await supabase.rpc('store_channel_secret', {
-        p_vault_id: apiKeyVaultId,
-        p_name: `channel_api_key_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
-        p_value: formData.api_key,
+      apiKeyVaultId = await storeChannelSecret({
+        vaultId: apiKeyVaultId,
+        name: `channel_api_key_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
+        value: formData.api_key,
       });
-      if (vaultErr) throw new Error(vaultErr.message);
-      apiKeyVaultId = vaultId as string;
     }
 
     if (formData.client_secret) {
-      const { data: vaultId, error: vaultErr } = await supabase.rpc('store_channel_secret', {
-        p_vault_id: clientSecretVaultId,
-        p_name: `channel_client_secret_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
-        p_value: formData.client_secret,
+      clientSecretVaultId = await storeChannelSecret({
+        vaultId: clientSecretVaultId,
+        name: `channel_client_secret_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
+        value: formData.client_secret,
       });
-      if (vaultErr) throw new Error(vaultErr.message);
-      clientSecretVaultId = vaultId as string;
     }
 
     const channelPayload = {
