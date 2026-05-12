@@ -1,17 +1,46 @@
-import { Building2, Plus, LogOut, Hotel } from 'lucide-react';
+import { Building2, Plus, LogOut, Hotel, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLobbyData, type LobbyHotel } from './useLobbyData';
+import { supabase } from '../../lib/supabase';
 import HotelCard from './HotelCard';
 import HotelCardSkeleton from './HotelCardSkeleton';
 import LegalFooter from '../../components/legal/LegalFooter';
 
 const SUPERADMIN_EMAILS = (import.meta.env.VITE_SUPERADMIN_EMAILS ?? '').split(',').map((e: string) => e.trim()).filter(Boolean);
 
-function isSuperAdmin(email: string | undefined): boolean {
+function emailLooksLikeSuperAdmin(email: string | undefined): boolean {
   if (!email) return false;
   return SUPERADMIN_EMAILS.includes(email) || email.endsWith('@staywisesoftware.com');
+}
+
+function useIsSuperAdmin() {
+  const { user } = useAuth();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setIsSuperAdmin(false);
+      return;
+    }
+    if (emailLooksLikeSuperAdmin(user.email)) {
+      setIsSuperAdmin(true);
+      return;
+    }
+    supabase
+      .from('user_hotel_assignments')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('role', 'super_admin')
+      .eq('active', true)
+      .is('tenant_id', null)
+      .limit(1)
+      .then(({ data }) => setIsSuperAdmin((data?.length ?? 0) > 0));
+  }, [user]);
+
+  return isSuperAdmin;
 }
 
 function getAvatarInitials(email: string): string {
@@ -24,7 +53,7 @@ export default function LobbyPage() {
   const navigate = useNavigate();
   const { hotels, loading, error } = useLobbyData();
 
-  const superAdmin = isSuperAdmin(user?.email);
+  const superAdmin = useIsSuperAdmin();
 
   async function handleEnterHotel(hotel: LobbyHotel) {
     await enter({
@@ -100,13 +129,22 @@ export default function LobbyPage() {
           </div>
 
           {superAdmin && (
-            <button
-              onClick={() => navigate('/superadmin')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Hotel
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/superadmin')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#e2e8f0] hover:bg-[#f8fafc] text-[#1e3a5f] text-sm font-medium rounded-xl transition-colors shadow-sm"
+              >
+                <Shield className="w-4 h-4" />
+                Super Admin
+              </button>
+              <button
+                onClick={() => navigate('/superadmin')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Hotel
+              </button>
+            </div>
           )}
         </div>
 
