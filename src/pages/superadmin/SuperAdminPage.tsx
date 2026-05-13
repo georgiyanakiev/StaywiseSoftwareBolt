@@ -16,7 +16,8 @@ export default function SuperAdminPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<{ mode: 'add' | 'edit'; tenant?: Tenant } | null>(null);
   const [search, setSearch] = useState('');
@@ -68,6 +69,7 @@ export default function SuperAdminPage() {
     });
 
     setTenants(tenantsData.map(t => ({ ...t, staff_count: countMap[t.id] ?? 0 })));
+    setHasLoadedOnce(true);
     setLoading(false);
   }, [db]);
 
@@ -252,7 +254,21 @@ export default function SuperAdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <StatsBar tenants={tenants} />
+        {hasLoadedOnce ? (
+          <StatsBar tenants={tenants} />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm animate-pulse">
+                <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
+                <div className="space-y-2">
+                  <div className="h-5 w-8 bg-gray-100 rounded" />
+                  <div className="h-3 w-16 bg-gray-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
@@ -263,7 +279,7 @@ export default function SuperAdminPage() {
               <Building2 className="w-4 h-4" />
               Hotels
               <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${tab === 'hotels' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                {tenants.length}
+                {hasLoadedOnce ? tenants.length : '—'}
               </span>
             </button>
             <button
