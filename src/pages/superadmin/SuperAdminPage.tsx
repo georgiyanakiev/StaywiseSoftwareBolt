@@ -142,6 +142,12 @@ export default function SuperAdminPage() {
         active: formData.active,
       }).eq('id', modal.tenant.id);
       if (err) throw new Error(err.message);
+
+      if (formData.name !== modal.tenant.name) {
+        await db.from('hotels')
+          .update({ name: formData.name })
+          .eq('tenant_id', modal.tenant.id);
+      }
     }
     await fetchTenants();
   };
