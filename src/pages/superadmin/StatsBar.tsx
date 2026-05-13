@@ -7,7 +7,7 @@ interface StatsBarProps {
 
 export default function StatsBar({ tenants }: StatsBarProps) {
   const total = tenants.length;
-  const active = tenants.filter(t => t.active).length;
+  const active = tenants.filter(t => t.active === true).length;
   const starter = tenants.filter(t => t.plan === 'starter').length;
   const pro = tenants.filter(t => t.plan === 'pro').length;
   const enterprise = tenants.filter(t => t.plan === 'enterprise').length;

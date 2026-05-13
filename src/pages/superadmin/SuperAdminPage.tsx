@@ -165,11 +165,16 @@ export default function SuperAdminPage() {
 
     if (err) {
       setError(`Failed to update tenant: ${err.message}`);
-    } else if (!data) {
-      setError('Update was blocked (no row returned). Check RLS policies for tenants.');
-    } else {
-      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, active: data.active } : t));
+      setTogglingId(null);
+      return;
     }
+    if (!data) {
+      setError('Update was blocked (no row returned). Check RLS policies for tenants.');
+      setTogglingId(null);
+      return;
+    }
+
+    await fetchTenants();
     setTogglingId(null);
   };
 
