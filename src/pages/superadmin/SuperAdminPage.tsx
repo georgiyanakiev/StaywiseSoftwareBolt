@@ -148,12 +148,21 @@ export default function SuperAdminPage() {
 
   const handleToggleActive = async (tenant: Tenant) => {
     setTogglingId(tenant.id);
-    const { error: err } = await db
+    setError(null);
+    const next = !tenant.active;
+    const { data, error: err } = await db
       .from('tenants')
-      .update({ active: !tenant.active })
-      .eq('id', tenant.id);
-    if (!err) {
-      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, active: !tenant.active } : t));
+      .update({ active: next })
+      .eq('id', tenant.id)
+      .select('id, active')
+      .maybeSingle();
+
+    if (err) {
+      setError(`Failed to update tenant: ${err.message}`);
+    } else if (!data) {
+      setError('Update was blocked (no row returned). Check RLS policies for tenants.');
+    } else {
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, active: data.active } : t));
     }
     setTogglingId(null);
   };
