@@ -45,10 +45,8 @@ export default function SuperAdminPage() {
   const fetchTenants = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: err } = await db
-      .from('tenants')
-      .select('*')
-      .order('created_at', { ascending: false });
+
+    const { data, error: err } = await db.rpc('admin_list_all_tenants');
 
     if (err) {
       setError(err.message);
@@ -56,19 +54,22 @@ export default function SuperAdminPage() {
       return;
     }
 
-    const tenantsData = (data as Tenant[]) ?? [];
+    const tenantsData: Tenant[] = (data ?? []).map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      name: row.name as string,
+      subdomain: row.subdomain as string,
+      custom_domain: (row.custom_domain as string) ?? null,
+      logo_url: (row.logo_url as string) ?? null,
+      primary_color: (row.primary_color as string) ?? '#2563eb',
+      secondary_color: (row.secondary_color as string) ?? '#1e40af',
+      plan: (row.plan as Tenant['plan']) ?? 'starter',
+      active: row.active === true,
+      owner_email: (row.owner_email as string) ?? null,
+      created_at: row.created_at as string,
+      staff_count: Number(row.staff_count) || 0,
+    }));
 
-    const { data: staffCounts } = await db
-      .from('staff_members')
-      .select('tenant_id')
-      .eq('is_active', true);
-
-    const countMap: Record<string, number> = {};
-    (staffCounts ?? []).forEach((s: { tenant_id: string }) => {
-      if (s.tenant_id) countMap[s.tenant_id] = (countMap[s.tenant_id] ?? 0) + 1;
-    });
-
-    setTenants(tenantsData.map(t => ({ ...t, staff_count: countMap[t.id] ?? 0 })));
+    setTenants(tenantsData);
     setHasLoadedOnce(true);
     setLoading(false);
   }, [db]);
