@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
+import { useHotelPath } from '../../hooks/useHotelPath';
 
 interface NavItem {
   to: string;
@@ -37,7 +38,7 @@ function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProp
   const { t, language, setLanguage } = useLanguage();
   const { session, clearActiveHotel } = useActiveHotel();
   const location = useLocation();
-  const navigate = useNavigate();
+  const { basePath, hotelPath } = useHotelPath();
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
 
   const brandColor = session?.primaryColor ?? '#2563eb';
@@ -78,8 +79,13 @@ function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProp
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];
 
-  const isActive = (to: string) =>
-    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
+  const isActive = (to: string) => {
+    const fullTo = hotelPath(to);
+    const dashPath = basePath || '/';
+    return fullTo === dashPath
+      ? location.pathname === dashPath || location.pathname === dashPath + '/'
+      : location.pathname === fullTo || location.pathname.startsWith(fullTo + '/');
+  };
 
   const handleNavClick = () => {
     if (mobile && onClose) onClose();
@@ -90,7 +96,7 @@ function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProp
     return (
       <NavLink
         key={item.to}
-        to={item.to}
+        to={hotelPath(item.to)}
         onClick={handleNavClick}
         title={collapsed ? item.label : undefined}
         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
@@ -277,6 +283,7 @@ export default function TopNav() {
   const { session } = useActiveHotel();
   const brandColor = session?.primaryColor ?? '#2563eb';
   const navigate = useNavigate();
+  const { hotelPath } = useHotelPath();
 
   return (
     <>
@@ -289,7 +296,7 @@ export default function TopNav() {
           <Menu className="w-5 h-5" />
         </button>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(hotelPath('/'))}
           className="text-sm font-bold text-gray-900 truncate max-w-[180px]"
         >
           {session?.hotelName ?? 'StayWise'}

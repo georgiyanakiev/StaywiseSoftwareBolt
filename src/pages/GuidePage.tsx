@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useHotelNavigate } from '../hooks/useHotelPath';
 
 const sections = [
   {
@@ -582,7 +582,7 @@ RLS (Разрешение на ред ниво) — Функция за сигу
 ];
 
 export default function GuidePage() {
-  const navigate = useNavigate();
+  const navigate = useHotelNavigate();
 
   useEffect(() => {
     document.title = 'StayWise Software — Ръководство за потребител';

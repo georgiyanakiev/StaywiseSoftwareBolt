@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useHotelNavigate } from '../../hooks/useHotelPath';
 import { ArrowLeft, Mail, Phone, MapPin, Tag, AlertTriangle, Star, CreditCard as Edit2, Plus, FileText, MessageSquare, PhoneCall, Send, Calendar, Euro, TrendingUp, Clock, Upload, Eye, Trash2 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
@@ -31,7 +32,7 @@ function StarRating({ value, onChange }: { value?: number; onChange?: (v: number
 
 export default function GuestProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const hotelNavigate = useHotelNavigate();
   const { currentHotel } = useHotel();
   const { toast } = useToast();
 
@@ -146,7 +147,7 @@ export default function GuestProfilePage() {
 
   return (
     <div className="space-y-5 max-w-5xl">
-      <button onClick={() => navigate('/guests')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">
+      <button onClick={() => hotelNavigate('/guests')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">
         <ArrowLeft className="w-4 h-4" />Back to Guest List
       </button>
 

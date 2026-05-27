@@ -56,6 +56,7 @@ export default function LobbyPage() {
   const superAdmin = useIsSuperAdmin();
 
   async function handleEnterHotel(hotel: LobbyHotel) {
+    const slug = hotel.tenant?.subdomain || hotel.id;
     await enter({
       tenantId: hotel.tenant_id ?? hotel.id,
       hotelId: hotel.id,
@@ -65,10 +66,10 @@ export default function LobbyPage() {
       primaryColor: hotel.tenant?.primary_color ?? '#2563eb',
       secondaryColor: hotel.tenant?.secondary_color ?? '#1e40af',
       tenantName: hotel.tenant?.name ?? hotel.name,
-      subdomain: hotel.tenant?.subdomain ?? '',
+      subdomain: slug,
       plan: hotel.tenant?.plan ?? 'starter',
     });
-    navigate('/');
+    navigate(`/h/${slug}`);
   }
 
   async function handleSignOut() {

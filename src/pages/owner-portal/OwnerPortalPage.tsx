@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Plus, Pencil, BedDouble, FileText, Send, Eye, Building2, ChevronRight,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useHotelNavigate } from '../../hooks/useHotelPath';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate } from '../../lib/utils';
@@ -27,7 +27,7 @@ interface OwnerRow extends PropertyOwner {
 export default function OwnerPortalPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const navigate = useHotelNavigate();
 
   const [tab, setTab] = useState<Tab>('owners');
   const [owners, setOwners] = useState<OwnerRow[]>([]);

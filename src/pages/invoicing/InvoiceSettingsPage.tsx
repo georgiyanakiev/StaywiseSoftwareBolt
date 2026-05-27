@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
 import { useTenantId } from '../../hooks/useTenantQuery';
-import { Link } from 'react-router-dom';
+import HotelLink from '../../components/ui/HotelLink';
 
 interface SettingsForm {
   hotel_name: string;
@@ -114,9 +114,9 @@ export default function InvoiceSettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
-        <Link to="/invoicing" className="text-gray-400 hover:text-gray-600 transition-colors">
+        <HotelLink to="/invoicing" className="text-gray-400 hover:text-gray-600 transition-colors">
           <ChevronLeft className="w-5 h-5" />
-        </Link>
+        </HotelLink>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
             <Settings className="w-6 h-6 text-blue-600" />
@@ -233,7 +233,7 @@ export default function InvoiceSettingsPage() {
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save Settings
         </button>
-        <Link to="/invoicing" className="btn-secondary">Cancel</Link>
+        <HotelLink to="/invoicing" className="btn-secondary">Cancel</HotelLink>
       </div>
     </div>
   );

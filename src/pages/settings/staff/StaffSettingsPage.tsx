@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import HotelLink from '../../../components/ui/HotelLink';
 import {
   ArrowLeft, UserPlus, Pencil, UserX, UserCheck, Search, Shield, BookOpen,
   Clock, CheckCircle2, XCircle, AlertTriangle, KeyRound, Eye, EyeOff, Loader2, Info,
@@ -169,13 +169,13 @@ export default function StaffSettingsPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link
+          <HotelLink
             to="/settings"
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Settings
-          </Link>
+          </HotelLink>
           <span className="text-gray-300">/</span>
           <h1 className="text-xl font-semibold text-gray-900">Staff & Permissions</h1>
         </div>

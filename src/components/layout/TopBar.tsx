@@ -15,6 +15,7 @@ import { translations } from '../../lib/translations';
 import { useChannels, type Channel } from '../../hooks/useChannels';
 import { getChannelIcon } from '../../utils/channelCatalog';
 import { supabase } from '../../lib/supabase';
+import { useHotelPath } from '../../hooks/useHotelPath';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface NavItem {
@@ -85,12 +86,16 @@ function capitalize(s: string) {
 
 function useIsActive() {
   const location = useLocation();
+  const { basePath, hotelPath } = useHotelPath();
   return useCallback(
-    (to: string) =>
-      to === '/'
-        ? location.pathname === '/'
-        : location.pathname === to || location.pathname.startsWith(to + '/'),
-    [location.pathname],
+    (to: string) => {
+      const fullTo = hotelPath(to);
+      const dashPath = basePath || '/';
+      return fullTo === dashPath
+        ? location.pathname === dashPath || location.pathname === dashPath + '/'
+        : location.pathname === fullTo || location.pathname.startsWith(fullTo + '/');
+    },
+    [location.pathname, basePath, hotelPath],
   );
 }
 
@@ -308,11 +313,12 @@ function UserAvatar({ brandColor, userRole, dark }: { brandColor: string; userRo
 /* ─── Row 2 link ────────────────────────────────────────────── */
 function R2Link({ item, brandColor }: { item: NavItem; brandColor: string }) {
   const isActive = useIsActive();
+  const { hotelPath } = useHotelPath();
   const active = isActive(item.to);
 
   return (
     <NavLink
-      to={item.to}
+      to={hotelPath(item.to)}
       style={active ? { color: brandColor, backgroundColor: `${brandColor}14` } : undefined}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] whitespace-nowrap flex-shrink-0 transition-colors ${
         active ? 'font-medium' : 'text-[#1f2937] hover:text-[#111827] hover:bg-[#f8fafc]'
@@ -327,11 +333,12 @@ function R2Link({ item, brandColor }: { item: NavItem; brandColor: string }) {
 /* ─── Row 3 link ────────────────────────────────────────────── */
 function R3Link({ item, brandColor }: { item: NavItem; brandColor: string }) {
   const isActive = useIsActive();
+  const { hotelPath } = useHotelPath();
   const active = isActive(item.to);
 
   return (
     <NavLink
-      to={item.to}
+      to={hotelPath(item.to)}
       style={active ? { color: brandColor } : undefined}
       className={`flex items-center gap-1 px-2.5 py-1 rounded-[5px] text-[12px] whitespace-nowrap flex-shrink-0 transition-colors ${
         active ? 'font-medium' : 'text-[#1f2937] hover:text-[#111827] hover:bg-[#f1f5f9]'
@@ -380,6 +387,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin, 
   drawerSections: { label: string; items: NavItem[] }[];
 }) {
   const isActive = useIsActive();
+  const { hotelPath } = useHotelPath();
   const { signOut, user, canAccess } = useAuth();
   const { clearActiveHotel } = useActiveHotel();
   const navigate = useNavigate();
@@ -420,7 +428,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin, 
                   return (
                     <NavLink
                       key={item.to}
-                      to={item.to}
+                      to={hotelPath(item.to)}
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                         active ? 'font-medium' : 'text-[#374151] hover:bg-[#f9fafb]'
@@ -439,7 +447,7 @@ function MobileDrawer({ onClose, brandColor, hotelName, userRole, isSuperAdmin, 
                     {drawerChannels.map(ch => (
                       <button
                         key={ch.id}
-                        onClick={() => { navigate('/channel-manager'); onClose(); }}
+                        onClick={() => { navigate(hotelPath('/channel-manager')); onClose(); }}
                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#374151] hover:bg-[#f9fafb] transition-colors"
                       >
                         <ChannelAvatar ch={ch} />
@@ -524,6 +532,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
   const { staff, canAccess, user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { hotelPath } = useHotelPath();
 
   useEffect(() => {
     if (!user) return;
@@ -625,7 +634,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
     return (
       <header className="sticky top-0 z-50 w-full h-[48px] bg-[#1e3a5f] flex items-center px-6 gap-4">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(hotelPath('/'))}
           className="flex items-center gap-1.5 text-[#94a3b8] hover:text-white text-[13px] font-medium transition-colors flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -663,7 +672,7 @@ export default function TopBar({ variant = 'hotel' }: TopBarProps) {
           {/* Left: logo + hotel identity */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate(hotelPath('/'))}
               className="flex-shrink-0 rounded transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-white/40"
               aria-label="Back to Dashboard"
             >

@@ -12,7 +12,7 @@ import { formatDate, formatCurrency } from '../../lib/utils';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import InvoiceEditorModal from './InvoiceEditorModal';
 import InvoicePrintView from './InvoicePrintView';
-import { Link } from 'react-router-dom';
+import HotelLink from '../../components/ui/HotelLink';
 
 export interface InvoiceLine {
   id: string;
@@ -288,9 +288,9 @@ export default function InvoicingPage() {
           <p className="text-gray-500 text-sm mt-1">{t.invoicing.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/invoicing/settings" className="btn-secondary flex items-center gap-2 py-2">
+          <HotelLink to="/invoicing/settings" className="btn-secondary flex items-center gap-2 py-2">
             <Settings className="w-4 h-4" /> {t.invoicing.settings}
-          </Link>
+          </HotelLink>
           <button onClick={() => { setEditingInvoice(null); setShowEditor(true); }} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t.invoicing.newInvoice}
           </button>

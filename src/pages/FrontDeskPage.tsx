@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import HotelLink from '../components/ui/HotelLink';
 import {
   LogIn, LogOut, Users, BedDouble, SprayCan, CheckCircle2,
   AlertTriangle, Euro, RefreshCw,
@@ -71,12 +71,12 @@ export default function FrontDeskPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
+          <HotelLink
             to="/reservations"
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
           >
             <CalendarDays className="w-3.5 h-3.5" /> {fd.newBooking}
-          </Link>
+          </HotelLink>
           <button
             onClick={refresh}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -197,9 +197,9 @@ export default function FrontDeskPage() {
               <RoomStatusBar label={fd.clean} value={kpis.cleanRooms} total={kpis.totalRooms} color="bg-teal-400" textColor="text-teal-700" />
               <RoomStatusBar label={fd.maintenance} value={kpis.maintenanceRooms} total={kpis.totalRooms} color="bg-gray-400" textColor="text-gray-600" />
             </div>
-            <Link to="/rooms" className="mt-4 flex items-center gap-1 text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium">
+            <HotelLink to="/rooms" className="mt-4 flex items-center gap-1 text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium">
               {fd.manageRooms} <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            </HotelLink>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -224,7 +224,7 @@ export default function FrontDeskPage() {
                 { label: fd.housekeeping, to: '/housekeeping', icon: SprayCan, color: 'bg-amber-500 hover:bg-amber-600 text-white' },
                 { label: fd.guestDirectory, to: '/guests', icon: Users, color: 'bg-slate-600 hover:bg-slate-700 text-white' },
               ].map(a => (
-                <Link
+                <HotelLink
                   key={a.label}
                   to={a.to}
                   className={`${a.color} flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors`}
@@ -232,7 +232,7 @@ export default function FrontDeskPage() {
                   <a.icon className="w-3.5 h-3.5" />
                   {a.label}
                   <ArrowRight className="w-3.5 h-3.5 ml-auto opacity-60" />
-                </Link>
+                </HotelLink>
               ))}
             </div>
           </div>
@@ -367,9 +367,9 @@ function ArrivalsTable({ items, fd }: { items: ArrivalItem[]; fd: FdTranslations
                   <StatusBadge status={item.status} fd={fd} />
                 </td>
                 <td className="px-4 py-3">
-                  <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
+                  <HotelLink to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
                     {fd.view}
-                  </Link>
+                  </HotelLink>
                 </td>
               </tr>
             ))}
@@ -379,7 +379,7 @@ function ArrivalsTable({ items, fd }: { items: ArrivalItem[]; fd: FdTranslations
 
       <div className="md:hidden divide-y divide-gray-100">
         {items.map(item => (
-          <Link key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
+          <HotelLink key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
@@ -405,7 +405,7 @@ function ArrivalsTable({ items, fd }: { items: ArrivalItem[]; fd: FdTranslations
                 <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
               </div>
             </div>
-          </Link>
+          </HotelLink>
         ))}
       </div>
     </>
@@ -474,9 +474,9 @@ function DeparturesTable({ items, fd }: { items: DepartureItem[]; fd: FdTranslat
                   <StatusBadge status={item.status} fd={fd} />
                 </td>
                 <td className="px-4 py-3">
-                  <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
+                  <HotelLink to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
                     {fd.view}
-                  </Link>
+                  </HotelLink>
                 </td>
               </tr>
             ))}
@@ -486,7 +486,7 @@ function DeparturesTable({ items, fd }: { items: DepartureItem[]; fd: FdTranslat
 
       <div className="md:hidden divide-y divide-gray-100">
         {items.map(item => (
-          <Link key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
+          <HotelLink key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
@@ -516,7 +516,7 @@ function DeparturesTable({ items, fd }: { items: DepartureItem[]; fd: FdTranslat
                 )}
               </div>
             </div>
-          </Link>
+          </HotelLink>
         ))}
       </div>
     </>
@@ -576,9 +576,9 @@ function StayoversTable({ items, fd }: { items: StayoverItem[]; fd: FdTranslatio
                   {formatCurrency(item.totalAmount)}
                 </td>
                 <td className="px-4 py-3">
-                  <Link to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
+                  <HotelLink to="/reservations" className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium whitespace-nowrap">
                     {fd.view}
-                  </Link>
+                  </HotelLink>
                 </td>
               </tr>
             ))}
@@ -588,7 +588,7 @@ function StayoversTable({ items, fd }: { items: StayoverItem[]; fd: FdTranslatio
 
       <div className="md:hidden divide-y divide-gray-100">
         {items.map(item => (
-          <Link key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
+          <HotelLink key={item.id} to="/reservations" className="block p-3.5 hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900 text-sm truncate">{item.guestName}</p>
@@ -616,7 +616,7 @@ function StayoversTable({ items, fd }: { items: StayoverItem[]; fd: FdTranslatio
                 <p className="font-semibold text-gray-800">{formatCurrency(item.totalAmount)}</p>
               </div>
             </div>
-          </Link>
+          </HotelLink>
         ))}
       </div>
     </>

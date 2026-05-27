@@ -4,13 +4,14 @@ import {
   GitBranch, Globe, TrendingUp, ShoppingBag,
   CreditCard, FileText, BarChart3,
   Users, Settings, Building2, ChevronLeft, ChevronRight, LogOut, X, BookOpen,
-  Link2, UserCog, KeyRound, ClipboardList, Wrench, BedDouble,
+  UserCog, KeyRound, ClipboardList, Wrench, BedDouble,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTenant } from '../../contexts/TenantContext';
 import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
+import { useHotelPath } from '../../hooks/useHotelPath';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -32,6 +33,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { tenant } = useTenant();
   const location = useLocation();
   const navigate = useNavigate();
+  const { basePath, hotelPath } = useHotelPath();
 
   const brandColor = tenant?.primary_color ?? '#1e3a5f';
   const displayName = tenant?.name ?? 'StayWise PMS';
@@ -58,8 +60,12 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     { to: '/guide', icon: BookOpen, label: t.navigation.userGuide },
   ];
 
-  const isActive = (to: string) =>
-    to === '/' ? location.pathname === '/' : location.pathname === to || location.pathname.startsWith(to + '/');
+  const isActive = (to: string) => {
+    const fullTo = hotelPath(to);
+    return fullTo === basePath
+      ? location.pathname === basePath || location.pathname === basePath + '/'
+      : location.pathname === fullTo || location.pathname.startsWith(fullTo + '/');
+  };
 
   const renderNavItem = (item: NavItem) => {
     if (!canAccess(item.to)) return null;
@@ -67,7 +73,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     return (
       <NavLink
         key={item.to}
-        to={item.to}
+        to={hotelPath(item.to)}
         onClick={onMobileClose}
         className={() =>
           `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
@@ -87,7 +93,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     <div className="flex flex-col h-full">
       <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-4 py-4 border-b border-gray-100`}>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(hotelPath('/'))}
           className="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity"
           title={language === 'bg' ? 'Обратно към таблото' : 'Back to dashboard'}
         >

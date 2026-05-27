@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase';
 import { useToast } from '../components/ui/Toast';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { LodgifySettings, LodgifySyncLog } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useHotelNavigate } from '../hooks/useHotelPath';
 
 function StatusDot({ status }: { status: string }) {
   if (status === 'success') return <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500" />;
@@ -54,7 +54,7 @@ export default function LodgifyPage() {
   const { currentHotel } = useHotel();
   const { staff } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const hotelNavigate = useHotelNavigate();
 
   const [settings, setSettings] = useState<LodgifySettings | null>(null);
   const [syncLogs, setSyncLogs] = useState<LodgifySyncLog[]>([]);
@@ -168,7 +168,7 @@ export default function LodgifyPage() {
           </div>
           {isAdmin && (
             <button
-              onClick={() => navigate('/settings')}
+              onClick={() => hotelNavigate('/settings')}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
             >
               <Settings2 className="h-4 w-4" />
@@ -199,7 +199,7 @@ export default function LodgifyPage() {
                 </a>
                 <span className="text-amber-400">·</span>
                 <button
-                  onClick={() => navigate('/settings')}
+                  onClick={() => hotelNavigate('/settings')}
                   className="text-sm font-medium text-amber-800 underline hover:text-amber-900"
                 >
                   Open Settings
@@ -222,7 +222,7 @@ export default function LodgifyPage() {
             </div>
           </div>
           <button
-            onClick={() => navigate('/settings')}
+            onClick={() => hotelNavigate('/settings')}
             className="text-sm font-medium text-[#1e3a5f] hover:text-[#172e4c]"
           >
             Enable now

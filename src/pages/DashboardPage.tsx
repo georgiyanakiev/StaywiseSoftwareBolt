@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import HotelLink from '../components/ui/HotelLink';
 import {
   BedDouble, LogIn, LogOut, Users, SprayCan, RefreshCw,
   CalendarDays, Euro, TrendingUp, BarChart3, Activity,
@@ -70,9 +70,9 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <SyncStatusIndicator hotelId={currentHotel?.id} />
-          <Link to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
+          <HotelLink to="/reservations" className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#1e3a5f] hover:bg-[#172e4c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
             <CalendarDays className="w-3.5 h-3.5" /> {t.dashboard.newBooking}
-          </Link>
+          </HotelLink>
           <button onClick={refresh} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -267,7 +267,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl border border-gray-100 p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-gray-900">{t.dashboard.recentActivity}</h2>
-            <Link to="/reservations" className="text-xs font-medium text-[#1e3a5f] hover:text-[#172e4c]">{t.dashboard.viewAll}</Link>
+            <HotelLink to="/reservations" className="text-xs font-medium text-[#1e3a5f] hover:text-[#172e4c]">{t.dashboard.viewAll}</HotelLink>
           </div>
           <ActivityFeed items={recentActivity} />
         </div>
@@ -282,12 +282,12 @@ export default function DashboardPage() {
               { label: t.dashboard.viewRooms, to: '/rooms', icon: BedDouble, color: 'bg-slate-700 hover:bg-slate-800 text-white' },
               { label: t.navigation.reports, to: '/reports', icon: BarChart3, color: 'bg-gray-600 hover:bg-gray-700 text-white' },
             ].map(a => (
-              <Link key={a.label} to={a.to}
+              <HotelLink key={a.label} to={a.to}
                 className={`${a.color} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm`}>
                 <a.icon className="w-4 h-4" />
                 {a.label}
                 <ArrowRightCircle className="w-4 h-4 ml-auto opacity-60" />
-              </Link>
+              </HotelLink>
             ))}
           </div>
         </div>
@@ -316,9 +316,9 @@ function OperaTile({
         {children}
       </div>
       <div className="px-4 pb-3">
-        <Link to={link} className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium flex items-center gap-1">
+        <HotelLink to={link} className="text-xs text-[#1e3a5f] hover:text-[#172e4c] font-medium flex items-center gap-1">
           {linkLabel} <ArrowRightCircle className="w-3.5 h-3.5" />
-        </Link>
+        </HotelLink>
       </div>
     </div>
   );

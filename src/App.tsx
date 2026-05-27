@@ -59,6 +59,41 @@ const PageFallback = (
   </div>
 );
 
+function HotelRoutes() {
+  return (
+    <>
+      <Route index element={<DashboardPage />} />
+      <Route path="front-desk" element={<FrontDeskPage />} />
+      <Route path="reservations" element={<ReservationsPage />} />
+      <Route path="rooms" element={<RoomsPage />} />
+      <Route path="guests" element={<GuestListPage />} />
+      <Route path="guests/:id" element={<GuestProfilePage />} />
+      <Route path="billing" element={<BillingPage />} />
+      <Route path="housekeeping" element={<HousekeepingPage />} />
+      <Route path="maintenance" element={<MaintenancePage />} />
+      <Route path="reports" element={<ReportsPage />} />
+      <Route path="settings" element={<SettingsPage />} />
+      <Route path="settings/staff" element={<StaffSettingsPage />} />
+      <Route path="guide" element={<GuidePage />} />
+      <Route path="channel-manager" element={<ChannelManagerPage />} />
+      <Route path="booking-engine" element={<BookingEngineAdminPage />} />
+      <Route path="payment-automation" element={<PaymentAutomationPage />} />
+      <Route path="invoicing" element={<InvoicingPage />} />
+      <Route path="invoicing/settings" element={<InvoiceSettingsPage />} />
+      <Route path="guest-portal" element={<GuestPortalPage />} />
+      <Route path="owner-portal" element={<OwnerPortalPage />} />
+      <Route path="owner-portal/my-portal" element={<MyOwnerPortal />} />
+      <Route path="dynamic-pricing" element={<DynamicPricingPage />} />
+      <Route path="upselling" element={<UpsellPage />} />
+      <Route path="booking-com" element={<BookingComPage />} />
+      <Route path="expedia" element={<ExpediaPage />} />
+      <Route path="cloudbeds" element={<CloudbedsPage />} />
+      <Route path="siteminder" element={<SiteMinderPage />} />
+      <Route path="lodgify" element={<LodgifyPage />} />
+    </>
+  );
+}
+
 function AuthenticatedApp() {
   return (
     <HotelProvider>
@@ -71,39 +106,12 @@ function AuthenticatedApp() {
         <Route path="/privacy-policy" element={<PrivacyPage />} />
         <Route path="/dpa" element={<DpaPage />} />
         <Route path="/data-processing-agreement" element={<DpaPage />} />
-        <Route element={<AppLayout />}>
+        <Route path="/h/:slug" element={<AppLayout />}>
           <Route element={<RequireHotel />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/front-desk" element={<FrontDeskPage />} />
-            <Route path="/reservations" element={<ReservationsPage />} />
-            <Route path="/rooms" element={<RoomsPage />} />
-            <Route path="/guests" element={<GuestListPage />} />
-            <Route path="/guests/:id" element={<GuestProfilePage />} />
-            <Route path="/billing" element={<BillingPage />} />
-            <Route path="/housekeeping" element={<HousekeepingPage />} />
-            <Route path="/maintenance" element={<MaintenancePage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/settings/staff" element={<StaffSettingsPage />} />
-            <Route path="/guide" element={<GuidePage />} />
-            <Route path="/channel-manager" element={<ChannelManagerPage />} />
-            <Route path="/booking-engine" element={<BookingEngineAdminPage />} />
-            <Route path="/payment-automation" element={<PaymentAutomationPage />} />
-            <Route path="/invoicing" element={<InvoicingPage />} />
-            <Route path="/invoicing/settings" element={<InvoiceSettingsPage />} />
-            <Route path="/guest-portal" element={<GuestPortalPage />} />
-            <Route path="/owner-portal" element={<OwnerPortalPage />} />
-            <Route path="/owner-portal/my-portal" element={<MyOwnerPortal />} />
-            <Route path="/dynamic-pricing" element={<DynamicPricingPage />} />
-            <Route path="/upselling" element={<UpsellPage />} />
-            <Route path="/booking-com" element={<BookingComPage />} />
-            <Route path="/expedia" element={<ExpediaPage />} />
-            <Route path="/cloudbeds" element={<CloudbedsPage />} />
-            <Route path="/siteminder" element={<SiteMinderPage />} />
-            <Route path="/lodgify" element={<LodgifyPage />} />
+            {HotelRoutes()}
           </Route>
-          <Route path="*" element={<Navigate to="/lobby" replace />} />
         </Route>
+        <Route path="*" element={<Navigate to="/lobby" replace />} />
       </Routes>
     </HotelProvider>
   );
