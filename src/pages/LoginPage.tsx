@@ -201,12 +201,12 @@ export default function LoginPage() {
     return (
       <>
         {!isSignUp && (
-          <div className="flex border-b border-gray-200 mb-6">
+          <div className="flex border-b border-gray-200 mb-4">
             {(['email', 'phone', 'google'] as LoginTab[]).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2.5 text-sm font-medium transition-all relative ${
+                className={`flex-1 py-2 text-sm font-medium transition-all relative ${
                   activeTab === tab
                     ? 'text-[#1e3a5f]'
                     : 'text-gray-400 hover:text-gray-600'
@@ -237,27 +237,27 @@ export default function LoginPage() {
         )}
 
         {activeTab === 'email' ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {isSignUp && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.firstName}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.login.firstName}</label>
                   <input
                     type="text"
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50"
                     placeholder="John"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.lastName}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.login.lastName}</label>
                   <input
                     type="text"
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50"
                     placeholder="Doe"
                     required
                   />
@@ -265,24 +265,24 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.email}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.login.email}</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50"
                 placeholder="you@example.com"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.login.password}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.login.password}</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50 pr-10"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1ABCB4]/30 focus:border-[#1ABCB4] transition-all bg-gray-50/50 pr-10"
                   placeholder={t.login.enterPassword}
                   required
                   minLength={8}
@@ -300,14 +300,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#1e3a5f] text-white text-sm font-semibold rounded-lg hover:bg-[#172e4c] transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm hover:shadow-md"
+              className="w-full py-2.5 bg-[#1e3a5f] text-white text-sm font-semibold rounded-lg hover:bg-[#172e4c] transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-sm hover:shadow-md"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {isSignUp ? t.login.createAccountBtn : 'Sign In'}
             </button>
 
             {!isSignUp && (
-              <div className="flex flex-col items-center gap-2 pt-1">
+              <div className="flex flex-col items-center gap-1.5 pt-0.5">
                 <button
                   type="button"
                   onClick={enterForgotPassword}
@@ -344,7 +344,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <p className="mt-5 text-center text-sm text-gray-500">
+        <p className="mt-4 text-center text-sm text-gray-500">
           {isSignUp ? t.login.alreadyHaveAccount : t.login.dontHaveAccount}{' '}
           <button
             onClick={switchMode}
@@ -358,31 +358,31 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1e3a5f] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="h-screen bg-[#1e3a5f] flex flex-col items-center justify-center p-3 sm:p-4 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
 
       {/* Main card */}
-      <div className="relative w-full max-w-[920px] bg-white rounded-2xl shadow-2xl overflow-hidden flex min-h-[560px]">
+      <div className="relative w-full max-w-[880px] bg-white rounded-2xl shadow-2xl overflow-hidden flex max-h-[calc(100vh-80px)]">
 
         {/* Left side - Form */}
-        <div className="flex-1 flex flex-col p-8 sm:p-10 lg:p-12">
+        <div className="flex-1 flex flex-col p-6 sm:p-8 lg:p-9 overflow-y-auto">
           {/* Logo */}
-          <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center justify-center mb-4">
             <img
               src="/staywisesoftware_logo_v8.png"
               alt="StayWise Software"
-              className="h-10 w-auto"
+              className="h-9 w-auto"
             />
           </div>
 
           {/* Header */}
           {!isForgotPassword && !submitted && (
-            <div className="text-center mb-6">
-              <h1 className="text-xl font-bold text-[#1e3a5f] tracking-tight">
+            <div className="text-center mb-4">
+              <h1 className="text-lg font-bold text-[#1e3a5f] tracking-tight">
                 {isSignUp ? 'Create Your Account' : 'Welcome to StayWise Software'}
               </h1>
-              <p className="text-sm font-medium text-[#1ABCB4] mt-1">
+              <p className="text-sm font-medium text-[#1ABCB4] mt-0.5">
                 Hotel Management Portal
               </p>
             </div>
@@ -395,7 +395,7 @@ export default function LoginPage() {
 
           {/* Legal */}
           {!isForgotPassword && !submitted && (
-            <p className="mt-6 text-center text-[11px] text-gray-400 leading-relaxed">
+            <p className="mt-4 text-center text-[11px] text-gray-400 leading-relaxed">
               By signing in you agree to our{' '}
               <Link to="/terms" className="text-gray-500 hover:text-[#1ABCB4] underline transition-colors">Terms</Link>
               {' '}and{' '}
@@ -405,21 +405,21 @@ export default function LoginPage() {
         </div>
 
         {/* Right side - Illustration */}
-        <div className="hidden lg:flex w-[380px] bg-gradient-to-br from-[#f0f9f8] to-[#e8f4f3] flex-col items-center justify-center p-10 relative border-l border-gray-100">
+        <div className="hidden lg:flex w-[340px] bg-gradient-to-br from-[#f0f9f8] to-[#e8f4f3] flex-col items-center justify-center p-8 relative border-l border-gray-100">
           {/* Decorative circles */}
-          <div className="absolute top-6 right-6 w-20 h-20 rounded-full bg-[#1ABCB4]/5" />
-          <div className="absolute bottom-10 left-6 w-14 h-14 rounded-full bg-[#1e3a5f]/5" />
+          <div className="absolute top-5 right-5 w-16 h-16 rounded-full bg-[#1ABCB4]/5" />
+          <div className="absolute bottom-8 left-5 w-12 h-12 rounded-full bg-[#1e3a5f]/5" />
 
           {/* Hotel icon */}
-          <div className="w-20 h-20 bg-[#1e3a5f] rounded-2xl flex items-center justify-center mb-8 shadow-lg">
-            <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-16 h-16 bg-[#1e3a5f] rounded-xl flex items-center justify-center mb-6 shadow-lg">
+            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
               <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/>
             </svg>
           </div>
 
           {/* Device mockups */}
-          <div className="flex items-end gap-4 mb-8">
+          <div className="flex items-end gap-3 mb-6">
             {/* Tablet */}
             <div className="flex flex-col items-center">
               <div className="w-16 h-11 bg-white rounded-md border-2 border-[#1e3a5f]/20 flex items-center justify-center shadow-sm">
@@ -459,7 +459,7 @@ export default function LoginPage() {
       </div>
 
       {/* Bottom bar */}
-      <div className="relative flex items-center justify-between w-full max-w-[920px] mt-5 px-1">
+      <div className="relative flex items-center justify-between w-full max-w-[880px] mt-3 px-1">
         {/* Language toggle */}
         <div className="flex items-center rounded-lg overflow-hidden border border-white/20">
           <button
