@@ -9,6 +9,7 @@ import AppLayout from './components/layout/AppLayout';
 import RequireHotel from './components/guards/RequireHotel';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import CookieConsent from './components/legal/CookieConsent';
+import AIConciergeButton from './components/ai/AIConciergeButton';
 import { useDpaAcceptance } from './pages/legal/useDpaAcceptance';
 
 const SuperAdminPage = lazy(() => import('./pages/superadmin/SuperAdminPage'));
@@ -212,6 +213,7 @@ export default function App() {
         </Routes>
         </Suspense>
         <CookieConsent />
+        <AIConciergeButton />
       </ActiveHotelProvider>
     </LanguageProvider>
   );

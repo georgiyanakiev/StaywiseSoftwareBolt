@@ -201,12 +201,16 @@ export default function AIConciergePanel({ open, onClose }: AIConciergeProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-gray-900/30 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity"
+        style={{ zIndex: 10002 }}
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[440px] flex flex-col bg-gray-50 shadow-2xl animate-slideIn">
+      <div
+        className="fixed right-0 top-0 bottom-0 w-full sm:w-[440px] flex flex-col bg-gray-50 shadow-2xl animate-slideIn"
+        style={{ zIndex: 10003 }}
+      >
         {/* Header */}
         <div
           className="flex items-center gap-3 px-5 py-4 text-white flex-shrink-0"
