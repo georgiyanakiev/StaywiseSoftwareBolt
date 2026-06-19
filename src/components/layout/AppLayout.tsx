@@ -19,18 +19,23 @@ export default function AppLayout() {
       </main>
       <InternalLegalFooter />
 
-      {/* AI Concierge FAB */}
-      <button
-        onClick={() => setAiOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center group"
-        style={{
-          background: `linear-gradient(135deg, ${brandColor}, ${brandColor}cc)`,
-        }}
-        title="AI Concierge"
-      >
-        <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white" />
-      </button>
+      {/* AI Concierge FAB — rendered as portal-level fixed element */}
+      {!aiOpen && (
+        <div className="fixed bottom-6 right-6" style={{ zIndex: 9990 }}>
+          <button
+            onClick={() => setAiOpen(true)}
+            className="w-14 h-14 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center group"
+            style={{
+              background: `linear-gradient(135deg, ${brandColor}, ${brandColor}cc)`,
+              boxShadow: `0 4px 20px ${brandColor}55`,
+            }}
+            title="AI Concierge"
+          >
+            <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
+          </button>
+        </div>
+      )}
 
       <AIConciergePanel open={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
