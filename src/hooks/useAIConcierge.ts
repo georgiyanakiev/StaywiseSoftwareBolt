@@ -123,7 +123,7 @@ export function useAIConcierge() {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errBody.error || `Server error (${res.status})`);
+        throw new Error(errBody.details || errBody.error || `Server error (${res.status})`);
       }
 
       const data = await res.json();
