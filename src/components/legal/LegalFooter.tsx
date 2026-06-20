@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { COMPANY } from '../../config/company';
+import { openCookiePreferences } from './CookieConsent';
 
 interface LegalFooterProps {
   onCookiePreferences?: () => void;
@@ -63,6 +64,7 @@ export function InternalLegalFooter() {
         <Link to="/terms" className="hover:text-gray-400 transition-colors">Terms</Link>
         <Link to="/privacy" className="hover:text-gray-400 transition-colors">Privacy</Link>
         <Link to="/dpa" className="hover:text-gray-400 transition-colors">DPA</Link>
+        <button onClick={openCookiePreferences} className="hover:text-gray-400 transition-colors cursor-pointer">Cookies</button>
       </div>
     </footer>
   );

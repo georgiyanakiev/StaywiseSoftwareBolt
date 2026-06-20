@@ -66,6 +66,10 @@ function ToggleRow({ label, description, enabled, locked, onToggle }: ToggleRowP
   );
 }
 
+export function openCookiePreferences() {
+  window.dispatchEvent(new Event('sw:cookie:open-preferences'));
+}
+
 export default function CookieConsent() {
   const [consent, setConsent] = useState<ConsentValue>(() => loadConsent());
   const [showModal, setShowModal] = useState(false);
@@ -73,6 +77,12 @@ export default function CookieConsent() {
 
   useEffect(() => {
     setConsent(loadConsent());
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setShowModal(true);
+    window.addEventListener('sw:cookie:open-preferences', handler);
+    return () => window.removeEventListener('sw:cookie:open-preferences', handler);
   }, []);
 
   const visible = consent === null;
