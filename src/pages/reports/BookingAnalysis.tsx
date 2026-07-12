@@ -47,10 +47,7 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
           <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.bookingsBySource}</h3>
           {bookingSourcePie.length === 0 ? (
             <div className="flex items-center justify-center h-56">
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">No booking data</p>
-                <p className="text-xs text-gray-400 mt-1">Source distribution will appear once reservations are recorded</p>
-              </div>
+              <p className="text-sm text-gray-400">{t.reports.noDataPeriod}</p>
             </div>
           ) : (
             <div className="flex items-center gap-6">
@@ -84,10 +81,7 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
           <p className="text-xs text-gray-400 mb-4">{t.reports.currentYear} — {t.reports.monthlyCancellationRate}</p>
           {cancellationTrend.length === 0 ? (
             <div className="flex items-center justify-center h-56">
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">Insufficient data</p>
-                <p className="text-xs text-gray-400 mt-1">Cancellation trend will appear once reservation history exists</p>
-              </div>
+              <p className="text-sm text-gray-400">{t.reports.noDataPeriod}</p>
             </div>
           ) : (
             <div className="h-56">
@@ -109,10 +103,7 @@ export default function BookingAnalysis({ leadTimeBuckets, bookingSourcePie, can
           <p className="text-xs text-gray-400 mb-4">{t.reports.currentYear} — {t.reports.avgNightsPerBooking}</p>
           {avgStayTrend.length === 0 ? (
             <div className="flex items-center justify-center h-56">
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">Insufficient data</p>
-                <p className="text-xs text-gray-400 mt-1">Average stay trend will appear once reservation history exists</p>
-              </div>
+              <p className="text-sm text-gray-400">{t.reports.noDataPeriod}</p>
             </div>
           ) : (
             <div className="h-56">

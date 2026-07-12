@@ -1,7 +1,7 @@
 import { Download, FlaskConical } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, getCurrencySymbol } from '../../lib/utils';
 import type { PLRow } from './types';
 
 const TOOLTIP_STYLE = { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' };
@@ -26,11 +26,12 @@ interface Props {
 
 export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCosts, grossProfit, monthlyBreakdown, currency, onExport }: Props) {
   const { t } = useLanguage();
+  const sym = getCurrencySymbol(currency);
   const kpiCards = [
-    { label: t.reports.totalRevenue, value: formatCurrency(totalRevenue, currency), color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: t.reports.totalCosts, value: formatCurrency(totalCosts, currency), color: 'text-red-600', bg: 'bg-red-50' },
-    { label: t.reports.grossProfit, value: formatCurrency(grossProfit, currency), color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: t.reports.grossMargin, value: `${grossMargin.toFixed(1)}%`, color: 'text-teal-600', bg: 'bg-teal-50' },
+    { label: t.reports.totalRevenue,  value: formatCurrency(totalRevenue, currency),  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: t.reports.totalCosts,    value: formatCurrency(totalCosts, currency),     color: 'text-red-600',     bg: 'bg-red-50' },
+    { label: t.reports.grossProfit,   value: formatCurrency(grossProfit, currency),    color: grossProfit >= 0 ? 'text-blue-600' : 'text-red-600', bg: grossProfit >= 0 ? 'bg-blue-50' : 'bg-red-50' },
+    { label: t.reports.grossMargin,   value: `${grossMargin.toFixed(1)}%`,             color: 'text-teal-600',    bg: 'bg-teal-50' },
   ];
 
   const hasEstimatedRows = rows.some(r => r.isEstimated);
@@ -67,8 +68,7 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
         <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.plStatement}</h3>
         {totalRevenue === 0 ? (
           <div className="text-center py-10">
-            <p className="text-sm font-medium text-gray-500">No revenue data for this period</p>
-            <p className="text-xs text-gray-400 mt-1">Adjust the date range or check back once reservations are recorded</p>
+            <p className="text-sm text-gray-400">{t.reports.noDataPeriod}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -117,27 +117,20 @@ export default function FinancialPL({ rows, grossMargin, totalRevenue, totalCost
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-base font-semibold text-gray-900 mb-1">{t.reports.monthByMonthBreakdown}</h3>
         <p className="text-xs text-gray-400 mb-4">{t.reports.currentYear} — {t.reports.monthsWithRecordings}</p>
-        {monthlyBreakdown.length === 0 ? (
-          <div className="text-center py-10">
-            <p className="text-sm font-medium text-gray-500">Insufficient data</p>
-            <p className="text-xs text-gray-400 mt-1">Monthly breakdown will appear once reservations exist for the current year</p>
-          </div>
-        ) : (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyBreakdown} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [formatCurrency(Number(v || 0), currency), '']} />
-                <Legend />
-                <Bar dataKey="revenue" name={t.reports.revenue} fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="costs" name={t.reports.costs} fill="#ef4444" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="profit" name={t.reports.grossProfit} fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={monthlyBreakdown} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${sym}${(v / 1000).toFixed(0)}k`} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [formatCurrency(Number(v || 0), currency), '']} />
+              <Legend />
+              <Bar dataKey="revenue" name={t.reports.revenue}     fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="costs"   name={t.reports.costs}       fill="#ef4444" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="profit"  name={t.reports.grossProfit} fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

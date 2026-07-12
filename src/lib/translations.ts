@@ -181,8 +181,9 @@ export const translations = {
       estPriorPeriod: 'Est. Prior Period',
       change: 'Change',
       monthByMonthBreakdown: 'Month-by-Month Breakdown',
-      costs: 'Costs',
-      revenue: 'Revenue',
+      costs: 'Costs', revenue: 'Revenue',
+      totalCosts: 'Total Costs', grossProfit: 'Gross Profit', grossMargin: 'Gross Margin',
+      noDataPeriod: 'No data for selected period',
     },
     billing: {
       title: 'Billing & Invoicing', invoiceNumber: 'Invoice Number',
@@ -777,8 +778,9 @@ export const translations = {
       estPriorPeriod: 'Прогноза преди период',
       change: 'Промяна',
       monthByMonthBreakdown: 'Месечен преглед',
-      costs: 'Разходи',
-      revenue: 'Приходи',
+      costs: 'Разходи', revenue: 'Приходи',
+      totalCosts: 'Общи разходи', grossProfit: 'Брутна печалба', grossMargin: 'Брутен марж',
+      noDataPeriod: 'Няма данни за избрания период',
     },
     billing: {
       title: 'Сметки и Фактуриране', invoiceNumber: 'Номер фактура',

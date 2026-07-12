@@ -1,9 +1,9 @@
 import { Euro, TrendingUp, Building2, BarChart3, Download } from 'lucide-react';
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, getCurrencySymbol } from '../../lib/utils';
 import type { RevenueKPIs, RevenueBySourceRow, DailyRevenue, RoomTypePerf } from './types';
 
 const TOOLTIP_STYLE = { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' };
@@ -21,6 +21,7 @@ interface Props {
 
 export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roomTypePerf, currency, onExport, daysCount }: Props) {
   const { t } = useLanguage();
+  const sym = getCurrencySymbol(currency);
   const kpiCards = [
     { label: t.reports.totalRevenue, value: formatCurrency(kpis.totalRevenue, currency), icon: Euro, color: 'text-emerald-600', bg: 'bg-emerald-50', sub: t.reports.selectedPeriod },
     { label: t.reports.revpar, value: formatCurrency(kpis.revpar, currency), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50', sub: t.reports.revenuePerAvailableRoom },
@@ -58,10 +59,7 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
           <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.revenueBySource}</h3>
           {revenueBySource.length === 0 ? (
             <div className="flex items-center justify-center h-72">
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-500">No revenue data</p>
-                <p className="text-xs text-gray-400 mt-1">Revenue by source will appear once reservations are recorded for this period</p>
-              </div>
+              <p className="text-sm text-gray-400">{t.reports.noDataPeriod}</p>
             </div>
           ) : (
             <>
@@ -70,7 +68,7 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
                   <BarChart data={revenueBySource} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="source" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`} />
+                    <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${sym}${(v / 1000).toFixed(0)}k`} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [formatCurrency(Number(v || 0), currency), 'Revenue']} />
                     <Bar dataKey="revenue" name="Revenue" radius={[6, 6, 0, 0]}>
                       {revenueBySource.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />)}
@@ -99,7 +97,7 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
               <LineChart data={dailyRevenue} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} interval={trendInterval} />
-                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}k`} />
+                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${sym}${(v / 1000).toFixed(0)}k`} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [formatCurrency(Number(v || 0), currency), 'Revenue']} />
                 <Line type="monotone" dataKey="revenue" name="Revenue" stroke="#3b82f6" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#3b82f6' }} />
               </LineChart>
@@ -112,8 +110,7 @@ export default function RevenueReport({ kpis, revenueBySource, dailyRevenue, roo
         <h3 className="text-base font-semibold text-gray-900 mb-4">{t.reports.roomTypePerformance}</h3>
         {roomTypePerf.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-sm font-medium text-gray-500">No room type data</p>
-            <p className="text-xs text-gray-400 mt-1">Configure room types in Settings to see performance metrics</p>
+            <p className="text-sm text-gray-400">{t.reports.noDataPeriod}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
