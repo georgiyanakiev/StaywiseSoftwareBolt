@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  SprayCan, LayoutGrid, Grid3x3, Wrench, Users,
+  SprayCan, LayoutGrid, Grid3x3, Wrench, Users, UserPlus,
   CheckCircle2, Clock, Eye, AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -11,7 +11,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import KanbanBoard from './housekeeping/KanbanBoard';
 import RoomGrid from './housekeeping/RoomGrid';
 import MaintenanceTab from './housekeeping/MaintenanceTab';
-import StaffTab from './housekeeping/StaffTab';
+import StaffTab, { StaffModal } from './housekeeping/StaffTab';
 import { HKTask, HKStaff } from './housekeeping/types';
 import type { MaintenanceRequest } from '../types';
 
@@ -36,6 +36,7 @@ export default function HousekeepingPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [upsellByRoom, setUpsellByRoom] = useState<Record<string, string[]>>({});
+  const [showAddStaff, setShowAddStaff] = useState(false);
 
   const load = useCallback(async () => {
     if (!currentHotel) return;
@@ -54,9 +55,10 @@ export default function HousekeepingPage() {
       supabase.from('maintenance_requests').select('*, room:rooms(id, number)')
         .eq('hotel_id', currentHotel.id)
         .order('created_at', { ascending: false }),
-      supabase.from('staff_members').select('*')
+      supabase.from('staff_members')
+        .select('id, first_name, last_name, email, phone, role, is_active, department, created_at')
         .eq('hotel_id', currentHotel.id)
-        .order('name'),
+        .order('first_name'),
       supabase.from('rooms').select('id, number, floor, status, room_type:room_types(name)')
         .eq('hotel_id', currentHotel.id)
         .order('floor').order('number'),
@@ -119,13 +121,32 @@ export default function HousekeepingPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-          <SprayCan className="w-6 h-6 text-blue-600" />
-          {t.housekeeping.title}
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">{t.housekeeping.manageClean}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+            <SprayCan className="w-6 h-6 text-blue-600" />
+            {t.housekeeping.title}
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">{t.housekeeping.manageClean}</p>
+        </div>
+        <button
+          onClick={() => setShowAddStaff(true)}
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#1e3a5f] border border-[#1e3a5f]/30 rounded-lg hover:bg-[#1e3a5f]/5 transition-colors flex-shrink-0"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span className="hidden sm:inline">{t.housekeeping.addStaff}</span>
+        </button>
       </div>
+
+      {showAddStaff && (
+        <StaffModal
+          existing={null}
+          hotelId={currentHotel!.id}
+          tenantId={tenantId}
+          onClose={() => setShowAddStaff(false)}
+          onSaved={() => { setShowAddStaff(false); load(); }}
+        />
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[

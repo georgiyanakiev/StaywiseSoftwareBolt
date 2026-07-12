@@ -40,11 +40,18 @@ export interface MaintenanceIssue {
 export interface HKStaff {
   id: string;
   hotel_id: string;
-  name: string;
-  role: string;
+  first_name: string;
+  last_name: string;
+  email: string;
   phone: string;
-  active: boolean;
+  role: string;
+  is_active: boolean;
+  department: string | null;
   created_at: string;
+}
+
+export function staffFullName(s: HKStaff): string {
+  return `${s.first_name} ${s.last_name}`.trim();
 }
 
 export const TASK_TYPE_LABELS: Record<string, string> = {

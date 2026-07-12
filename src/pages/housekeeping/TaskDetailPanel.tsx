@@ -5,7 +5,7 @@ import { formatDateTime } from '../../lib/utils';
 import {
   HKTask, HKStaff,
   TASK_TYPE_LABELS, TASK_TYPE_COLORS, PRIORITY_COLORS,
-  STATUS_LABELS, NEXT_STATUS,
+  STATUS_LABELS, NEXT_STATUS, staffFullName,
 } from './types';
 
 interface Props {
@@ -153,8 +153,8 @@ export default function TaskDetailPanel({ task, staff, onClose, onUpdated }: Pro
               </label>
               <select value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)} className="input-field text-sm">
                 <option value="">Unassigned</option>
-                {staff.filter(s => s.active).map(s => (
-                  <option key={s.id} value={s.name}>{s.name} ({s.role})</option>
+                {staff.filter(s => s.is_active).map(s => (
+                  <option key={s.id} value={staffFullName(s)}>{staffFullName(s)} ({s.role})</option>
                 ))}
               </select>
             </div>
@@ -164,8 +164,8 @@ export default function TaskDetailPanel({ task, staff, onClose, onUpdated }: Pro
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">Inspected By</label>
                 <select value={form.inspected_by} onChange={e => set('inspected_by', e.target.value)} className="input-field text-sm">
                   <option value="">Select inspector...</option>
-                  {staff.filter(s => s.active && (s.role === 'supervisor' || s.role === 'inspector')).map(s => (
-                    <option key={s.id} value={s.name}>{s.name}</option>
+                  {staff.filter(s => s.is_active && (s.role === 'supervisor' || s.role === 'inspector' || s.role === 'manager')).map(s => (
+                    <option key={s.id} value={staffFullName(s)}>{staffFullName(s)}</option>
                   ))}
                 </select>
               </div>
