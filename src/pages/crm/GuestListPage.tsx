@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHotelNavigate } from '../../hooks/useHotelPath';
 import { Users, Plus, Search, Download, Filter, Tag, AlertTriangle, ChevronLeft, ChevronRight, X, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
@@ -20,7 +20,7 @@ const ALL_AUTO_TAGS = ['Loyal', 'High Value', 'Lapsed', 'New'];
 export default function GuestListPage() {
   const { currentHotel } = useHotel();
   const { t } = useLanguage();
-  const navigate = useNavigate();
+  const hotelNavigate = useHotelNavigate();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editGuest, setEditGuest] = useState<GuestProfile | null>(null);
@@ -191,7 +191,7 @@ export default function GuestListPage() {
                     <tr
                       key={g.id}
                       className="hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/guests/${g.id}`)}
+                      onClick={() => hotelNavigate(`/guests/${g.id}`)}
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
