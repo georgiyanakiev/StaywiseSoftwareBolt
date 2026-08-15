@@ -27,6 +27,25 @@ function safe(n: number): number {
   return isFinite(n) && !isNaN(n) ? n : 0;
 }
 
+const SOURCE_ALIASES: Record<string, string> = {
+  'booking_com': 'Booking.com',
+  'booking.com': 'Booking.com',
+  'bookingcom': 'Booking.com',
+  'expedia': 'Expedia',
+  'airbnb': 'Airbnb',
+  'direct': 'Direct',
+  'direct booking': 'Direct',
+  'walk-in': 'Walk-in',
+  'walkin': 'Walk-in',
+  'website': 'Direct',
+  'corporate': 'Corporate',
+};
+
+function normalizeSource(raw: string): string {
+  const key = raw.toLowerCase().trim();
+  return SOURCE_ALIASES[key] ?? raw;
+}
+
 export function useReportsData(hotelId: string | undefined, dateRange: DateRange) {
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState<any[]>([]);
@@ -35,6 +54,9 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [upsellOrders, setUpsellOrders] = useState<any[]>([]);
+  const [prevReservations, setPrevReservations] = useState<any[]>([]);
+  const [prevPayments, setPrevPayments] = useState<any[]>([]);
+  const [prevUpsellOrders, setPrevUpsellOrders] = useState<any[]>([]);
 
   const fetchData = useCallback(async () => {
     if (!hotelId) { setLoading(false); return; }
@@ -43,7 +65,15 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
       const yearStart = format(startOfYear(new Date()), 'yyyy-MM-dd');
       const yearEnd   = format(endOfYear(new Date()), 'yyyy-MM-dd');
 
-      const [resResult, yearlyResult, roomsResult, rtResult, paymentsResult, upsellResult] = await Promise.all([
+      const periodStart = parseISO(dateRange.start);
+      const periodEnd = parseISO(dateRange.end);
+      const periodDays = Math.max(1, differenceInDays(periodEnd, periodStart) + 1);
+      const prevEnd = periodStart;
+      const prevStart = subDays(prevEnd, periodDays);
+      const prevStartStr = format(prevStart, 'yyyy-MM-dd');
+      const prevEndStr = format(subDays(prevEnd, 1), 'yyyy-MM-dd');
+
+      const [resResult, yearlyResult, roomsResult, rtResult, paymentsResult, upsellResult, prevResResult, prevPaymentsResult, prevUpsellResult] = await Promise.all([
         // Overlapping range: reservation overlaps the period if check_in <= end AND check_out >= start
         supabase
           .from('reservations')
@@ -84,6 +114,30 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
           .eq('hotel_id', hotelId)
           .gte('ordered_at', dateRange.start)
           .lte('ordered_at', dateRange.end),
+
+        // Prior period reservations
+        supabase
+          .from('reservations')
+          .select('id, status, check_in, check_out, total_amount, booking_source, source')
+          .eq('hotel_id', hotelId)
+          .lte('check_in', prevEndStr)
+          .gte('check_out', prevStartStr),
+
+        // Prior period payments
+        supabase
+          .from('payments')
+          .select('id, amount, payment_date, reservation_id')
+          .eq('hotel_id', hotelId)
+          .gte('payment_date', prevStartStr)
+          .lte('payment_date', prevEndStr),
+
+        // Prior period upsell orders
+        supabase
+          .from('upsell_orders')
+          .select('id, total_price, status, ordered_at')
+          .eq('hotel_id', hotelId)
+          .gte('ordered_at', prevStartStr)
+          .lte('ordered_at', prevEndStr),
       ]);
 
       setReservations(resResult.data || []);
@@ -92,6 +146,9 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
       setRoomTypes(rtResult.data || []);
       setPayments(paymentsResult.data || []);
       setUpsellOrders(upsellResult.data || []);
+      setPrevReservations(prevResResult.data || []);
+      setPrevPayments(prevPaymentsResult.data || []);
+      setPrevUpsellOrders(prevUpsellResult.data || []);
     } catch (err) {
       console.error('Reports data fetch error:', err);
     } finally {
@@ -146,17 +203,24 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
   const revenueBySource = useMemo((): RevenueBySourceRow[] => {
     if (activeRes.length === 0) return [];
     const sourceMap: Record<string, { revenue: number; bookings: number }> = {};
+    const usePayments = payments.length > 0;
     activeRes.forEach(r => {
-      const src = r.booking_source || r.source || 'Direct';
+      const src = normalizeSource(r.booking_source || r.source || 'Direct');
       if (!sourceMap[src]) sourceMap[src] = { revenue: 0, bookings: 0 };
-      sourceMap[src].revenue  += r.total_amount || 0;
+      if (usePayments) {
+        const resPayments = payments.filter(p => p.reservation_id === r.id);
+        const resRevenue = resPayments.reduce((s, p) => s + (p.amount || 0), 0);
+        sourceMap[src].revenue += resRevenue > 0 ? resRevenue : (r.total_amount || 0);
+      } else {
+        sourceMap[src].revenue += r.total_amount || 0;
+      }
       sourceMap[src].bookings += 1;
     });
-    const total = activeRes.reduce((s, r) => s + (r.total_amount || 0), 0);
+    const total = Object.values(sourceMap).reduce((s, d) => s + d.revenue, 0);
     return Object.entries(sourceMap)
       .map(([source, d]) => ({ source, revenue: d.revenue, bookings: d.bookings, pct: safe(total > 0 ? (d.revenue / total) * 100 : 0) }))
       .sort((a, b) => b.revenue - a.revenue);
-  }, [activeRes]);
+  }, [activeRes, payments]);
 
   const dailyRevenue = useMemo((): DailyRevenue[] => {
     // Use actual payment dates when available, fall back to check-in date
@@ -305,18 +369,32 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
     const totalCosts     = channelCommissions + paymentFees + staffCosts;
     const grossProfit    = totalRevenue - totalCosts;
     const grossMargin    = safe(totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0);
-    const prevMultiplier = 0.92;
+
+    // Prior period calculations from actual data
+    const prevActiveRes = prevReservations.filter(r => r.status !== 'cancelled');
+    const prevResRevenue = prevActiveRes.reduce((s, r) => s + (r.total_amount || 0), 0);
+    const prevPaymentsTotal = prevPayments.reduce((s, p) => s + (p.amount || 0), 0);
+    const prevAccommodation = prevPaymentsTotal > 0 ? prevPaymentsTotal : prevResRevenue;
+    const prevUpsellRev = prevUpsellOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total_price || 0), 0);
+    const prevFb = prevResRevenue * 0.08;
+    const prevExtras = prevUpsellRev || 0;
+    const prevTotalRevenue = prevAccommodation + prevExtras;
+    const prevChannelCommissions = prevAccommodation * 0.12;
+    const prevPaymentFees = prevTotalRevenue * 0.025;
+    const prevStaffCosts = prevTotalRevenue * 0.22;
+    const prevTotalCosts = prevChannelCommissions + prevPaymentFees + prevStaffCosts;
+    const prevGrossProfit = prevTotalRevenue - prevTotalCosts;
 
     const rows: PLRow[] = [
-      { label: 'Accommodation Revenue', current: accommodation,        prev: accommodation * prevMultiplier },
-      { label: 'F&B Revenue (est.)',     current: fb,                   prev: fb * prevMultiplier,                   isEstimated: true },
-      { label: 'Extras & Upsells',      current: extras,               prev: extras * prevMultiplier },
-      { label: 'Total Revenue',         current: totalRevenue,         prev: totalRevenue * prevMultiplier,         isTotal: true },
-      { label: 'Channel Commissions',   current: channelCommissions,   prev: channelCommissions * prevMultiplier,   isNegative: true, isEstimated: true },
-      { label: 'Payment Processing',    current: paymentFees,          prev: paymentFees * prevMultiplier,          isNegative: true, isEstimated: true },
-      { label: 'Staff Costs',           current: staffCosts,           prev: staffCosts * prevMultiplier,           isNegative: true, isEstimated: true },
-      { label: 'Total Costs',           current: totalCosts,           prev: totalCosts * prevMultiplier,           isTotal: true, isNegative: true, isEstimated: true },
-      { label: 'Gross Profit',          current: grossProfit,          prev: grossProfit * prevMultiplier,          isProfit: true, isEstimated: true },
+      { label: 'Accommodation Revenue', current: accommodation,        prev: prevAccommodation },
+      { label: 'F&B Revenue (est.)',     current: fb,                   prev: prevFb,                   isEstimated: true },
+      { label: 'Extras & Upsells',      current: extras,               prev: prevExtras },
+      { label: 'Total Revenue',         current: totalRevenue,         prev: prevTotalRevenue,         isTotal: true },
+      { label: 'Channel Commissions',   current: channelCommissions,   prev: prevChannelCommissions,   isNegative: true, isEstimated: true },
+      { label: 'Payment Processing',    current: paymentFees,          prev: prevPaymentFees,          isNegative: true, isEstimated: true },
+      { label: 'Staff Costs',           current: staffCosts,           prev: prevStaffCosts,           isNegative: true, isEstimated: true },
+      { label: 'Total Costs',           current: totalCosts,           prev: prevTotalCosts,           isTotal: true, isNegative: true, isEstimated: true },
+      { label: 'Gross Profit',          current: grossProfit,          prev: prevGrossProfit,          isProfit: true, isEstimated: true },
     ];
 
     // Include all 12 months (zero bars for months with no data)
@@ -329,7 +407,7 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
     });
 
     return { rows, grossMargin, totalRevenue, totalCosts, grossProfit, monthlyBreakdown };
-  }, [activeRes, activeYearly, upsellOrders, effectiveRevenue, reservationRevenue]);
+  }, [activeRes, activeYearly, upsellOrders, effectiveRevenue, reservationRevenue, prevReservations, prevPayments, prevUpsellOrders]);
 
   return {
     loading, kpis, revenueBySource, dailyRevenue, roomTypePerf,
