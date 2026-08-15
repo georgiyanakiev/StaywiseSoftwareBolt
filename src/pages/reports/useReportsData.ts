@@ -286,7 +286,7 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
       const nightsSold   = monthRes.reduce((s, r) => s + Math.max(0, differenceInDays(parseISO(r.check_out || format(new Date(year, i + 1, 0), 'yyyy-MM-dd')), parseISO(r.check_in))), 0);
       const occupancyPct = safe(available > 0 ? Math.min(100, Math.round((nightsSold / available) * 100)) : 0);
       return { month, occupancyPct, prevOccupancyPct: 0 };
-    }).filter(m => m.occupancyPct > 0);
+    });
   }, [activeYearly, totalRooms]);
 
   const roomPerf = useMemo((): RoomPerf[] => {
@@ -328,20 +328,18 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
     if (yearlyReservations.length === 0) return [];
     return MONTH_LABELS.map((m, i) => {
       const monthRes  = yearlyReservations.filter(r => r.check_in && getMonth(parseISO(r.check_in)) === i);
-      if (monthRes.length === 0) return null;
       const cancelled = monthRes.filter(r => r.status === 'cancelled').length;
-      return { date: m, rate: Math.round(safe((cancelled / monthRes.length) * 100)) };
-    }).filter(Boolean) as DailyCancellationRate[];
+      return { date: m, rate: monthRes.length > 0 ? Math.round(safe((cancelled / monthRes.length) * 100)) : 0 };
+    }) as DailyCancellationRate[];
   }, [yearlyReservations]);
 
   const avgStayTrend = useMemo((): AvgStayTrend[] => {
     if (activeYearly.length === 0) return [];
     return MONTH_LABELS.map((month, i) => {
       const monthRes = activeYearly.filter(r => r.check_in && getMonth(parseISO(r.check_in)) === i);
-      if (monthRes.length === 0) return null;
       const totalNights = monthRes.reduce((s, r) => s + Math.max(0, differenceInDays(parseISO(r.check_out || r.check_in), parseISO(r.check_in))), 0);
-      return { month, avgNights: Math.round(safe((totalNights / monthRes.length) * 10)) / 10 };
-    }).filter(Boolean) as AvgStayTrend[];
+      return { month, avgNights: monthRes.length > 0 ? Math.round(safe((totalNights / monthRes.length) * 10)) / 10 : 0 };
+    }) as AvgStayTrend[];
   }, [activeYearly]);
 
   const nationalityBreakdown = useMemo((): NationalityRow[] => {
