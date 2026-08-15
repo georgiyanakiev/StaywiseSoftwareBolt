@@ -42,6 +42,7 @@ export default function HousekeepingPage() {
     if (!currentHotel) return;
     setLoading(true);
     const today = new Date().toISOString().split('T')[0];
+    await supabase.rpc('sync_room_statuses', { p_hotel_id: currentHotel.id });
     const [
       { data: t },
       { data: i },

@@ -105,6 +105,7 @@ export function useFrontDeskData(currentHotel: Hotel | null) {
     try {
       setLoading(true);
       setError(null);
+      await supabase.rpc('sync_room_statuses', { p_hotel_id: currentHotel.id });
       await Promise.all([fetchRoomStats(), fetchReservations()]);
       setLastUpdated(new Date());
     } catch (err) {
