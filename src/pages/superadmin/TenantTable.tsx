@@ -1,5 +1,9 @@
-import { ExternalLink, Pencil, Users, Building2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ExternalLink, Pencil, Users, Building2, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import type { Tenant } from './types';
 
 interface TenantTableProps {
@@ -25,12 +29,38 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-function viewAsHotel(tenant: Tenant) {
-  const origin = window.location.origin;
-  window.open(`${origin}/h/${tenant.subdomain}`, '_blank');
-}
-
 export default function TenantTable({ tenants, onEdit, onManageStaff, onToggleActive, togglingId }: TenantTableProps) {
+  const { enter } = useActiveHotel();
+  const navigate = useNavigate();
+  const [enteringId, setEnteringId] = useState<string | null>(null);
+
+  async function viewAsHotel(tenant: Tenant) {
+    setEnteringId(tenant.id);
+    try {
+      const { data, error } = await supabase.rpc('get_hotel_for_tenant', { p_tenant_id: tenant.id });
+      if (error || !data || (data as unknown[]).length === 0) {
+        setEnteringId(null);
+        return;
+      }
+      const hotel = (data as { id: string; name: string; tenant_id: string; logo_url: string | null; subdomain: string }[])[0];
+      await enter({
+        tenantId: tenant.id,
+        hotelId: hotel.id,
+        role: 'super_admin',
+        hotelName: hotel.name,
+        hotelLogo: hotel.logo_url,
+        primaryColor: tenant.primary_color ?? '#2563eb',
+        secondaryColor: tenant.secondary_color ?? '#1e40af',
+        tenantName: tenant.name,
+        subdomain: tenant.subdomain,
+        plan: tenant.plan,
+      });
+      navigate(`/h/${tenant.subdomain}`);
+    } finally {
+      setEnteringId(null);
+    }
+  }
+
   if (tenants.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 p-12 text-center shadow-sm">
@@ -136,9 +166,14 @@ export default function TenantTable({ tenants, onEdit, onManageStaff, onToggleAc
                     </button>
                     <button
                       onClick={() => viewAsHotel(tenant)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                      disabled={enteringId === tenant.id}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      {enteringId === tenant.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      )}
                       Enter
                     </button>
                   </div>
