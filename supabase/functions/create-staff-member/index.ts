@@ -128,6 +128,43 @@ Deno.serve(async (req: Request) => {
       return json({ error: "You do not have permission to add staff members." }, 403);
     }
 
+    // Clamp the requested role to what the caller is allowed to assign.
+    // Managers can only create front_desk / housekeeping staff; admins and
+    // owners can create up to manager; super admins and tenant owners can
+    // assign any role.
+    const requestedRole = role || "front_desk";
+    const managerAssignable = ["front_desk", "housekeeping"];
+    const adminAssignable = ["front_desk", "housekeeping", "manager", "general_manager"];
+    const allRoles = ["front_desk", "housekeeping", "manager", "general_manager", "admin", "owner"];
+
+    const isCallerManager = staffMatch?.role === "manager";
+    const isCallerAdmin = staffMatch?.role === "admin" || staffMatch?.role === "owner" || staffMatch?.role === "general_manager";
+    const { data: callerAssignments } = await supabaseAdmin
+      .from("user_hotel_assignments")
+      .select("role, tenant_id")
+      .eq("user_id", caller.id)
+      .eq("active", true);
+    const isCallerSuperAdmin = (callerAssignments ?? []).some((a) => a.role === "super_admin");
+    const isCallerTenantOwner = (callerAssignments ?? []).some(
+      (a) => a.role === "owner" && a.tenant_id === resolvedTenantId
+    );
+
+    let allowedToAssign: string[];
+    if (isCallerSuperAdmin || isCallerTenantOwner) {
+      allowedToAssign = allRoles;
+    } else if (isCallerAdmin) {
+      allowedToAssign = adminAssignable;
+    } else if (isCallerManager) {
+      allowedToAssign = managerAssignable;
+    } else {
+      allowedToAssign = ["front_desk"];
+    }
+
+    if (!allowedToAssign.includes(requestedRole)) {
+      return json({ error: "You cannot assign that role." }, 403);
+    }
+    const finalRole = requestedRole;
+
     let targetUserId: string | null = null;
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find((u) => u.email === email);
@@ -167,7 +204,7 @@ Deno.serve(async (req: Request) => {
       email,
       phone: phone || "",
       department: department || "",
-      role,
+      role: finalRole,
       is_active: is_active !== undefined ? is_active : true,
       approval_status: "approved",
       onboarding_sent: false,
@@ -186,6 +223,7 @@ Deno.serve(async (req: Request) => {
 
     return json({ success: true, staffId: insertedStaff?.id, userId: targetUserId });
   } catch (err) {
-    return json({ error: String(err) }, 500);
+    console.error("create-staff-member error", err);
+    return json({ error: "Unable to create staff member" }, 500);
   }
 });
