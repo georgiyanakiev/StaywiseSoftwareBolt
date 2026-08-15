@@ -459,6 +459,29 @@ Deno.serve(async (req: Request) => {
       { onConflict: "reservation_id,email_type" }
     );
 
+    if (status === "sent") {
+      const { data: profile } = await supabase
+        .from("guest_profiles")
+        .select("id, tenant_id")
+        .eq("guest_id", r.guest_id)
+        .maybeSingle();
+
+      if (profile) {
+        await supabase.from("guest_communications").insert({
+          guest_id: r.guest_id,
+          hotel_id: r.hotel_id,
+          guest_profile_id: profile.id,
+          type: "email",
+          subject,
+          body: subject,
+          direction: "outbound",
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          tenant_id: profile.tenant_id,
+        });
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: status === "sent",
