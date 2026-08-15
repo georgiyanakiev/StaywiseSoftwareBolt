@@ -258,6 +258,9 @@ function ReportIssueModal({ rooms, hotelId, tenantId, onClose, onSaved }: {
               <option value="appliance">Appliance</option>
               <option value="structural">Structural</option>
               <option value="it">IT</option>
+              <option value="electronics">Electronics</option>
+              <option value="carpentry">Carpentry</option>
+              <option value="cleaning">Cleaning</option>
               <option value="other">Other</option>
             </select>
           </div>

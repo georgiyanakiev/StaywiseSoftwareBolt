@@ -113,8 +113,12 @@ export const CATEGORY_COLORS: Record<string, string> = {
   electrical: 'bg-yellow-100 text-yellow-700',
   hvac:       'bg-sky-100 text-sky-700',
   furniture:  'bg-amber-100 text-amber-700',
-  cleaning:   'bg-emerald-100 text-emerald-700',
-  it:         'bg-gray-100 text-gray-700',
+  appliance:  'bg-orange-100 text-orange-700',
+  structural: 'bg-stone-100 text-stone-700',
+  it:         'bg-emerald-100 text-emerald-700',
+  electronics:'bg-purple-100 text-purple-700',
+  carpentry:  'bg-amber-100 text-amber-700',
+  cleaning:   'bg-teal-100 text-teal-700',
   other:      'bg-gray-100 text-gray-600',
 };
 

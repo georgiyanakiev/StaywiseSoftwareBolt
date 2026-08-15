@@ -46,6 +46,9 @@ const CATEGORIES: { value: MaintenanceCategory; label: string; icon: React.Eleme
   { value: 'appliance', label: 'Appliance', icon: Package, color: 'text-orange-600 bg-orange-50' },
   { value: 'structural', label: 'Structural', icon: Building, color: 'text-stone-600 bg-stone-50' },
   { value: 'it', label: 'IT / Tech', icon: Cpu, color: 'text-emerald-600 bg-emerald-50' },
+  { value: 'electronics', label: 'Electronics', icon: Cpu, color: 'text-purple-600 bg-purple-50' },
+  { value: 'carpentry', label: 'Carpentry', icon: Hammer, color: 'text-amber-700 bg-amber-50' },
+  { value: 'cleaning', label: 'Cleaning', icon: Droplets, color: 'text-teal-600 bg-teal-50' },
   { value: 'other', label: 'Other', icon: Wrench, color: 'text-gray-600 bg-gray-50' },
 ];
 

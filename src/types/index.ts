@@ -249,6 +249,9 @@ export type MaintenanceCategory =
   | 'appliance'
   | 'structural'
   | 'it'
+  | 'electronics'
+  | 'carpentry'
+  | 'cleaning'
   | 'other';
 
 export interface MaintenanceRequest {
