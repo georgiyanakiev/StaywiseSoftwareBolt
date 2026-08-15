@@ -297,8 +297,12 @@ export default function ReservationsPage() {
 
   const filteredRooms = useMemo(() => {
     if (!form.room_type_id) return rooms;
-    return rooms.filter(r => r.room_type_id === form.room_type_id);
-  }, [rooms, form.room_type_id]);
+    return rooms.filter(r => {
+      if (r.room_type_id !== form.room_type_id) return false;
+      if (editingReservation && r.id === editingReservation.room_id) return true;
+      return r.status === 'available' || r.status === 'dirty' || r.status === 'clean';
+    });
+  }, [rooms, form.room_type_id, editingReservation]);
 
   const nights = useMemo(() => {
     if (form.check_in && form.check_out) {
