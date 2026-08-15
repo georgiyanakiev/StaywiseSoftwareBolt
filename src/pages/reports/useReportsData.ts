@@ -298,7 +298,7 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
     const upsellRev      = upsellOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total_price || 0), 0);
     const fb             = reservationRevenue * 0.08;
     const extras         = upsellRev || 0;
-    const totalRevenue   = accommodation + fb + extras;
+    const totalRevenue   = accommodation + extras;
     const channelCommissions = accommodation * 0.12;
     const paymentFees    = totalRevenue * 0.025;
     const staffCosts     = totalRevenue * 0.22;
@@ -309,7 +309,7 @@ export function useReportsData(hotelId: string | undefined, dateRange: DateRange
 
     const rows: PLRow[] = [
       { label: 'Accommodation Revenue', current: accommodation,        prev: accommodation * prevMultiplier },
-      { label: 'F&B Revenue',           current: fb,                   prev: fb * prevMultiplier,                   isEstimated: true },
+      { label: 'F&B Revenue (est.)',     current: fb,                   prev: fb * prevMultiplier,                   isEstimated: true },
       { label: 'Extras & Upsells',      current: extras,               prev: extras * prevMultiplier },
       { label: 'Total Revenue',         current: totalRevenue,         prev: totalRevenue * prevMultiplier,         isTotal: true },
       { label: 'Channel Commissions',   current: channelCommissions,   prev: channelCommissions * prevMultiplier,   isNegative: true, isEstimated: true },

@@ -111,7 +111,7 @@ export default function BillingPage() {
   const [selectedInvoiceForHistory, setSelectedInvoiceForHistory] = useState<Invoice | null>(null);
 
   const [aggregateStats, setAggregateStats] = useState({
-    totalRevenue: 0,
+    totalInvoiced: 0,
     collectedRevenue: 0,
     outstandingBalance: 0,
     paidCount: 0,
@@ -151,7 +151,7 @@ export default function BillingPage() {
       i.status === 'overdue' ||
       (i.status === 'sent' && i.due_date < today && Number(i.amount_paid || 0) < Number(i.total_amount || 0));
     setAggregateStats({
-      totalRevenue: active.reduce((s, i) => s + Number(i.total_amount || 0), 0),
+      totalInvoiced: active.reduce((s, i) => s + Number(i.total_amount || 0), 0),
       collectedRevenue: active.reduce((s, i) => s + Number(i.amount_paid || 0), 0),
       outstandingBalance: active.reduce((s, i) => s + Math.max(0, Number(i.total_amount || 0) - Number(i.amount_paid || 0)), 0),
       paidCount: data.filter(i => i.status === 'paid').length,
@@ -882,9 +882,9 @@ export default function BillingPage() {
               <Euro className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total Revenue</p>
+              <p className="text-xs text-gray-500">Total Invoiced (All-Time)</p>
               <p className="text-xl font-semibold text-gray-900">
-                {formatCurrency(stats.totalRevenue, currentHotel.currency)}
+                {formatCurrency(stats.totalInvoiced, currentHotel.currency)}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
                 Collected: {formatCurrency(stats.collectedRevenue, currentHotel.currency)}

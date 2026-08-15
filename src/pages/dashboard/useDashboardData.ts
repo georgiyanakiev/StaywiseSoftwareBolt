@@ -145,7 +145,7 @@ export function useDashboardData(currentHotel: Hotel | null) {
     const today = isoToday();
     const yearStart = startOfYear();
 
-    const [roomsRes, resStatusRes, checkInsRes, checkOutsRes, pendingCIRes, pendingCORes, paymentsRes] = await Promise.all([
+    const [roomsRes, resStatusRes, checkInsRes, checkOutsRes, pendingCIRes, pendingCORes, paymentsRes, upsellRes] = await Promise.all([
       supabase.from('rooms').select('status').eq('hotel_id', currentHotel.id),
       supabase.from('reservations').select('status').eq('hotel_id', currentHotel.id),
       supabase.from('reservations').select('id', { count: 'exact' }).eq('hotel_id', currentHotel.id).eq('check_in', today).eq('status', 'checked_in'),
@@ -153,6 +153,7 @@ export function useDashboardData(currentHotel: Hotel | null) {
       supabase.from('reservations').select('id', { count: 'exact' }).eq('hotel_id', currentHotel.id).eq('check_in', today).eq('status', 'confirmed'),
       supabase.from('reservations').select('id', { count: 'exact' }).eq('hotel_id', currentHotel.id).eq('check_out', today).eq('status', 'checked_in'),
       supabase.from('payments').select('amount, payment_date').eq('hotel_id', currentHotel.id).gte('payment_date', yearStart),
+      supabase.from('upsell_orders').select('total_price, status, ordered_at').eq('hotel_id', currentHotel.id).gte('ordered_at', yearStart),
     ]);
 
     if (roomsRes.error) throw roomsRes.error;
@@ -199,7 +200,7 @@ export function useDashboardData(currentHotel: Hotel | null) {
     const monthRevenue = payments
       .filter(p => paymentDateStr(p.payment_date) >= monthStart && paymentDateStr(p.payment_date) <= today)
       .reduce((s, p) => s + Number(p.amount), 0);
-    const ytdRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
+    const ytdRevenue = payments.reduce((s, p) => s + Number(p.amount), 0) + (upsellRes.data || []).filter(o => o.status !== 'cancelled').reduce((s, o) => s + Number(o.total_price || 0), 0);
 
     setStats({
       totalRooms, availableRooms, occupiedRooms, dirtyRooms, cleanRooms, maintenanceRooms, outOfServiceRooms,

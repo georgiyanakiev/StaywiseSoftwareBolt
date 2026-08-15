@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, getCurrencySymbol } from '../lib/utils';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useDashboardData } from './dashboard/useDashboardData';
 import ActivityFeed from './dashboard/ActivityFeed';
@@ -202,7 +202,7 @@ export default function DashboardPage() {
             <div className={`${card.bg} ${card.color} w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center mb-2 sm:mb-3`}>
               <card.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div className="text-base sm:text-xl font-bold text-gray-900 truncate">{formatCurrency(card.value)}</div>
+            <div className="text-base sm:text-xl font-bold text-gray-900 truncate">{formatCurrency(card.value, currentHotel.currency)}</div>
             <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{card.label}</div>
           </div>
         ))}
@@ -225,9 +225,9 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f8" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false}
-                  tickFormatter={(v: number) => `€${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
+                  tickFormatter={(v: number) => `${getCurrencySymbol(currentHotel.currency)}${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
                 <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }}
-                  formatter={(v) => [formatCurrency(Number(v)), t.dashboard.revenue]} />
+                  formatter={(v) => [formatCurrency(Number(v), currentHotel.currency), t.dashboard.revenue]} />
                 <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fill="url(#revGrad)" dot={{ r: 3, fill: '#2563eb' }} activeDot={{ r: 5 }} />
               </AreaChart>
             </ResponsiveContainer>
