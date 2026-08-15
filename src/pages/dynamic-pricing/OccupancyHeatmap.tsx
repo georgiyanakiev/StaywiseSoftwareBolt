@@ -72,12 +72,14 @@ export default function OccupancyHeatmap() {
           .select('room_id, check_in, check_out, status')
           .eq('hotel_id', currentHotel.id)
           .in('status', ['confirmed', 'checked_in', 'checked_out'])
-          .or(`check_in.lte.${endDate},check_out.gte.${startDate}`),
+          .lte('check_in', endDate)
+          .gte('check_out', startDate),
         supabase.from('direct_bookings')
           .select('room_type_id, check_in, check_out, status')
           .eq('hotel_id', currentHotel.id)
           .in('status', ['confirmed', 'checked_in', 'checked_out'])
-          .or(`check_in.lte.${endDate},check_out.gte.${startDate}`),
+          .lte('check_in', endDate)
+          .gte('check_out', startDate),
         supabase.from('rooms').select('id').eq('hotel_id', currentHotel.id),
       ]);
 

@@ -98,14 +98,16 @@ function buildReasoning(factors: YieldFactors, changePct: number): string {
   return `${verb} ${signals.join(", ")}`;
 }
 
-function confidenceScore(occ: number, hasPickupData: boolean, hasHistorical: boolean): number {
+function confidenceScore(occ: number, hasPickupData: boolean, hasPickupForDate: boolean, leadDays: number): number {
   let score = 50;
-  if (occ >= 75 || occ <= 25) score += 22;
-  else if (occ >= 60 || occ <= 35) score += 12;
-  else score += 6;
-  if (hasPickupData) score += 14;
-  if (hasHistorical) score += 9;
-  return Math.min(96, score);
+  if (occ >= 75 || occ <= 25) score += 18;
+  else if (occ >= 60 || occ <= 35) score += 10;
+  else score += 4;
+  if (hasPickupData) score += 10;
+  if (hasPickupForDate) score += 6;
+  if (leadDays <= 3) score += 8;
+  else if (leadDays <= 14) score += 4;
+  return Math.min(94, Math.max(45, score));
 }
 
 Deno.serve(async (req: Request) => {
@@ -138,32 +140,63 @@ Deno.serve(async (req: Request) => {
     lookback14.setDate(today.getDate() - 14);
     const lookback14Str = lookback14.toISOString().split("T")[0];
 
-    const [rtRes, roomsRes, resvRes, pickupRes, rulesRes] = await Promise.all([
+    const [rtRes, roomsRes, resvRes, directRes, pickupRes, rulesRes] = await Promise.all([
       supabase.from("room_types").select("id, name, base_rate").eq("hotel_id", hotel_id),
       supabase.from("rooms").select("id, room_type_id").eq("hotel_id", hotel_id),
       supabase.from("reservations")
         .select("room_id, check_in, check_out, status")
         .eq("hotel_id", hotel_id)
-        .in("status", ["confirmed", "checked_in"])
+        .in("status", ["confirmed", "checked_in", "checked_out"])
+        .gte("check_out", todayStr)
+        .lte("check_in", horizon30Str),
+      supabase.from("direct_bookings")
+        .select("room_type_id, check_in, check_out, status")
+        .eq("hotel_id", hotel_id)
+        .in("status", ["confirmed", "checked_in", "checked_out"])
         .gte("check_out", todayStr)
         .lte("check_in", horizon30Str),
       supabase.from("reservations")
         .select("check_in, check_out, created_at")
         .eq("hotel_id", hotel_id)
-        .in("status", ["confirmed", "checked_in"])
+        .in("status", ["confirmed", "checked_in", "checked_out"])
         .gte("created_at", lookback14Str)
         .gte("check_in", todayStr),
       supabase.from("pricing_rules")
-        .select("room_type_id, min_rate, max_rate, active")
+        .select("*")
         .eq("hotel_id", hotel_id)
         .eq("active", true),
     ]);
 
+    interface FullPricingRule {
+      id: string;
+      name: string;
+      type: string;
+      room_type_id: string | null;
+      date_from: string | null;
+      date_to: string | null;
+      days_of_week: number[] | null;
+      occupancy_threshold_pct: number | null;
+      days_before_arrival: number | null;
+      adjustment_type: string;
+      adjustment_value: number;
+      min_rate: number | null;
+      max_rate: number | null;
+      priority: number;
+      active: boolean;
+    }
+
     const roomTypes = (rtRes.data ?? []).map(rt => ({ ...rt, base_rate: Number(rt.base_rate) })) as { id: string; name: string; base_rate: number }[];
     const rooms = (roomsRes.data ?? []) as { id: string; room_type_id: string }[];
     const reservations = (resvRes.data ?? []) as { room_id: string; check_in: string; check_out: string; status: string }[];
+    const directBookings = (directRes.data ?? []) as { room_type_id: string; check_in: string; check_out: string; status: string }[];
     const recentBookings = (pickupRes.data ?? []) as { check_in: string; check_out: string; created_at: string }[];
-    const rules = (rulesRes.data ?? []).map(r => ({ ...r, min_rate: r.min_rate != null ? Number(r.min_rate) : null, max_rate: r.max_rate != null ? Number(r.max_rate) : null })) as { room_type_id: string | null; min_rate: number | null; max_rate: number | null; active: boolean }[];
+    const rules = (rulesRes.data ?? []).map(r => ({
+      ...r,
+      adjustment_value: Number(r.adjustment_value),
+      min_rate: r.min_rate != null ? Number(r.min_rate) : null,
+      max_rate: r.max_rate != null ? Number(r.max_rate) : null,
+      days_of_week: r.days_of_week ?? [],
+    })) as FullPricingRule[];
 
     if (!roomTypes.length) {
       return new Response(
@@ -199,7 +232,10 @@ Deno.serve(async (req: Request) => {
           .filter(r => r.check_in <= dateStr && r.check_out > dateStr)
           .map(r => r.room_id)
       );
-      const occupiedCount = occupiedRoomIds.size;
+      const directOccupiedTypes = directBookings
+        .filter(r => r.check_in <= dateStr && r.check_out > dateStr)
+        .map(r => r.room_type_id);
+      const occupiedCount = occupiedRoomIds.size + directOccupiedTypes.length;
       const occPct = totalRooms > 0 ? (occupiedCount / totalRooms) * 100 : 50;
 
       const pickupForDate = recentBookings.filter(
@@ -209,10 +245,12 @@ Deno.serve(async (req: Request) => {
 
       const hasPickupData = recentBookings.length > 0;
 
+      const directOccupiedForType = directOccupiedTypes.filter(tid => tid === rt.id).length;
+
       for (const rt of roomTypes) {
         const typeRooms = roomsByType[rt.id]?.length ?? 0;
         const typeOccupied = typeRooms > 0
-          ? Array.from(occupiedRoomIds).filter(rid => roomIdToType[rid] === rt.id).length
+          ? Array.from(occupiedRoomIds).filter(rid => roomIdToType[rid] === rt.id).length + directOccupiedForType
           : 0;
         const typeOccPct = typeRooms > 0
           ? (typeOccupied / typeRooms) * 100
@@ -224,13 +262,47 @@ Deno.serve(async (req: Request) => {
         const paceMult = pickupMultiplier(pickupVsAvg);
 
         let rate = rt.base_rate * demandMult * weekendMult * ltMult * paceMult;
-        rate = Math.round(rate / 5) * 5;
 
-        const rtRules = rules.filter(r => r.room_type_id === rt.id || r.room_type_id === null);
+        const rtRules = rules
+          .filter(r => r.room_type_id === rt.id || r.room_type_id === null)
+          .sort((a, b) => b.priority - a.priority);
+
+        const appliedRuleNames: string[] = [];
         for (const rule of rtRules) {
-          if (rule.min_rate != null && rate < rule.min_rate) rate = rule.min_rate;
-          if (rule.max_rate != null && rate > rule.max_rate) rate = rule.max_rate;
+          let match = false;
+          if (rule.type === "base_rate") match = true;
+          if (rule.type === "seasonal" || rule.type === "event") {
+            const from = rule.date_from ? new Date(rule.date_from) : null;
+            const to = rule.date_to ? new Date(rule.date_to) : null;
+            match = (!from || d >= from) && (!to || d <= to);
+          }
+          if (rule.type === "day_of_week") {
+            match = (rule.days_of_week ?? []).includes(dow);
+          }
+          if (rule.type === "last_minute") {
+            match = rule.days_before_arrival != null && leadDays <= rule.days_before_arrival;
+          }
+          if (rule.type === "early_bird") {
+            match = rule.days_before_arrival != null && leadDays >= rule.days_before_arrival;
+          }
+          if (rule.type === "occupancy") {
+            match = rule.occupancy_threshold_pct != null && typeOccPct >= rule.occupancy_threshold_pct;
+          }
+          if (!match) continue;
+
+          const v = rule.adjustment_value;
+          if (rule.adjustment_type === "percentage_increase") rate *= 1 + v / 100;
+          else if (rule.adjustment_type === "percentage_decrease") rate *= 1 - v / 100;
+          else if (rule.adjustment_type === "fixed_increase") rate += v;
+          else if (rule.adjustment_type === "fixed_decrease") rate -= v;
+          else if (rule.adjustment_type === "set_rate") rate = v;
+
+          if (rule.min_rate != null) rate = Math.max(rate, rule.min_rate);
+          if (rule.max_rate != null) rate = Math.min(rate, rule.max_rate);
+          appliedRuleNames.push(rule.name);
         }
+
+        rate = Math.round(rate / 5) * 5;
 
         const factors: YieldFactors = {
           demand: demandBucket(typeOccPct),
@@ -243,7 +315,8 @@ Deno.serve(async (req: Request) => {
 
         const changePct = rt.base_rate > 0 ? ((rate - rt.base_rate) / rt.base_rate) * 100 : 0;
         const reasoning = buildReasoning(factors, changePct);
-        const confidence = confidenceScore(typeOccPct, hasPickupData, false);
+        const hasPickupForDate = pickupForDate > 0;
+        const confidence = confidenceScore(typeOccPct, hasPickupData, hasPickupForDate, leadDays);
 
         suggestions.push({
           date: dateStr,
