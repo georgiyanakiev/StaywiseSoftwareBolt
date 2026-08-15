@@ -80,7 +80,7 @@ export const ROLE_LABELS: Record<StaffRole, string> = {
 export const ROLE_DESCRIPTIONS: Record<StaffRole, string> = {
   admin:        'Full access to all features, settings, and staff management.',
   owner:        'Full access to all features, settings, and staff management.',
-  manager:      'Full operational access. Can manage staff but cannot delete critical settings.',
+  manager:      'Full operational access to daily hotel management. Cannot manage users, system settings, or owner portal.',
   front_desk:   'Manages reservations, check-ins, guests, and billing. View-only for reports.',
   housekeeping: 'Full access to housekeeping and maintenance tasks. View-only for rooms.',
   maintenance:  'Full access to maintenance requests. View-only for housekeeping dashboard.',
@@ -150,15 +150,12 @@ export const DEFAULT_PERMISSIONS: Record<StaffRole, Record<ModuleKey, ModulePerm
     return acc;
   }, {} as Record<ModuleKey, ModulePermission>),
 
-  manager: ALL_MODULES.reduce((acc, m) => {
-    acc[m] = {
-      can_view: true,
-      can_create: true,
-      can_edit: true,
-      can_delete: !['settings', 'payments'].includes(m),
-    };
-    return acc;
-  }, {} as Record<ModuleKey, ModulePermission>),
+  manager: makePerms(
+    ['dashboard', 'front_desk', 'reservations', 'rooms', 'guests', 'billing',
+     'housekeeping', 'maintenance', 'reports', 'channel_manager', 'booking_engine',
+     'payments', 'invoicing', 'guest_portal', 'dynamic_pricing', 'upselling'],
+    ['settings']
+  ),
 
   front_desk: makePerms(
     ['dashboard', 'front_desk', 'reservations', 'rooms', 'guests', 'billing', 'guest_portal'],
