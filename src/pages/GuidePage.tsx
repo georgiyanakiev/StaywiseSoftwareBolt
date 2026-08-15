@@ -184,7 +184,7 @@ Guest List
 Displays: name avatar, email, phone, country, total stays, total spent, VIP status, last visit.
 
 VIP Status Levels
-• Regular — standard guests
+• Standard — standard guests
 • Silver — returning loyal guests
 • Gold — high-value guests (crown icon)
 • Platinum — premium-tier guests (crown icon)
@@ -194,18 +194,16 @@ Search, Filter & Sort
 • Filter by VIP level or country
 • Sort by: Newest, Oldest, Name A-Z/Z-A, Most Stays, Highest Spent
 
-Guest Profile Tabs
-Each guest has a detailed profile with five tabs:
+Guest Profile
+Each guest has a detailed profile with a header card showing personal information, contact details, loyalty tier, and tags, followed by four tabs:
 
-Profile — Personal information, contact details, address, ID/passport, marketing preferences, and internal notes.
+Stay History — Full booking history with dates, room, nights, amount, source, and star rating.
 
-Reservations — Full booking history with status, dates, room type, and amounts.
+Communications — Log of all emails, SMS, notes, and phone calls with direction and timestamp.
 
-Communications — Log of all emails, SMS, WhatsApp, and phone calls with delivery status.
+Preferences — Room preferences, dietary requirements, language preference, marketing opt-in, special occasions (birthday, anniversary), and internal notes.
 
-Documents — Uploaded identity documents (passport, ID card, visa, etc.).
-
-Preferences — Room floor/view/bed type preferences, dietary restrictions, allergies, special requests, and complaint history.
+Documents — Uploaded identity documents (passport, ID card, visa, etc.) with file size and upload date.
 
 Adding / Editing Guests
 Fields include: title, first/last name, email, phone, mobile, preferred contact method, address, nationality, date of birth, document number, room preferences, dietary/allergy info, VIP status, and marketing opt-in management.
@@ -583,50 +581,36 @@ Bulk Operations
   {
     id: 'reports',
     title: '19. Reports & Analytics',
-    content: `The Reports page provides seven categories of business intelligence with charts, tables, and export options.
+    content: `The Reports page provides four categories of business intelligence with charts, tables, and export options.
 
 Date Range Controls
 Set a custom date range or click "Last 30 Days" for a quick overview. All reports update dynamically.
 
-1. Occupancy Reports
+1. Revenue Dashboard
+• Total Revenue, ADR (Average Daily Rate), RevPAR
+• Revenue by source breakdown (Direct, Booking.com, Expedia, Airbnb, Corporate)
+• 7-day revenue trend area chart
+• Top-performing room types table with occupancy %, ADR, and RevPAR
+
+2. Occupancy Report
 • Average occupancy rate and length of stay
 • RevPAR (Revenue Per Available Room)
 • Line chart: occupancy rate over time
-• Bar chart: occupancy by room type
-• Room utilization table
+• Bar chart: monthly occupancy comparison
+• Room utilization table with per-room occupancy and revenue
 
-2. Revenue Reports
-• Total Revenue, ADR (Average Daily Rate), RevPAR
-• Bar chart: monthly revenue trends
-• Pie chart: revenue by payment method
-• Table: top-performing rooms by revenue
+3. Booking Analysis
+• Total reservations, lead time distribution
+• Pie chart: distribution by source (Direct, Booking.com, Expedia, Airbnb, Corporate)
+• Cancellation rate trend over time
+• Average stay length by month
+• Guest nationality breakdown
 
-3. Guest Reports
-• Total guests, VIP breakdown (Silver, Gold, Platinum)
-• New vs. returning guests chart
-• Top spenders table
-• Guests by country chart
-
-4. Booking Sources
-• Total reservations, direct booking percentage, commission costs
-• Pie chart: distribution by source (Direct, Website, Booking.com, Expedia, Airbnb, Corporate)
-• Revenue breakdown per source
-
-5. Housekeeping Reports
-• Tasks completed, in-progress, and pending
-• Bar chart of daily task completion
-• Staff performance table with completion percentages
-
-6. Financial Reports
-• Revenue, expenses (estimated 35% of revenue), net income
-• Revenue vs. expenses comparison chart (6 months)
-• Payment method breakdown pie chart
-
-7. Cancellation Report
-• Total cancellations, cancellation rate, lost revenue
-• Average days before check-in at cancellation
-• Cancellations over time chart
-• Recent cancellations table with reasons
+4. Financial P&L
+• Revenue, costs (commissions, payment fees, staff costs), and gross profit
+• Period-over-period comparison with actual prior-period data
+• Monthly revenue vs. costs breakdown chart
+• Gross margin percentage
 
 Export Options
 • Export CSV — downloads the active report tab as a formatted spreadsheet
@@ -864,7 +848,7 @@ Check-Out — The process of a guest departing and settling their account.
 
 Confirmation Code — A unique reference number automatically assigned to each reservation (e.g., SW-2024-0001).
 
-VIP Status — Loyalty classification (Regular, Silver, Gold, Platinum) used to recognize and prioritize valuable guests.
+VIP Status — Loyalty classification (Standard, Silver, Gold, Platinum) used to recognize and prioritize valuable guests.
 
 Folio — A running account of charges accumulated during a guest's stay.
 
