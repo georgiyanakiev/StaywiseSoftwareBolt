@@ -6,7 +6,7 @@ export interface SyncLog {
   channel_name: string;
   rooms_affected: number;
   dates_affected: number;
-  status: 'success' | 'failed' | 'partial';
+  status: 'success' | 'failed' | 'partial' | 'simulated';
   error_message: string;
   created_at: string;
 }
@@ -16,9 +16,10 @@ interface Props {
 }
 
 const STATUS_CONFIG = {
-  success: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Success' },
-  failed:  { icon: XCircle,      color: 'text-red-600',     bg: 'bg-red-50',     label: 'Failed' },
-  partial: { icon: AlertCircle,  color: 'text-amber-600',   bg: 'bg-amber-50',   label: 'Partial' },
+  success:   { icon: CheckCircle2,  color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Success' },
+  failed:    { icon: XCircle,       color: 'text-red-600',     bg: 'bg-red-50',     label: 'Failed' },
+  partial:   { icon: AlertCircle,   color: 'text-amber-600',   bg: 'bg-amber-50',   label: 'Partial' },
+  simulated: { icon: FlaskConical,  color: 'text-amber-600',   bg: 'bg-amber-50',   label: 'Simulated' },
 };
 
 export default function SyncLogTable({ logs }: Props) {
@@ -65,7 +66,7 @@ export default function SyncLogTable({ logs }: Props) {
                         <Icon className="w-3 h-3" />
                         {cfg.label}
                       </span>
-                      {log.error_message?.startsWith('Simulated') && (
+                      {log.status === 'simulated' && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                           <FlaskConical className="w-2.5 h-2.5" />
                           Simulated
@@ -74,7 +75,7 @@ export default function SyncLogTable({ logs }: Props) {
                     </div>
                   </td>
                   <td className="table-cell text-gray-500 text-xs">
-                    {log.error_message && !log.error_message.startsWith('Simulated') ? log.error_message : '—'}
+                    {log.error_message && log.status !== 'simulated' ? log.error_message : '—'}
                   </td>
                 </tr>
               );

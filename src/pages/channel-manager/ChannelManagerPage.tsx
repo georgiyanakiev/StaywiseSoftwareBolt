@@ -91,16 +91,19 @@ export default function ChannelManagerPage() {
     const isSimulated = !hasCredentials;
 
     if (isSimulated) {
-      await supabase.from('channel_sync_logs').insert({
-        hotel_id: currentHotel.id,
-        channel_id: id,
-        channel_name: name,
-        rooms_affected: 0,
-        dates_affected: 0,
-        status: 'simulated',
-        error_message: 'Demo mode — no API credentials configured. No real OTA calls were made.',
-        ...(tenantId ? { tenant_id: tenantId } : {}),
-      });
+      await Promise.all([
+        supabase.from('channels').update({ last_sync: now, status: 'connected' }).eq('id', id),
+        supabase.from('channel_sync_logs').insert({
+          hotel_id: currentHotel.id,
+          channel_id: id,
+          channel_name: name,
+          rooms_affected: 0,
+          dates_affected: 0,
+          status: 'simulated',
+          error_message: 'Simulated sync — demo mode. No real OTA calls were made. Add API credentials to enable live sync.',
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+        }),
+      ]);
     } else {
       await Promise.all([
         supabase.from('channels').update({ last_sync: now, status: 'connected' }).eq('id', id),
