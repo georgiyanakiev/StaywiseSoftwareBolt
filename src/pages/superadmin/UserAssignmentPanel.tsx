@@ -118,10 +118,11 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
 
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
-    const { data } = await db
-      .from('user_hotel_assignments')
-      .select('*')
-      .eq('user_id', user.id);
+    const { data, error } = await db
+      .rpc('admin_get_user_assignments', { p_user_id: user.id });
+    if (error) {
+      setSaveError('Failed to load assignments. Please try again.');
+    }
     setAssignments((data as HotelAssignment[]) ?? []);
     setLoading(false);
   }, [db, user.id]);
