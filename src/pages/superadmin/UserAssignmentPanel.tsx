@@ -138,30 +138,31 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
     setSaving(tenant.id);
     setSaveError(null);
 
-    if (existing) {
-      const newActive = !existing.active;
-      const { error } = await db
-        .from('user_hotel_assignments')
-        .update({ active: newActive })
-        .eq('id', existing.id);
-      if (error) {
-        setSaveError(`Failed to update assignment for ${tenant.name}: ${error.message}`);
-      } else {
-        setAssignments(prev => prev.map(a => a.id === existing.id ? { ...a, active: newActive } : a));
-        onToast(newActive ? `Assigned to ${tenant.name}` : `Removed from ${tenant.name}`);
-      }
+    const newActive = existing ? !existing.active : true;
+    const role = (existing?.role ?? 'front_desk') as AssignmentRole;
+
+    const { error } = await db.rpc('set_user_tenant_access', {
+      p_user_id: user.id,
+      p_tenant_id: tenant.id,
+      p_role: role,
+      p_active: newActive,
+    });
+
+    if (error) {
+      setSaveError(`Failed to update assignment for ${tenant.name}. Please try again.`);
     } else {
-      const { data, error } = await db
-        .from('user_hotel_assignments')
-        .insert({ user_id: user.id, tenant_id: tenant.id, role: 'front_desk', active: true })
-        .select()
-        .single();
-      if (error) {
-        setSaveError(`Failed to assign to ${tenant.name}: ${error.message}`);
-      } else if (data) {
-        setAssignments(prev => [...prev, data as HotelAssignment]);
-        onToast(`Assigned to ${tenant.name}`);
+      if (existing) {
+        setAssignments(prev => prev.map(a => a.id === existing.id ? { ...a, active: newActive, role } : a));
+      } else {
+        setAssignments(prev => [...prev, {
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          tenant_id: tenant.id,
+          role,
+          active: true,
+        } as HotelAssignment]);
       }
+      onToast(newActive ? `Assigned to ${tenant.name}` : `Removed from ${tenant.name}`);
     }
 
     setSaving(null);
@@ -182,13 +183,15 @@ export default function UserAssignmentPanel({ user, tenants, onToast }: Props) {
     setSaving(`role-${tenant.id}`);
     setSaveError(null);
 
-    const { error } = await db
-      .from('user_hotel_assignments')
-      .update({ role })
-      .eq('id', existing.id);
+    const { error } = await db.rpc('set_user_tenant_access', {
+      p_user_id: user.id,
+      p_tenant_id: tenant.id,
+      p_role: role,
+      p_active: existing.active,
+    });
 
     if (error) {
-      setSaveError(`Failed to update role: ${error.message}`);
+      setSaveError('Failed to update role. Please try again.');
     } else {
       setAssignments(prev => prev.map(a => a.id === existing.id ? { ...a, role } : a));
       onToast('Role updated');

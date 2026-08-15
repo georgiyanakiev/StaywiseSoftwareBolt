@@ -34,25 +34,17 @@ export function HotelProvider({ children }: { children: ReactNode }) {
     if (targetHotelId) {
       const { data: rpcData } = await supabase.rpc('get_hotel_for_user', { p_hotel_id: targetHotelId });
       const rpcRow = Array.isArray(rpcData) && rpcData.length > 0 ? (rpcData[0] as Hotel) : null;
-      const hotel = rpcRow
-        ?? (await supabase.from('hotels').select('*').eq('id', targetHotelId).maybeSingle()).data as Hotel | null;
 
-      if (hotel) {
-        setHotels([hotel]);
-        setCurrentHotel(hotel);
+      if (rpcRow) {
+        setHotels([rpcRow]);
+        setCurrentHotel(rpcRow);
         setLoading(false);
         return;
       }
     }
 
-    const { data } = await supabase.from('hotels').select('*').order('name');
-    const hotelList = (data || []) as Hotel[];
-    setHotels(hotelList);
-    if (hotelList.length > 0) {
-      const savedId = localStorage.getItem('staywise_current_hotel');
-      const found = savedId ? hotelList.find(h => h.id === savedId) : null;
-      setCurrentHotel(found || hotelList[0]);
-    }
+    setHotels([]);
+    setCurrentHotel(null);
     setLoading(false);
   };
 

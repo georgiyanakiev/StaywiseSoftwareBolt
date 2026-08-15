@@ -57,10 +57,12 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
 
   const handleRoleChange = async (assignment: AssignmentWithUser, role: AssignmentRole) => {
     setSavingId(assignment.id);
-    const { error } = await db
-      .from('user_hotel_assignments')
-      .update({ role })
-      .eq('id', assignment.id);
+    const { error } = await db.rpc('set_user_tenant_access', {
+      p_user_id: assignment.user_id,
+      p_tenant_id: selectedTenantId,
+      p_role: role,
+      p_active: true,
+    });
     if (!error) {
       setAssignments(prev => prev.map(a => a.id === assignment.id ? { ...a, role } : a));
       onToast('Role updated');
@@ -70,10 +72,12 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
 
   const handleRemove = async (assignment: AssignmentWithUser) => {
     setSavingId(assignment.id);
-    const { error } = await db
-      .from('user_hotel_assignments')
-      .update({ active: false })
-      .eq('id', assignment.id);
+    const { error } = await db.rpc('set_user_tenant_access', {
+      p_user_id: assignment.user_id,
+      p_tenant_id: selectedTenantId,
+      p_role: assignment.role,
+      p_active: false,
+    });
     if (!error) {
       setAssignments(prev => prev.filter(a => a.id !== assignment.id));
       onToast('User removed from hotel');
@@ -85,26 +89,12 @@ export default function HotelStaffView({ tenants, allUsers, onToast }: Props) {
     if (!addUserId) return;
     setAdding(true);
 
-    const existing = await db
-      .from('user_hotel_assignments')
-      .select('id, active')
-      .eq('user_id', addUserId)
-      .eq('tenant_id', selectedTenantId)
-      .maybeSingle();
-
-    let error = null;
-    if (existing.data) {
-      const res = await db
-        .from('user_hotel_assignments')
-        .update({ active: true, role: addRole })
-        .eq('id', existing.data.id);
-      error = res.error;
-    } else {
-      const res = await db
-        .from('user_hotel_assignments')
-        .insert({ user_id: addUserId, tenant_id: selectedTenantId, role: addRole, active: true });
-      error = res.error;
-    }
+    const { error } = await db.rpc('set_user_tenant_access', {
+      p_user_id: addUserId,
+      p_tenant_id: selectedTenantId,
+      p_role: addRole,
+      p_active: true,
+    });
 
     if (!error) {
       onToast('User added to hotel');
