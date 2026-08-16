@@ -80,11 +80,11 @@ interface Props {
   tenantId: string | null;
   onChannelAdded: () => void;
   onConfigure: (channelId: string) => void;
-  toast: (type: 'success' | 'error', message: string) => void;
+  showToast: (msg: string, type: 'success' | 'error') => void;
 }
 
 export default function ChannelCatalog({
-  hotelChannels, hotelId, tenantId, onChannelAdded, onConfigure, toast,
+  hotelChannels, hotelId, tenantId, onChannelAdded, onConfigure, showToast,
 }: Props) {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,9 +181,9 @@ export default function ChannelCatalog({
       }
       setPendingItem(null);
       onChannelAdded();
-      toast('success', `${item.name} added. You can configure credentials any time in My Channels.`);
+      showToast(`${item.name} added. You can configure credentials any time in My Channels.`, 'success');
     } catch {
-      toast('error', 'Failed to add channel');
+      showToast('Failed to add channel', 'error');
     } finally {
       setAdding(null);
     }

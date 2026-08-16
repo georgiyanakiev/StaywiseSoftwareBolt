@@ -35,7 +35,7 @@ interface Props {
 const VIEW_SIZES = [7, 14, 30] as const;
 
 export default function RateCalendar({ hotelId, channels }: Props) {
-  const { toast } = useToast();
+  const { showToast } = useToast();
   const tenantId = useTenantId();
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [rates, setRates] = useState<ChannelRate[]>([]);
@@ -127,7 +127,7 @@ export default function RateCalendar({ hotelId, channels }: Props) {
 
     setEditingCell(null);
     setSaving(false);
-    toast('success', 'Rate updated — pending sync');
+    showToast('Rate updated — pending sync', 'success');
   };
 
   const dates = getDates();
