@@ -305,7 +305,7 @@ export default function PricingRulesBuilder({ roomTypes }: { roomTypes: RoomType
         message={`Delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   );

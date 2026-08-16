@@ -186,7 +186,7 @@ export default function UpsellCatalogue() {
         message={t.upselling.deleteItemDesc.replace('{name}', deleteTarget?.name || '')}
         confirmLabel={t.common.delete}
         onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   );
