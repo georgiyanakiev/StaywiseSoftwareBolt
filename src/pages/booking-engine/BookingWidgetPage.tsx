@@ -120,6 +120,7 @@ export default function BookingWidgetPage() {
   const [loading, setLoading] = useState(false);
   const [confirmationNumber, setConfirmationNumber] = useState('');
   const [bookingId, setBookingId] = useState('');
+  const [checkoutRequestId, setCheckoutRequestId] = useState('');
   const [hotelId, setHotelId] = useState('');
   const [tenantId, setTenantId] = useState('');
   const [upsellItems, setUpsellItems] = useState<UpsellItem[]>([]);
@@ -313,6 +314,31 @@ export default function BookingWidgetPage() {
     // second pending_payment record for the same stay.
     if (stripeEnabled && bookingId) {
       await startStripeCheckout(bookingId);
+      return;
+    }
+
+    // Stripe bookings are reserved and created atomically by the Edge Function.
+    // The stable request id makes a browser retry return the same booking/session.
+    if (stripeEnabled) {
+      const requestId = checkoutRequestId || crypto.randomUUID();
+      if (!checkoutRequestId) setCheckoutRequestId(requestId);
+      const confNum = generateConfirmationCode();
+      const { data, error } = await supabase.functions.invoke('create-booking-checkout', {
+        body: { booking: {
+          requestId, hotelId, tenantId: tenantId || null, confirmationNumber: confNum,
+          roomTypeId: selectedRoom.id, guestName, guestEmail, guestPhone, guestCountry,
+          checkIn, checkOut, adults, children, ratePerNight: selectedRoom.base_rate,
+          subtotal, taxAmount, totalAmount: total, depositAmount, specialRequests,
+        } },
+      });
+      if (error || !data?.url || !data?.bookingId) {
+        setBookingError(error?.message || data?.error || 'Unable to initiate payment. Please try again.');
+        setLoading(false);
+        return;
+      }
+      setBookingId(data.bookingId);
+      setConfirmationNumber(confNum);
+      window.location.href = data.url;
       return;
     }
 

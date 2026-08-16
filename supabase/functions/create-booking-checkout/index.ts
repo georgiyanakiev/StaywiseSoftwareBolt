@@ -10,7 +10,8 @@ const corsHeaders = {
 };
 
 interface CheckoutPayload {
-  bookingId: string;
+  bookingId?: string;
+  booking?: Record<string, unknown>;
 }
 
 function json(body: unknown, status = 200) {
@@ -59,23 +60,35 @@ Deno.serve(async (req: Request) => {
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" });
     const payload: CheckoutPayload = await req.json();
 
-    if (!payload?.bookingId) {
-      return json({ error: "Missing required field: bookingId" }, 400);
-    }
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Everything that decides the price is read from the stored booking, never
+    let bookingId = payload.bookingId;
+    if (!bookingId && payload.booking) {
+      const b = payload.booking;
+      const { data, error } = await supabase.rpc("reserve_direct_booking_hold", {
+        p_hotel_id: b.hotelId, p_room_type_id: b.roomTypeId, p_tenant_id: b.tenantId ?? null,
+        p_checkout_request_id: b.requestId, p_confirmation_number: b.confirmationNumber,
+        p_guest_name: b.guestName, p_guest_email: b.guestEmail, p_guest_phone: b.guestPhone ?? '', p_guest_country: b.guestCountry ?? '',
+        p_check_in: b.checkIn, p_check_out: b.checkOut, p_adults: b.adults, p_children: b.children,
+        p_rate_per_night: b.ratePerNight, p_subtotal: b.subtotal, p_tax_amount: b.taxAmount,
+        p_total_amount: b.totalAmount, p_deposit_amount: b.depositAmount, p_special_requests: b.specialRequests ?? '',
+      });
+      if (error || !data?.[0]?.id) return json({ error: error?.message ?? "Unable to reserve availability" }, 409);
+      bookingId = data[0].id;
+    }
+    if (!bookingId) return json({ error: "Missing booking details" }, 400);
+
+    // Everything that decides the charge is read from the stored booking, never
     // from the request body.
     const { data: booking, error: bookingErr } = await supabase
       .from("direct_bookings")
       .select(
         "id, hotel_id, tenant_id, confirmation_number, guest_email, check_in, check_out, total_amount, deposit_amount, payment_status, status, stripe_session_id, room_type:room_types(name), hotel:hotels(name, currency)"
       )
-      .eq("id", payload.bookingId)
+      .eq("id", bookingId)
       .maybeSingle();
 
     if (bookingErr || !booking) {
@@ -96,7 +109,7 @@ Deno.serve(async (req: Request) => {
     if (booking.stripe_session_id) {
       const existingSession = await stripe.checkout.sessions.retrieve(booking.stripe_session_id);
       if (existingSession.status === "open" && existingSession.url) {
-        return json({ sessionId: existingSession.id, url: existingSession.url });
+        return json({ bookingId: booking.id, sessionId: existingSession.id, url: existingSession.url });
       }
     }
 
@@ -181,7 +194,7 @@ Deno.serve(async (req: Request) => {
 
     if (updateError) throw updateError;
 
-    return json({ sessionId: session.id, url: session.url });
+    return json({ bookingId: booking.id, sessionId: session.id, url: session.url });
   } catch (err) {
     console.error("create-booking-checkout error", err);
     return json({ error: "Unable to start checkout" }, 500);
