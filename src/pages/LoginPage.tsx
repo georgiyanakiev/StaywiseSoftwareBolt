@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { validatePassword } from '../lib/passwordValidation';
 import { Eye, EyeOff, Loader2, CheckCircle2, ArrowLeft, Mail, Smartphone, Monitor, Tablet } from 'lucide-react';
 
 type LoginTab = 'email' | 'phone' | 'google';
@@ -67,6 +68,12 @@ export default function LoginPage() {
     if (isSignUp) {
       if (!firstName.trim() || !lastName.trim()) {
         setError(t.login.nameRequired);
+        setLoading(false);
+        return;
+      }
+      const pwIssues = validatePassword(password);
+      if (pwIssues.length > 0) {
+        setError(pwIssues[0].message);
         setLoading(false);
         return;
       }

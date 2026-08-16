@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { validatePassword } from '../lib/passwordValidation';
 import { Building2, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import LegalFooter from '../components/legal/LegalFooter';
 
@@ -45,6 +46,11 @@ export default function ResetPasswordPage() {
     }
     if (password !== confirmPassword) {
       setError(t.login.passwordMismatch);
+      return;
+    }
+    const pwIssues = validatePassword(password);
+    if (pwIssues.length > 0) {
+      setError(pwIssues[0].message);
       return;
     }
 
