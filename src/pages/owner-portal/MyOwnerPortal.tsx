@@ -4,7 +4,6 @@ import {
   TrendingUp, BedDouble, CalendarCheck, Euro, BarChart2, FileText, Printer, Building2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { firstRelated } from '../../lib/supabaseRelations';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHotel } from '../../contexts/HotelContext';
 import { formatCurrency, formatDate } from '../../lib/utils';
@@ -127,10 +126,7 @@ export default function MyOwnerPortal() {
           .in('status', ['confirmed', 'checked_in', 'checked_out'])
           .order('check_in', { ascending: false });
 
-        setReservations((resvData ?? []).map(reservation => ({
-          ...reservation,
-          guest: firstRelated(reservation.guest),
-        })) as ReservationRow[]);
+        setReservations((resvData ?? []) as ReservationRow[]);
       }
     } finally {
       setLoading(false);
@@ -286,7 +282,7 @@ export default function MyOwnerPortal() {
             <h3 className="text-sm font-semibold text-gray-700 mb-4">3-Month Availability Calendar</h3>
             <OwnerAvailabilityCalendar
               rooms={rooms}
-              reservations={reservations.filter((reservation): reservation is ReservationRow & { room_id: string } => Boolean(reservation.room_id))}
+              reservations={reservations}
               startDate={now}
             />
           </div>

@@ -19,7 +19,7 @@ import SyncStatusIndicator from './dashboard/SyncStatusIndicator';
 export default function DashboardPage() {
   const { currentHotel } = useHotel();
   const { t } = useLanguage();
-  const { loading, error, stats, revenueData, recentActivity, availabilityData, refresh } = useDashboardData(currentHotel);
+  const { loading, error, stats, revenueData, recentActivity, availabilityData, roomStatusData, refresh } = useDashboardData(currentHotel);
 
   if (loading) return <LoadingSpinner size="lg" />;
 
@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const maintenanceCount = stats.maintenanceRooms;
   const outOfServiceCount = stats.outOfServiceRooms;
 
+  const todayAvailable = availableCount;
   const todayOccupied = occupiedCount;
 
   const visibleRevenue = revenueData.slice(-7);

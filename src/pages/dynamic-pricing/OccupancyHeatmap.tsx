@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday, addMonths } from 'date-fns';
 import { supabase } from '../../lib/supabase';
-import { firstRelated } from '../../lib/supabaseRelations';
 import { useHotel } from '../../contexts/HotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatDate, formatCurrency } from '../../lib/utils';
@@ -119,10 +118,7 @@ export default function OccupancyHeatmap() {
       .gt('check_out', dateStr);
 
     const occ = occupancy[dateStr] ?? { occupied: 0, total: 0, pct: 0 };
-    const resvList = (data ?? []).map(reservation => ({
-      ...reservation,
-      guest: firstRelated(reservation.guest),
-    })) as Reservation[];
+    const resvList = (data ?? []) as Reservation[];
     setSelectedDay({
       date: dateStr,
       reservations: resvList,

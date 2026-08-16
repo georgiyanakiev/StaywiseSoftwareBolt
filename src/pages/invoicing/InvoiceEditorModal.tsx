@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Loader2, BookOpen, GripVertical } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { firstRelated } from '../../lib/supabaseRelations';
 import Modal from '../../components/ui/Modal';
 import { formatCurrency } from '../../lib/utils';
 import { useTenantId } from '../../hooks/useTenantQuery';
@@ -131,11 +130,7 @@ export default function InvoiceEditorModal({ hotelId, invoice, onClose, onSaved 
       .in('status', ['confirmed','checked_in','checked_out'])
       .order('check_in', { ascending: false })
       .limit(50);
-    setReservations((data ?? []).map(reservation => ({
-      ...reservation,
-      guest: firstRelated(reservation.guest),
-      room_type: firstRelated(reservation.room_type),
-    })) as Reservation[]);
+    setReservations((data ?? []) as Reservation[]);
   }, [hotelId]);
 
   useEffect(() => { loadReservations(); }, [loadReservations]);
