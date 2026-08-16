@@ -6,6 +6,7 @@ import {
   Bed, Coffee, Car, Clock
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { firstRelated } from '../../lib/supabaseRelations';
 import { formatDate } from '../../lib/utils';
 import LegalFooter from '../../components/legal/LegalFooter';
 
@@ -106,18 +107,24 @@ export default function GuestPortal() {
         : Promise.resolve({ data: null }),
     ]);
     setHotel(h as Hotel | null);
-    setReservation(r as Reservation | null);
+    const normalizedReservation = r ? {
+      ...r,
+      room: firstRelated(r.room),
+      room_type: firstRelated(r.room_type),
+      guest: firstRelated(r.guest),
+    } as Reservation : null;
+    setReservation(normalizedReservation);
 
     const { data: upsellData } = await supabase.from('upsell_items')
       .select('id, name, description, price, price_type, image_url')
       .eq('hotel_id', sess.hotel_id).eq('active', true).order('sort_order').limit(6);
     if (upsellData) setDbUpsellItems(upsellData);
 
-    if (r?.guest) {
+    if (normalizedReservation?.guest) {
       setPersonal(p => ({
         ...p,
-        fullName: p.fullName || `${r.guest!.first_name} ${r.guest!.last_name}`,
-        email: p.email || r.guest!.email,
+        fullName: p.fullName || `${normalizedReservation.guest!.first_name} ${normalizedReservation.guest!.last_name}`,
+        email: p.email || normalizedReservation.guest!.email,
       }));
     }
 

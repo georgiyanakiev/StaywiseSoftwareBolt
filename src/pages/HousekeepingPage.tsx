@@ -4,6 +4,7 @@ import {
   CheckCircle2, Clock, Eye, AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { firstRelated } from '../lib/supabaseRelations';
 import { useHotel } from '../contexts/HotelContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenantId } from '../hooks/useTenantQuery';
@@ -67,7 +68,10 @@ export default function HousekeepingPage() {
     setTasks((t ?? []) as HKTask[]);
     setIssues((i ?? []) as MaintenanceRequest[]);
     setStaff((s ?? []) as HKStaff[]);
-    setRooms((r ?? []) as Room[]);
+    setRooms((r ?? []).map(room => ({
+      ...room,
+      room_type: firstRelated(room.room_type),
+    })) as Room[]);
 
     const { data: upsellOrders } = await supabase
       .from('upsell_orders')
