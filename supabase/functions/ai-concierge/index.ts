@@ -61,6 +61,34 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const [{ data: staffRow }, { data: assignments }] = await Promise.all([
+      supabase
+        .from("staff_members")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("hotel_id", hotel_id)
+        .eq("is_active", true)
+        .in("approval_status", ["approved", "pending"])
+        .maybeSingle(),
+      supabase
+        .from("user_hotel_assignments")
+        .select("role, tenant_id, active")
+        .eq("user_id", user.id)
+        .eq("active", true),
+    ]);
+
+    const isPlatformAdmin = (assignments ?? []).some(
+      (a: { role?: string; tenant_id?: string | null }) =>
+        a.role === "super_admin" && a.tenant_id === null
+    );
+
+    if (!staffRow && !isPlatformAdmin) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const hotelContext = await gatherHotelContext(supabase, hotel_id);
 
     const systemPrompt = buildSystemPrompt(hotelContext);
@@ -92,7 +120,7 @@ Deno.serve(async (req: Request) => {
       const errBody = await anthropicRes.text();
       console.error("Anthropic API error:", errBody);
       return new Response(
-        JSON.stringify({ error: "AI service error", details: errBody }),
+        JSON.stringify({ error: "AI service error" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -111,7 +139,7 @@ Deno.serve(async (req: Request) => {
   } catch (err) {
     console.error("ai-concierge error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal error", details: String(err) }),
+      JSON.stringify({ error: "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

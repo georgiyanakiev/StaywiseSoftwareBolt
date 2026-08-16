@@ -132,10 +132,24 @@ Deno.serve(async (req: Request) => {
       }
 
       if (bookingId) {
+        // Only mark the booking paid in full when the amount Stripe actually
+        // captured covers the booking total. A deposit-mode checkout captures
+        // less, and must not clear the outstanding balance.
+        const { data: bookingRow } = await supabase
+          .from("direct_bookings")
+          .select("total_amount")
+          .eq("id", bookingId)
+          .maybeSingle();
+
+        const bookingTotal = Number(bookingRow?.total_amount ?? 0);
+        const depositMode = session.metadata?.deposit_mode === "true";
+        const fullyPaid =
+          !depositMode && (bookingTotal <= 0 || amountTotal + 0.001 >= bookingTotal);
+
         await supabase
           .from("direct_bookings")
           .update({
-            payment_status: "paid",
+            payment_status: fullyPaid ? "paid" : "deposit_paid",
             stripe_payment_intent_id: paymentIntentId,
             paid_at: new Date().toISOString(),
             status: "confirmed",

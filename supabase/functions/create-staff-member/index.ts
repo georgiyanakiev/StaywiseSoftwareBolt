@@ -75,7 +75,9 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", caller.id)
         .eq("active", true);
 
-      const isSuperAdmin = assignments?.some((a) => a.role === "super_admin");
+      const isSuperAdmin = assignments?.some(
+        (a) => a.role === "super_admin" && a.tenant_id === null
+      );
 
       if (bodyHotelId) {
         const isTenantOwnerForHotel = async () => {
@@ -87,7 +89,9 @@ Deno.serve(async (req: Request) => {
           if (!hotel) return false;
           resolvedTenantId = hotel.tenant_id;
           return assignments?.some(
-            (a) => (a.role === "owner" && a.tenant_id === hotel.tenant_id) || a.role === "super_admin"
+            (a) =>
+              (a.role === "owner" && a.tenant_id === hotel.tenant_id) ||
+              (a.role === "super_admin" && a.tenant_id === null)
           );
         };
 

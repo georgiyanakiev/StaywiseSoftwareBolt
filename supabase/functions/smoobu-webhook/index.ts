@@ -52,7 +52,6 @@ Deno.serve(async (req: Request) => {
   const presentedSecret =
     req.headers.get("x-smoobu-signature") ??
     req.headers.get("x-webhook-secret") ??
-    new URL(req.url).searchParams.get("secret") ??
     "";
 
   if (!timingSafeEqual(presentedSecret, configuredSecret)) {

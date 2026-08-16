@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
     const { data: booking, error: bookingErr } = await supabase
       .from("direct_bookings")
       .select(
-        "id, hotel_id, tenant_id, confirmation_number, guest_email, check_in, check_out, total_amount, deposit_amount, payment_status, room_type:room_types(name), hotel:hotels(name, currency)"
+        "id, hotel_id, tenant_id, confirmation_number, guest_email, check_in, check_out, total_amount, deposit_amount, payment_status, status, room_type:room_types(name), hotel:hotels(name, currency)"
       )
       .eq("id", payload.bookingId)
       .maybeSingle();
@@ -82,8 +82,12 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Booking not found" }, 404);
     }
 
-    if (booking.payment_status === "paid") {
+    if (["paid", "deposit_paid", "refunded"].includes(String(booking.payment_status))) {
       return json({ error: "This booking has already been paid" }, 409);
+    }
+
+    if (["cancelled", "checked_out", "no_show"].includes(String(booking.status))) {
+      return json({ error: "This booking is no longer open for payment" }, 409);
     }
 
     const { data: config } = await supabase
