@@ -34,6 +34,7 @@ export default function SuperAdminPage() {
         .select('role')
         .eq('user_id', user.id)
         .eq('role', 'super_admin')
+        .eq('active', true)
         .limit(1)
         .then(({ data }) => {
           setIsSuperAdmin((data?.length ?? 0) > 0);
