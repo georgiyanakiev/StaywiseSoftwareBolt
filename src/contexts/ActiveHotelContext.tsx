@@ -138,6 +138,11 @@ export function ActiveHotelProvider({ children }: { children: ReactNode }) {
   const enter = useCallback(async (payload: ActiveHotelSession) => {
     setEntering(true);
     try {
+      const { data: accessData } = await supabase.rpc('get_hotel_for_user', { p_hotel_id: payload.hotelId });
+      if (!Array.isArray(accessData) || accessData.length === 0) {
+        throw new Error('You do not have access to this hotel');
+      }
+
       await supabase.rpc('set_tenant_context', { p_tenant_id: payload.tenantId });
       setActiveTenant(payload.tenantId);
       applyBrandColor(payload.primaryColor);
