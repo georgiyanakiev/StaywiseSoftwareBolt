@@ -41,7 +41,7 @@ export default function PaymentRuleModal({ hotelId, onClose, onSaved }: Props) {
   const set = (key: string, val: unknown) => setForm(f => ({ ...f, [key]: val }));
 
   return (
-    <Modal isOpen onClose={onClose} title="Add Payment Rule" size="md">
+    <Modal open onClose={onClose} title="Add Payment Rule" size="md">
       <div className="space-y-4 p-1">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Rule Name</label>
