@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   QrCode, Send, Eye, CheckCircle2, Clock, Link2, Copy, Check,
-  ChevronDown, ChevronUp, Settings, Users, CalendarDays, Loader2
+  Settings, Users, CalendarDays, Loader2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
@@ -71,7 +71,7 @@ export default function GuestPortalPage() {
         .eq('hotel_id', currentHotel.id)
         .order('created_at', { ascending: false }),
     ]);
-    setArrivals((res ?? []) as Reservation[]);
+    setArrivals((res ?? []) as unknown as Reservation[]);
     setSessions((sess ?? []) as PortalSession[]);
     setLoading(false);
   }, [currentHotel]);
@@ -171,7 +171,7 @@ export default function GuestPortalPage() {
           >
             <tabItem.icon className="w-4 h-4" />
             {tabItem.label}
-            {tabItem.badge ? <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full">{tabItem.badge}</span> : null}
+            {'badge' in tabItem && tabItem.badge ? <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-1.5 py-0.5 rounded-full">{tabItem.badge}</span> : null}
           </button>
         ))}
       </div>

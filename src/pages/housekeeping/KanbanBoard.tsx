@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, RefreshCw, Loader2, ChevronRight, User, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Loader2, ChevronRight, User, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../components/ui/Toast';
@@ -81,7 +81,7 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
 
     for (const r of (checkouts ?? [])) {
       if (!r.room_id || existingKeys.has(`${r.room_id}:checkout_clean`)) continue;
-      const room = r.rooms as { number: string; floor: number } | null;
+      const room = r.rooms as unknown as { number: string; floor: number } | null;
       toInsert.push({
         hotel_id: hotelId,
         ...(tenantId ? { tenant_id: tenantId } : {}),
@@ -98,7 +98,7 @@ export default function KanbanBoard({ tasks, staff, hotelId, tenantId, upsellByR
 
     for (const r of (occupied ?? [])) {
       if (!r.room_id || existingKeys.has(`${r.room_id}:stayover_clean`)) continue;
-      const room = r.rooms as { number: string; floor: number } | null;
+      const room = r.rooms as unknown as { number: string; floor: number } | null;
       toInsert.push({
         hotel_id: hotelId,
         ...(tenantId ? { tenant_id: tenantId } : {}),

@@ -1,4 +1,4 @@
-import { ArrowRight, Building2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import type { LobbyHotel } from './useLobbyData';
 
 interface HotelCardProps {
@@ -93,9 +93,9 @@ export default function HotelCard({ hotel, onEnter }: HotelCardProps) {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <StatPill label="Rooms" value={hotel.rooms_count} color={primaryColor} />
-          <StatPill label="Arrivals" value={hotel.todays_arrivals} color={primaryColor} />
-          <StatPill label="Occupancy" value={`${hotel.occupancy_pct}%`} color={primaryColor} />
+          <StatPill label="Rooms" value={hotel.rooms_count} />
+          <StatPill label="Arrivals" value={hotel.todays_arrivals} />
+          <StatPill label="Occupancy" value={`${hotel.occupancy_pct}%`} />
         </div>
 
         <div className="flex items-center justify-between gap-2">
@@ -122,7 +122,7 @@ export default function HotelCard({ hotel, onEnter }: HotelCardProps) {
   );
 }
 
-function StatPill({ label, value, color }: { label: string; value: number | string; color: string }) {
+function StatPill({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2 text-center">
       <div className="text-base font-semibold text-gray-800 leading-tight">{value}</div>

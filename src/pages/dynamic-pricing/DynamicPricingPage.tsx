@@ -3,7 +3,6 @@ import { CalendarDays, Sparkles, SlidersHorizontal, BarChart2 } from 'lucide-rea
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import RateCalendar90Day from './RateCalendar90Day';
 import AISuggestionsPanel from './AISuggestionsPanel';
 import PricingRulesBuilder from './PricingRulesBuilder';

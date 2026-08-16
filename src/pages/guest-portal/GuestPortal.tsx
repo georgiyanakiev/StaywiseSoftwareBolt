@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Building2, ChevronRight, ChevronLeft, User, FileText,
   Star, PenLine, CheckCircle2, Loader2, AlertCircle,
-  Bed, Coffee, Car, Clock
+  Clock
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
@@ -81,7 +81,7 @@ export default function GuestPortal() {
   const isDrawing = useRef(false);
   const [hasSignature, setHasSignature] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [, setSubmitted] = useState(false);
   const [upsells, setUpsells] = useState({ lateCheckout: false, breakfast: false, parking: false });
   const [dbUpsellItems, setDbUpsellItems] = useState<Array<{id:string;name:string;description:string;price:number;price_type:string;image_url:string}>>([]);
   const [selectedDbUpsells, setSelectedDbUpsells] = useState<Set<string>>(new Set());
@@ -114,10 +114,11 @@ export default function GuestPortal() {
     if (upsellData) setDbUpsellItems(upsellData);
 
     if (r?.guest) {
+      const g = (r as unknown as { guest: { first_name: string; last_name: string; email: string } | null }).guest;
       setPersonal(p => ({
         ...p,
-        fullName: p.fullName || `${r.guest!.first_name} ${r.guest!.last_name}`,
-        email: p.email || r.guest!.email,
+        fullName: p.fullName || `${g!.first_name} ${g!.last_name}`,
+        email: p.email || g!.email,
       }));
     }
 
@@ -759,7 +760,7 @@ function StepDone({ hotel, reservation, dbUpsellItems, selectedDbUpsells, saving
           return (
             <div key={item.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${active ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
               {'image_url' in item && item.image_url ? (
-                <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                <img src={item.image_url as string} alt={item.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
               ) : (
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-[#1e3a5f]' : 'bg-white border border-gray-200'}`}>
                   <Star className={`w-5 h-5 ${active ? 'text-white' : 'text-gray-400'}`} />

@@ -173,7 +173,7 @@ export default function SyncStatusIndicator({ hotelId }: Props) {
   );
 }
 
-function StatBox({ label, value, sub, color }: { label: string; value: number; sub: string; color?: string }) {
+function StatBox({ label, value, color }: { label: string; value: number; sub: string; color?: string }) {
   return (
     <div className="bg-gray-50 rounded-lg p-2 text-center">
       <div className={`text-lg font-bold ${color || 'text-gray-800'}`}>{value}</div>

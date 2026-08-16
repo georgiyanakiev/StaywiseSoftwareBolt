@@ -57,11 +57,6 @@ function detectTenantLookup(): TenantLookup {
   return { type: 'custom_domain', value: hostname };
 }
 
-function detectSubdomain(): string | null {
-  const lookup = detectTenantLookup();
-  return lookup.type === 'subdomain' ? lookup.value : null;
-}
-
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);

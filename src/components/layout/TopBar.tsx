@@ -4,14 +4,13 @@ import {
   LayoutDashboard, CalendarCheck, SprayCan, GitBranch, CreditCard,
   FileText, Globe, Users, Settings, LogOut, Menu, X, ChevronDown,
   ArrowLeftRight, Building2, Shield, ArrowLeft, Receipt, BedDouble,
-  ClipboardList, Wrench, BookOpen, Link2, Bell, BarChart3, Zap,
+  ClipboardList, Wrench, BookOpen, Bell, BarChart3, Zap,
   Gift, MonitorSmartphone, Home,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveHotel } from '../../contexts/ActiveHotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ROLE_LABELS, type StaffRole } from '../../lib/permissions';
-import { translations } from '../../lib/translations';
 import { useChannels, type Channel } from '../../hooks/useChannels';
 import { getChannelIcon } from '../../utils/channelCatalog';
 import { supabase } from '../../lib/supabase';
@@ -24,62 +23,7 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-/* ─── Nav definitions (translation keys) ───────────────────────────────────── */
-type NavItemKey = keyof typeof translations.en.navigation;
-
-const ROW2_KEYS: NavItemKey[][] = [
-  [
-    'dashboard',
-    'frontDesk',
-    'reservations',
-    'rooms',
-  ],
-  [
-    'guests',
-  ],
-  [
-    'housekeeping',
-    'maintenance',
-  ],
-  [
-    'reports',
-  ],
-];
-
-const ROW3_KEYS: NavItemKey[][] = [
-  [
-    'billing',
-    'payments',
-    'invoicing',
-  ],
-  [
-    'channelManager',
-    'bookingEngine',
-    'dynamicPricing',
-    'upselling',
-  ],
-  [
-    'guestPortal',
-  ],
-  [
-    'settings',
-    'userGuide',
-  ],
-];
-
-const CHANNELS: NavItem[] = [
-  { to: '/booking-com', label: 'Booking.com', icon: Link2 },
-  { to: '/expedia',     label: 'Expedia',     icon: Link2 },
-  { to: '/cloudbeds',   label: 'Cloudbeds',   icon: Link2 },
-  { to: '/siteminder',  label: 'SiteMinder',  icon: Link2 },
-  { to: '/lodgify',     label: 'Lodgify',     icon: Link2 },
-];
-
 /* ─── Utilities ─────────────────────────────────────────────── */
-function getInitials(name: string) {
-  return name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-}
-
 function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }

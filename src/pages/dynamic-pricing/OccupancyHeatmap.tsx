@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday, addMonths } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { useHotel } from '../../contexts/HotelContext';
@@ -52,13 +52,10 @@ function occLabel(pct: number): string {
 export default function OccupancyHeatmap() {
   const { currentHotel } = useHotel();
   const { t } = useLanguage();
-  const [monthOffset, setMonthOffset] = useState(0);
   const [occupancy, setOccupancy] = useState<Record<string, OccupancyData>>({});
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<DayDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-
-  const baseMonth = addMonths(new Date(), monthOffset);
 
   const load = useCallback(async () => {
     if (!currentHotel) return;
@@ -118,7 +115,7 @@ export default function OccupancyHeatmap() {
       .gt('check_out', dateStr);
 
     const occ = occupancy[dateStr] ?? { occupied: 0, total: 0, pct: 0 };
-    const resvList = (data ?? []) as Reservation[];
+    const resvList = (data ?? []) as unknown as Reservation[];
     setSelectedDay({
       date: dateStr,
       reservations: resvList,

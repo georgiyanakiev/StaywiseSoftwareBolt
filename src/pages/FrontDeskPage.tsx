@@ -12,7 +12,7 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useFrontDeskData } from './frontdesk/useFrontDeskData';
 import type { ArrivalItem, DepartureItem, StayoverItem } from './frontdesk/useFrontDeskData';
-import type { Translations } from '../contexts/LanguageContext';
+import type { TranslationKeys } from '../lib/translations';
 
 type Tab = 'arrivals' | 'departures' | 'stayovers';
 
@@ -242,7 +242,7 @@ export default function FrontDeskPage() {
   );
 }
 
-type FdTranslations = Translations['frontDesk'];
+type FdTranslations = TranslationKeys['frontDesk'];
 
 function KpiCard({ label, value, sub, icon, colorClass, iconBg }: {
   label: string;

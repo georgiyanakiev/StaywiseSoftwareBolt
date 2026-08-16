@@ -18,7 +18,7 @@ const getTabs = (t: any): { key: ReportTab; label: string; icon: typeof BarChart
   { key: 'financial', label: t.reports.financialPL, icon: Receipt },
 ];
 
-function buildCSV(tab: ReportTab, data: ReturnType<typeof useReportsData>, currency: string): { content: string; filename: string } {
+function buildCSV(tab: ReportTab, data: ReturnType<typeof useReportsData>): { content: string; filename: string } {
   const d = data;
   let content = '';
   let filename = `${tab}-report-${format(new Date(), 'yyyy-MM-dd')}.csv`;
@@ -70,7 +70,7 @@ export default function ReportsPage() {
   }
 
   function handleExport() {
-    const { content, filename } = buildCSV(activeTab, data, currency);
+    const { content, filename } = buildCSV(activeTab, data);
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.setAttribute('href', URL.createObjectURL(blob));

@@ -126,7 +126,7 @@ export default function MyOwnerPortal() {
           .in('status', ['confirmed', 'checked_in', 'checked_out'])
           .order('check_in', { ascending: false });
 
-        setReservations((resvData ?? []) as ReservationRow[]);
+        setReservations((resvData ?? []) as unknown as ReservationRow[]);
       }
     } finally {
       setLoading(false);
@@ -282,7 +282,7 @@ export default function MyOwnerPortal() {
             <h3 className="text-sm font-semibold text-gray-700 mb-4">3-Month Availability Calendar</h3>
             <OwnerAvailabilityCalendar
               rooms={rooms}
-              reservations={reservations}
+              reservations={reservations as unknown as React.ComponentProps<typeof OwnerAvailabilityCalendar>['reservations']}
               startDate={now}
             />
           </div>

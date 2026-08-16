@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bed, SprayCan, Eye, AlertTriangle, ZapOff, Ban } from 'lucide-react';
+import { Bed, SprayCan, Eye } from 'lucide-react';
 import { HKTask, HKStaff, TASK_TYPE_LABELS } from './types';
 import TaskDetailPanel from './TaskDetailPanel';
 

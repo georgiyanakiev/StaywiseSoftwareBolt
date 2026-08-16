@@ -112,7 +112,7 @@ function InviteModal({ tenants, onClose, onInvited }: InviteModalProps) {
       }
 
       onInvited();
-      setTempPassword(result.temp_password);
+      setTempPassword(result.temp_password as string);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create user');
     } finally {

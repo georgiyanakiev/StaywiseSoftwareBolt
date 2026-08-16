@@ -2,12 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Wrench,
   Plus,
-  AlertTriangle,
-  Clock,
   CheckCircle,
   Search,
   Filter,
-  TrendingUp,
   Euro,
   Zap,
   Droplets,
@@ -16,8 +13,6 @@ import {
   Cpu,
   Building,
   Package,
-  MoreHorizontal,
-  ChevronDown,
   X,
   Calendar,
   User,
@@ -31,7 +26,7 @@ import { useHotel } from '../../contexts/HotelContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { useTenantId } from '../../hooks/useTenantQuery';
-import { getStatusColor, getStatusLabel, formatDate, formatDateTime } from '../../lib/utils';
+import { getStatusLabel, formatDate, formatDateTime } from '../../lib/utils';
 import type { MaintenanceRequest, MaintenanceCategory, Room, StaffMember } from '../../types';
 import Modal from '../../components/ui/Modal';
 import EmptyState from '../../components/ui/EmptyState';

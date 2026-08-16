@@ -16,7 +16,7 @@ const DEFAULT_TERMS = `Welcome to our hotel. By completing this digital check-in
 6. The hotel accepts no liability for valuables left unattended in rooms.
 7. Payment is required at check-in unless a valid credit card guarantee is on file.`;
 
-export default function PortalSettingsPanel({ hotelId }: Props) {
+export default function PortalSettingsPanel({ }: Props) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
     terms: DEFAULT_TERMS,

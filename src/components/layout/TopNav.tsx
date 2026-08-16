@@ -48,15 +48,15 @@ function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProp
   const userRole = session?.role ?? staff?.role ?? null;
 
   const navItems: NavItem[] = [
-    { to: '/', icon: LayoutDashboard, label: t.nav.dashboard },
+    { to: '/', icon: LayoutDashboard, label: t.navigation.dashboard },
     { to: '/front-desk', icon: ClipboardList, label: 'Front Desk' },
-    { to: '/reservations', icon: CalendarCheck, label: t.nav.reservations },
-    { to: '/rooms', icon: BedDouble, label: t.nav.rooms },
-    { to: '/guests', icon: Users, label: t.nav.guests },
-    { to: '/billing', icon: Receipt, label: t.nav.billing },
-    { to: '/housekeeping', icon: SprayCan, label: t.nav.housekeeping },
+    { to: '/reservations', icon: CalendarCheck, label: t.navigation.reservations },
+    { to: '/rooms', icon: BedDouble, label: t.navigation.rooms },
+    { to: '/guests', icon: Users, label: t.navigation.guests },
+    { to: '/billing', icon: Receipt, label: t.navigation.billing },
+    { to: '/housekeeping', icon: SprayCan, label: t.navigation.housekeeping },
     { to: '/maintenance', icon: Wrench, label: 'Maintenance' },
-    { to: '/reports', icon: BarChart3, label: t.nav.reports },
+    { to: '/reports', icon: BarChart3, label: t.navigation.reports },
   ];
 
   const operationsItems: NavItem[] = [
@@ -75,7 +75,7 @@ function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProp
   ];
 
   const bottomItems: NavItem[] = [
-    { to: '/settings', icon: Settings, label: t.nav.settings },
+    { to: '/settings', icon: Settings, label: t.navigation.settings },
     { to: '/guide', icon: BookOpen, label: 'User Guide' },
   ];
 
@@ -266,11 +266,11 @@ function SidebarInner({ collapsed, onToggle, onClose, mobile }: SidebarInnerProp
         {/* Logout */}
         <button
           onClick={() => { handleNavClick(); signOut(); }}
-          title={collapsed ? t.nav.signOut : undefined}
+          title={collapsed ? t.navigation.signOut : undefined}
           className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors ${collapsed ? 'justify-center px-2' : ''}`}
         >
           <LogOut className="w-[18px] h-[18px] flex-shrink-0" />
-          {!collapsed && <span>{t.nav.signOut}</span>}
+          {!collapsed && <span>{t.navigation.signOut}</span>}
         </button>
       </div>
     </div>

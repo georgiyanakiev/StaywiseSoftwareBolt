@@ -23,9 +23,9 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR
 
 function getTimezones(): string[] {
   try {
-    const allTz = Intl.supportedValuesOf('timeZone');
+    const allTz = (Intl as unknown as { supportedValuesOf: (key: string) => string[] }).supportedValuesOf('timeZone');
     const grouped: Record<string, string[]> = {};
-    allTz.forEach(tz => {
+    allTz.forEach((tz: string) => {
       const region = tz.split('/')[0] || 'Other';
       if (!grouped[region]) grouped[region] = [];
       grouped[region].push(tz);

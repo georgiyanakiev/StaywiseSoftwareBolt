@@ -93,12 +93,6 @@ function startOfYear() {
   return isoDate(d);
 }
 
-function tomorrow() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return isoDate(d);
-}
-
 function paymentDateStr(ts: string): string {
   return ts.slice(0, 10);
 }

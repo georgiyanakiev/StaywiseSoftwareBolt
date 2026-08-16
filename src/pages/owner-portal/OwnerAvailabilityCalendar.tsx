@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { addDays, startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday } from 'date-fns';
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isToday } from 'date-fns';
 
 interface Reservation {
   id: string;

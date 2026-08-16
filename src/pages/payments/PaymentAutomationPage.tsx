@@ -66,7 +66,7 @@ const TYPE_COLORS: Record<string, string> = {
   adjustment: 'bg-orange-50 text-orange-700',
 };
 
-const getTriggerLabels = (t: any) => ({
+const getTriggerLabels = () => ({
   on_booking:          'On Booking',
   days_before_arrival: 'Days Before Arrival',
   on_checkin:          'On Check-in',
@@ -316,7 +316,7 @@ export default function PaymentAutomationPage() {
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
 
-  const TRIGGER_LABELS = getTriggerLabels(t);
+  const TRIGGER_LABELS = getTriggerLabels();
 
   return (
     <div className="space-y-6">
@@ -456,7 +456,7 @@ export default function PaymentAutomationPage() {
                     <p className="font-semibold text-gray-900">{rule.name}</p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                        {TRIGGER_LABELS[rule.trigger] ?? rule.trigger}
+                        {(TRIGGER_LABELS as Record<string, string>)[rule.trigger] ?? rule.trigger}
                         {rule.trigger === 'days_before_arrival' && rule.days_before ? ` · ${rule.days_before}d` : ''}
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${TYPE_COLORS[rule.payment_type] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -610,7 +610,7 @@ export default function PaymentAutomationPage() {
           hotelId={currentHotel?.id ?? ''}
           currency={currentHotel?.currency}
           onClose={() => setRefundTarget(null)}
-          onRefunded={(id, amount) => {
+          onRefunded={(_id, amount) => {
             setRefundTarget(null);
             loadData();
             showToast(`Refund of ${formatCurrency(amount, currentHotel?.currency)} issued`, 'success');

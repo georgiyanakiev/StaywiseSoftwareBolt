@@ -130,7 +130,7 @@ export default function InvoiceEditorModal({ hotelId, invoice, onClose, onSaved 
       .in('status', ['confirmed','checked_in','checked_out'])
       .order('check_in', { ascending: false })
       .limit(50);
-    setReservations((data ?? []) as Reservation[]);
+    setReservations((data ?? []) as unknown as Reservation[]);
   }, [hotelId]);
 
   useEffect(() => { loadReservations(); }, [loadReservations]);

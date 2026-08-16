@@ -67,7 +67,7 @@ export default function HousekeepingPage() {
     setTasks((t ?? []) as HKTask[]);
     setIssues((i ?? []) as MaintenanceRequest[]);
     setStaff((s ?? []) as HKStaff[]);
-    setRooms((r ?? []) as Room[]);
+    setRooms((r ?? []) as unknown as Room[]);
 
     const { data: upsellOrders } = await supabase
       .from('upsell_orders')

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useHotelNavigate } from '../../hooks/useHotelPath';
-import { ArrowLeft, Mail, Phone, MapPin, Tag, AlertTriangle, Star, CreditCard as Edit2, Plus, FileText, MessageSquare, PhoneCall, Send, Calendar, Euro, TrendingUp, Clock, Upload, Eye, Trash2 } from 'lucide-react';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { ArrowLeft, Mail, Phone, MapPin, Tag, AlertTriangle, Star, CreditCard as Edit2, FileText, MessageSquare, PhoneCall, Send, Calendar, Euro, TrendingUp, Clock, Upload, Eye, Trash2 } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { useHotel } from '../../contexts/HotelContext';
 import { useToast } from '../../components/ui/Toast';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';

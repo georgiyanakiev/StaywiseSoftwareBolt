@@ -9,7 +9,7 @@ import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useToast } from '../components/ui/Toast';
-import { Users, Plus, Search, CreditCard as Edit, Eye, Mail, Phone, MapPin, Star, Crown, ChevronLeft, ChevronRight, Download, MessageSquare, Send, FileText, Upload, Trash2, Settings, Heart, Calendar, Euro, Briefcase } from 'lucide-react';
+import { Users, Plus, Search, CreditCard as Edit, Eye, Mail, Phone, MapPin, Star, Crown, ChevronLeft, ChevronRight, Download, MessageSquare, Send, FileText, Upload, Trash2, Heart, Calendar, Euro, Briefcase } from 'lucide-react';
 
 const VIP_OPTIONS: Guest['vip_status'][] = ['regular', 'silver', 'gold', 'platinum'];
 
@@ -29,8 +29,6 @@ const VIP_LABELS: Record<Guest['vip_status'], string> = {
 
 const TITLE_OPTIONS = ['', 'Mr', 'Mrs', 'Ms', 'Dr', 'Prof'];
 const COMMUNICATION_TYPES: GuestCommunication['type'][] = ['email', 'sms', 'whatsapp', 'phone'];
-const DOCUMENT_TYPES = ['passport', 'id_card', 'drivers_license', 'visa', 'other'];
-
 type SortField = 'created_at' | 'last_name' | 'total_stays' | 'total_spent';
 type SortDir = 'asc' | 'desc';
 
@@ -61,6 +59,7 @@ const EMPTY_FORM: Omit<Guest, 'id' | 'hotel_id' | 'total_stays' | 'total_spent' 
   newsletter_opt_in: true,
   communication_preference: 'email',
   complaint_history: '',
+  stripe_customer_id: null,
 };
 
 const PAGE_SIZE = 10;
@@ -268,6 +267,7 @@ export default function GuestsPage() {
       newsletter_opt_in: guest.newsletter_opt_in,
       communication_preference: guest.communication_preference || 'email',
       complaint_history: guest.complaint_history || '',
+      stripe_customer_id: guest.stripe_customer_id,
     });
     setShowFormModal(true);
   };

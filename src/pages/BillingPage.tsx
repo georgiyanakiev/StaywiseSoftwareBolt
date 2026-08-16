@@ -27,9 +27,7 @@ import {
   ChevronLeft,
   ChevronRight,
   History,
-  TrendingUp,
   CreditCard,
-  Calendar,
 } from 'lucide-react';
 
 type InvoiceStatus = Invoice['status'] | '';
@@ -541,25 +539,6 @@ export default function BillingPage() {
     setShowPaymentHistoryModal(false);
     setSelectedInvoiceForHistory(null);
     setPaymentHistory([]);
-  };
-
-  const markAsPaid = async (invoice: Invoice) => {
-    const { error } = await supabase
-      .from('invoices')
-      .update({
-        status: 'paid',
-        amount_paid: invoice.total_amount,
-        paid_amount: invoice.total_amount,
-      })
-      .eq('id', invoice.id);
-
-    if (error) {
-      toast('error', 'Failed to update invoice');
-    } else {
-      toast('success', 'Invoice marked as paid');
-      fetchInvoices();
-      fetchAggregateStats();
-    }
   };
 
   const sendInvoice = async (invoice: Invoice) => {
