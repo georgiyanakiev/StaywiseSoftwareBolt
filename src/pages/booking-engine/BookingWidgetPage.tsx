@@ -251,7 +251,7 @@ export default function BookingWidgetPage() {
     if (hotelId && capacityFiltered.length > 0) {
       const [physRes, directRes, reservRes] = await Promise.all([
         supabase.from('rooms').select('room_type_id').eq('hotel_id', hotelId).neq('status', 'out_of_service'),
-        supabase.from('direct_bookings').select('room_type_id').eq('hotel_id', hotelId)
+        supabase.from('direct_bookings').select('room_type_id, status, created_at').eq('hotel_id', hotelId)
           .lt('check_in', checkOut).gt('check_out', checkIn).neq('status', 'cancelled'),
         supabase.from('reservations').select('room_type_id').eq('hotel_id', hotelId)
           .lt('check_in', checkOut).gt('check_out', checkIn).neq('status', 'cancelled'),
@@ -262,8 +262,15 @@ export default function BookingWidgetPage() {
         physicalCount[r.room_type_id] = (physicalCount[r.room_type_id] || 0) + 1;
       }
 
+      // A payment session is only a short-lived availability hold. If checkout
+      // failed or was abandoned, it must not block the room type indefinitely.
+      const paymentHoldMs = 30 * 60 * 1000;
+      const activeDirectBookings = (directRes.data ?? []).filter(b =>
+        b.status !== 'pending_payment' || Date.now() - new Date(b.created_at).getTime() < paymentHoldMs
+      );
+
       const bookedCount: Record<string, number> = {};
-      for (const b of [...(directRes.data ?? []), ...(reservRes.data ?? [])]) {
+      for (const b of [...activeDirectBookings, ...(reservRes.data ?? [])]) {
         bookedCount[b.room_type_id] = (bookedCount[b.room_type_id] || 0) + 1;
       }
 
@@ -282,10 +289,33 @@ export default function BookingWidgetPage() {
     setStep(2);
   };
 
+  const startStripeCheckout = async (id: string) => {
+    setStripeRedirecting(true);
+    const { data: checkoutData, error: checkoutError } = await supabase.functions
+      .invoke('create-booking-checkout', { body: { bookingId: id } });
+
+    if (checkoutError || !checkoutData?.url) {
+      setBookingError('Unable to initiate payment. Please try again or contact the hotel directly.');
+      setStripeRedirecting(false);
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = checkoutData.url;
+  };
+
   const submitBooking = async () => {
     if (!selectedRoom) return;
     setLoading(true);
     setBookingError('');
+
+    // Retry the same booking when checkout setup failed, rather than creating a
+    // second pending_payment record for the same stay.
+    if (stripeEnabled && bookingId) {
+      await startStripeCheckout(bookingId);
+      return;
+    }
+
     const confNum = generateConfirmationCode();
 
     const bookingStatus = stripeEnabled ? 'pending_payment' : 'confirmed';
@@ -336,23 +366,7 @@ export default function BookingWidgetPage() {
     setConfirmationNumber(confNum);
 
     if (stripeEnabled) {
-      setStripeRedirecting(true);
-
-      const { data: checkoutData, error: checkoutError } = await supabase.functions
-        .invoke('create-booking-checkout', {
-          body: {
-            bookingId: inserted.id,
-          },
-        });
-
-      if (checkoutError || !checkoutData?.url) {
-        setBookingError('Unable to initiate payment. Please try again or contact the hotel directly.');
-        setStripeRedirecting(false);
-        setLoading(false);
-        return;
-      }
-
-      window.location.href = checkoutData.url;
+      await startStripeCheckout(inserted.id);
       return;
     }
 

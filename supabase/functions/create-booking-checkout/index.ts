@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
     const { data: booking, error: bookingErr } = await supabase
       .from("direct_bookings")
       .select(
-        "id, hotel_id, tenant_id, confirmation_number, guest_email, check_in, check_out, total_amount, deposit_amount, payment_status, status, room_type:room_types(name), hotel:hotels(name, currency)"
+        "id, hotel_id, tenant_id, confirmation_number, guest_email, check_in, check_out, total_amount, deposit_amount, payment_status, status, stripe_session_id, room_type:room_types(name), hotel:hotels(name, currency)"
       )
       .eq("id", payload.bookingId)
       .maybeSingle();
@@ -88,6 +88,16 @@ Deno.serve(async (req: Request) => {
 
     if (["cancelled", "checked_out", "no_show"].includes(String(booking.status))) {
       return json({ error: "This booking is no longer open for payment" }, 409);
+    }
+
+    // A browser retry may arrive after Stripe created a session but before the
+    // client received its URL. Reuse that open session instead of charging or
+    // reserving the same booking twice.
+    if (booking.stripe_session_id) {
+      const existingSession = await stripe.checkout.sessions.retrieve(booking.stripe_session_id);
+      if (existingSession.status === "open" && existingSession.url) {
+        return json({ sessionId: existingSession.id, url: existingSession.url });
+      }
     }
 
     const { data: config } = await supabase
@@ -155,15 +165,21 @@ Deno.serve(async (req: Request) => {
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    }, {
+      // Retries within the checkout hold period return the same Stripe session.
+      idempotencyKey: `${booking.id}:${Math.floor(Date.now() / (30 * 60 * 1000))}`,
     });
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("direct_bookings")
       .update({
         stripe_session_id: session.id,
         payment_status: "pending",
       })
       .eq("id", booking.id);
+
+    if (updateError) throw updateError;
 
     return json({ sessionId: session.id, url: session.url });
   } catch (err) {
