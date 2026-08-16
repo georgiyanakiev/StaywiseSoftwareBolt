@@ -10,6 +10,7 @@ import {
   getStatusLabel,
   nightsBetween,
   generateConfirmationCode,
+  generateInvoiceNumber,
 } from '../lib/utils';
 import type { Reservation, Guest, Room, RoomType } from '../types';
 import Modal from '../components/ui/Modal';
@@ -232,7 +233,7 @@ export default function ReservationsPage() {
 
       if (queryError) {
         console.error('Error fetching reservations:', queryError);
-        setError(queryError.message);
+        setError('We could not load reservations right now. Please try again.');
         toast('error', 'Failed to load reservations');
         return;
       }
@@ -617,7 +618,7 @@ export default function ReservationsPage() {
         .maybeSingle();
 
       if (!existingInvoice && currentHotel) {
-        const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+        const invoiceNumber = generateInvoiceNumber();
         const subtotal = reservation.total_amount - reservation.tax_amount;
 
         const { data: newInvoice, error: invoiceError } = await supabase

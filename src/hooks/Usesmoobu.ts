@@ -70,7 +70,8 @@ export function useBookings(propertyId?: string) {
     const { data, error } = await query;
 
     if (error) {
-      setError(error.message);
+      console.error('Failed to load channel bookings', error);
+      setError('We could not load bookings right now. Please try again.');
     } else {
       setBookings(data ?? []);
     }

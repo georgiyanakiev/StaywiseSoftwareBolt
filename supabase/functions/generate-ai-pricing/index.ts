@@ -131,6 +131,59 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Rate, occupancy and revenue analytics are commercially sensitive: only
+    // staff of this property (or a platform super admin) may request them.
+    const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const { data: callerData } = jwt
+      ? await supabase.auth.getUser(jwt)
+      : { data: { user: null } };
+    const caller = callerData?.user ?? null;
+
+    if (!caller) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: callerAssignments } = await supabase
+      .from("user_hotel_assignments")
+      .select("role, tenant_id")
+      .eq("user_id", caller.id)
+      .eq("active", true);
+
+    let permitted = (callerAssignments ?? []).some(
+      (a) => a.role === "super_admin" && a.tenant_id === null
+    );
+
+    if (!permitted) {
+      const { data: staffRow } = await supabase
+        .from("staff_members")
+        .select("id")
+        .eq("user_id", caller.id)
+        .eq("hotel_id", hotel_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      permitted = !!staffRow;
+    }
+
+    if (!permitted) {
+      const { data: hotelRow } = await supabase
+        .from("hotels")
+        .select("tenant_id")
+        .eq("id", hotel_id)
+        .maybeSingle();
+      permitted = !!hotelRow?.tenant_id &&
+        (callerAssignments ?? []).some((a) => a.tenant_id === hotelRow.tenant_id);
+    }
+
+    if (!permitted) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
     const horizon30 = new Date(today);

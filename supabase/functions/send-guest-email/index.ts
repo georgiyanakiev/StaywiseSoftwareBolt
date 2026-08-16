@@ -397,8 +397,60 @@ Deno.serve(async (req: Request) => {
 
     if (rErr || !reservation) {
       return new Response(
-        JSON.stringify({ error: rErr?.message || "Reservation not found" }),
+        JSON.stringify({ error: "Reservation not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Only the internal scheduler (service role) or active staff of this
+    // reservation's property may cause an email to be sent to a guest.
+    const bearer = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    let authorized = bearer === serviceKey;
+
+    if (!authorized && bearer) {
+      const { data: callerData } = await supabase.auth.getUser(bearer);
+      const caller = callerData?.user ?? null;
+      if (caller) {
+        const reservationHotelId = (reservation as { hotel_id?: string }).hotel_id ?? null;
+
+        const { data: assignments } = await supabase
+          .from("user_hotel_assignments")
+          .select("role, tenant_id")
+          .eq("user_id", caller.id)
+          .eq("active", true);
+
+        authorized = (assignments ?? []).some(
+          (a) => a.role === "super_admin" && a.tenant_id === null
+        );
+
+        if (!authorized && reservationHotelId) {
+          const { data: staffRow } = await supabase
+            .from("staff_members")
+            .select("id")
+            .eq("user_id", caller.id)
+            .eq("hotel_id", reservationHotelId)
+            .eq("is_active", true)
+            .maybeSingle();
+          authorized = !!staffRow;
+        }
+
+        if (!authorized && reservationHotelId) {
+          const { data: hotelRow } = await supabase
+            .from("hotels")
+            .select("tenant_id")
+            .eq("id", reservationHotelId)
+            .maybeSingle();
+          authorized = !!hotelRow?.tenant_id &&
+            (assignments ?? []).some((a) => a.tenant_id === hotelRow.tenant_id);
+        }
+      }
+    }
+
+    if (!authorized) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

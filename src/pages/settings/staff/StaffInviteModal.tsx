@@ -10,8 +10,10 @@ const ROLES: StaffRole[] = ['owner', 'manager', 'front_desk', 'housekeeping', 'm
 
 function generatePassword(): string {
   const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$';
+  const bytes = new Uint32Array(16);
+  crypto.getRandomValues(bytes);
   let pw = '';
-  for (let i = 0; i < 12; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < bytes.length; i++) pw += chars.charAt(bytes[i] % chars.length);
   return pw;
 }
 

@@ -16,6 +16,16 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+function timingSafeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+  let diff = 0;
+  for (let i = 0; i < aBytes.length; i++) diff |= aBytes[i] ^ bBytes[i];
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -25,6 +35,30 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // The webhook is intentionally reachable without a session, so the shared
+  // secret is the only thing separating the channel provider from anyone else.
+  const configuredSecret = Deno.env.get("SMOOBU_WEBHOOK_SECRET") ?? "";
+  if (!configuredSecret) {
+    console.error("smoobu-webhook rejected: SMOOBU_WEBHOOK_SECRET is not configured");
+    return new Response(
+      JSON.stringify({ error: "Webhook is not configured" }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const presentedSecret =
+    req.headers.get("x-smoobu-signature") ??
+    req.headers.get("x-webhook-secret") ??
+    new URL(req.url).searchParams.get("secret") ??
+    "";
+
+  if (!timingSafeEqual(presentedSecret, configuredSecret)) {
+    return new Response(
+      JSON.stringify({ error: "Invalid signature" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 

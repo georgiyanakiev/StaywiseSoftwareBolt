@@ -32,11 +32,18 @@ export function nightsBetween(checkIn: string, checkOut: string): number {
   return differenceInDays(parseISO(checkOut), parseISO(checkIn));
 }
 
+function secureRandomInts(count: number): Uint32Array {
+  const values = new Uint32Array(count);
+  crypto.getRandomValues(values);
+  return values;
+}
+
 export function generateConfirmationCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const values = secureRandomInts(10);
   let code = 'SW-';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < values.length; i++) {
+    code += chars.charAt(values[i] % chars.length);
   }
   return code;
 }
@@ -45,7 +52,7 @@ export function generateInvoiceNumber(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+  const random = String(secureRandomInts(1)[0] % 100000000).padStart(8, '0');
   return `INV-${year}${month}-${random}`;
 }
 

@@ -165,6 +165,7 @@ export default function ChannelCatalog({
           vaultId: null,
           name: `channel_client_secret_${data.id}_${hotelId}`,
           value: credentials.client_secret,
+          hotelId,
         });
         if (vaultId) {
           await supabase.from('channels')

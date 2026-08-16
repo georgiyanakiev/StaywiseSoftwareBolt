@@ -4,6 +4,7 @@ export async function storeChannelSecret(params: {
   vaultId: string | null;
   name: string;
   value: string;
+  hotelId: string;
 }): Promise<string | null> {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
@@ -22,6 +23,7 @@ export async function storeChannelSecret(params: {
         p_vault_id: params.vaultId,
         p_name: params.name,
         p_value: params.value,
+        p_hotel_id: params.hotelId,
       }),
     }
   );

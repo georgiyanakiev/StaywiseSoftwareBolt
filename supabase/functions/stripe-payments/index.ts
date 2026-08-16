@@ -40,10 +40,69 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    if (!jwt) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
+    const { data: callerData, error: callerErr } = await supabase.auth.getUser(jwt);
+    const caller = callerData?.user;
+    if (callerErr || !caller) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
+    async function callerMayAccessHotel(hotelId: string | null): Promise<boolean> {
+      const { data: assignments } = await supabase
+        .from("user_hotel_assignments")
+        .select("role, tenant_id")
+        .eq("user_id", caller!.id)
+        .eq("active", true);
+
+      if ((assignments ?? []).some((a) => a.role === "super_admin" && a.tenant_id === null)) {
+        return true;
+      }
+      if (!hotelId) return false;
+
+      const { data: staff } = await supabase
+        .from("staff_members")
+        .select("id")
+        .eq("user_id", caller!.id)
+        .eq("hotel_id", hotelId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (staff) return true;
+
+      const { data: hotel } = await supabase
+        .from("hotels")
+        .select("tenant_id")
+        .eq("id", hotelId)
+        .maybeSingle();
+      if (!hotel?.tenant_id) return false;
+
+      return (assignments ?? []).some(
+        (a) => a.tenant_id === hotel.tenant_id && ["owner", "manager", "admin"].includes(a.role)
+      );
+    }
+
+    async function assertReservationAccess(id: string) {
+      const { data: row } = await supabase
+        .from("reservations")
+        .select("hotel_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (!row || !(await callerMayAccessHotel(row.hotel_id))) {
+        return false;
+      }
+      return true;
+    }
+
     const { action, reservation_id } = await req.json();
 
-    const appUrl =
-      Deno.env.get("APP_URL") || req.headers.get("origin") || "";
+    if (reservation_id && !(await assertReservationAccess(reservation_id))) {
+      return jsonResponse({ error: "Forbidden" }, 403);
+    }
+
+    const appUrl = Deno.env.get("APP_URL") || "";
 
     async function fetchReservation(id: string) {
       const { data, error } = await supabase
@@ -53,7 +112,7 @@ Deno.serve(async (req: Request) => {
         )
         .eq("id", id)
         .maybeSingle();
-      if (error || !data) throw new Error(error?.message || "Reservation not found");
+      if (error || !data) throw new Error("Reservation not found");
       return data;
     }
 
@@ -291,7 +350,7 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
 
       if (resErr || !reservation) {
-        return jsonResponse({ error: resErr?.message || "Reservation not found" }, 404);
+        return jsonResponse({ error: "Reservation not found" }, 404);
       }
 
       if (!reservation.stripe_payment_intent_id) {
@@ -330,7 +389,7 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
 
       if (resErr || !reservation) {
-        return jsonResponse({ error: resErr?.message || "Reservation not found" }, 404);
+        return jsonResponse({ error: "Reservation not found" }, 404);
       }
 
       if (!reservation.stripe_payment_intent_id) {
@@ -354,6 +413,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({ error: `Unknown action: ${action}` }, 400);
   } catch (err) {
-    return jsonResponse({ error: String(err) }, 500);
+    console.error("stripe-payments error", err);
+    return jsonResponse({ error: "Payment request could not be completed" }, 500);
   }
 });

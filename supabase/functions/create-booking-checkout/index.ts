@@ -11,17 +11,38 @@ const corsHeaders = {
 
 interface CheckoutPayload {
   bookingId: string;
-  hotelName: string;
-  roomName: string;
-  checkIn: string;
-  checkOut: string;
-  nights: number;
-  currency: string;
-  amountToCharge: number;
-  depositMode: boolean;
-  guestEmail: string;
-  successUrl: string;
-  cancelUrl: string;
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function nightsBetween(checkIn: string, checkOut: string): number {
+  const d1 = new Date(checkIn);
+  const d2 = new Date(checkOut);
+  return Math.max(1, Math.round((d2.getTime() - d1.getTime()) / 86400000));
+}
+
+// Return addresses are never taken from the request: an attacker could point a
+// paying guest at a site they control. They are derived from the configured app
+// origin instead.
+function appBaseUrl(req: Request): string {
+  const configured = (Deno.env.get("APP_URL") ?? "").replace(/\/+$/, "");
+  const origin = req.headers.get("origin") ?? "";
+  if (configured) {
+    if (origin && origin.replace(/\/+$/, "") === configured) return configured;
+    return configured;
+  }
+  try {
+    const parsed = new URL(origin);
+    if (parsed.protocol === "https:") return parsed.origin;
+  } catch {
+    // ignore
+  }
+  return "";
 }
 
 Deno.serve(async (req: Request) => {
@@ -32,58 +53,91 @@ Deno.serve(async (req: Request) => {
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      return new Response(
-        JSON.stringify({ error: "Stripe is not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return json({ error: "Stripe is not configured" }, 500);
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" });
     const payload: CheckoutPayload = await req.json();
 
-    const required: (keyof CheckoutPayload)[] = [
-      "bookingId",
-      "hotelName",
-      "roomName",
-      "amountToCharge",
-      "currency",
-      "successUrl",
-      "cancelUrl",
-    ];
-    for (const field of required) {
-      if (!payload[field]) {
-        return new Response(
-          JSON.stringify({ error: `Missing required field: ${field}` }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
+    if (!payload?.bookingId) {
+      return json({ error: "Missing required field: bookingId" }, 400);
     }
 
-    const amountInCents = Math.round(payload.amountToCharge * 100);
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-    const description = payload.depositMode
-      ? `Deposit for ${payload.roomName} (${payload.nights} night${payload.nights !== 1 ? "s" : ""})`
-      : `${payload.roomName} — ${payload.nights} night${payload.nights !== 1 ? "s" : ""} (${payload.checkIn} to ${payload.checkOut})`;
+    // Everything that decides the price is read from the stored booking, never
+    // from the request body.
+    const { data: booking, error: bookingErr } = await supabase
+      .from("direct_bookings")
+      .select(
+        "id, hotel_id, tenant_id, confirmation_number, guest_email, check_in, check_out, total_amount, deposit_amount, payment_status, room_type:room_types(name), hotel:hotels(name, currency)"
+      )
+      .eq("id", payload.bookingId)
+      .maybeSingle();
+
+    if (bookingErr || !booking) {
+      return json({ error: "Booking not found" }, 404);
+    }
+
+    if (booking.payment_status === "paid") {
+      return json({ error: "This booking has already been paid" }, 409);
+    }
+
+    const { data: config } = await supabase
+      .from("booking_engine_config")
+      .select("require_deposit, payment_mode, currency, stripe_enabled")
+      .eq("hotel_id", booking.hotel_id)
+      .maybeSingle();
+
+    if (!config?.stripe_enabled) {
+      return json({ error: "Online payment is not enabled for this property" }, 400);
+    }
+
+    const total = Number(booking.total_amount ?? 0);
+    const deposit = Number(booking.deposit_amount ?? 0);
+    const depositMode =
+      config.require_deposit === true &&
+      config.payment_mode === "deposit" &&
+      deposit > 0 &&
+      deposit < total;
+
+    const amountToCharge = depositMode ? deposit : total;
+    if (!Number.isFinite(amountToCharge) || amountToCharge <= 0) {
+      return json({ error: "This booking has no payable amount" }, 400);
+    }
+
+    const hotelRecord = booking.hotel as { name?: string; currency?: string } | null;
+    const roomRecord = booking.room_type as { name?: string } | null;
+    const hotelName = hotelRecord?.name ?? "Hotel";
+    const roomName = roomRecord?.name ?? "Room";
+    const currency = (config.currency || hotelRecord?.currency || "GBP").toLowerCase();
+    const nights = nightsBetween(booking.check_in, booking.check_out);
+
+    const base = appBaseUrl(req);
+    const returnParams = `hotel=${booking.hotel_id}&tenant=${booking.tenant_id ?? ""}&booking_id=${booking.id}`;
+    const successUrl = `${base}/booking-engine/widget?${returnParams}&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${base}/booking-engine/widget?${returnParams}&cancelled=true`;
+
+    const description = depositMode
+      ? `Deposit for ${roomName} (${nights} night${nights !== 1 ? "s" : ""})`
+      : `${roomName} — ${nights} night${nights !== 1 ? "s" : ""} (${booking.check_in} to ${booking.check_out})`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-      customer_email: payload.guestEmail || undefined,
+      customer_email: booking.guest_email || undefined,
       line_items: [
         {
           price_data: {
-            currency: payload.currency.toLowerCase(),
-            unit_amount: amountInCents,
+            currency,
+            unit_amount: Math.round(amountToCharge * 100),
             product_data: {
-              name: payload.depositMode
-                ? `Booking Deposit — ${payload.hotelName}`
-                : `Room Booking — ${payload.hotelName}`,
+              name: depositMode
+                ? `Booking Deposit — ${hotelName}`
+                : `Room Booking — ${hotelName}`,
               description,
             },
           },
@@ -91,18 +145,13 @@ Deno.serve(async (req: Request) => {
         },
       ],
       metadata: {
-        booking_id: payload.bookingId,
-        hotel_name: payload.hotelName,
-        deposit_mode: String(payload.depositMode),
+        booking_id: booking.id,
+        hotel_name: hotelName,
+        deposit_mode: String(depositMode),
       },
-      success_url: payload.successUrl,
-      cancel_url: payload.cancelUrl,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     });
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     await supabase
       .from("direct_bookings")
@@ -110,18 +159,11 @@ Deno.serve(async (req: Request) => {
         stripe_session_id: session.id,
         payment_status: "pending",
       })
-      .eq("id", payload.bookingId);
+      .eq("id", booking.id);
 
-    return new Response(
-      JSON.stringify({ sessionId: session.id, url: session.url }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return json({ sessionId: session.id, url: session.url });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("create-booking-checkout error", err);
+    return json({ error: "Unable to start checkout" }, 500);
   }
 });

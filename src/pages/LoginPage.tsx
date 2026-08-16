@@ -32,10 +32,11 @@ export default function LoginPage() {
     const redirectTo = `${window.location.origin}/reset-password`;
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
     if (resetError) {
-      setError(resetError.message);
-    } else {
-      setResetSent(true);
+      console.error('Password reset request failed', resetError);
     }
+    // Always show the same confirmation so the form cannot be used to find out
+    // whether an email address has an account.
+    setResetSent(true);
     setLoading(false);
   };
 
@@ -86,7 +87,7 @@ export default function LoginPage() {
           setCooldownEnd(Date.now() + 30000);
           setError('Too many failed attempts. Please wait 30 seconds before trying again.');
         } else {
-          setError(result.error);
+          setError('Incorrect email or password.');
         }
       } else {
         setFailedAttempts(0);

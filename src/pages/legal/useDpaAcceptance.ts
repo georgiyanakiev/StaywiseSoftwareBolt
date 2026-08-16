@@ -49,7 +49,8 @@ export function useDpaAcceptance(userId: string | null | undefined, tenantId: st
     const { data, error: fetchError } = await query.maybeSingle();
 
     if (fetchError) {
-      setError(fetchError.message);
+      console.error('Failed to load agreement status', fetchError);
+      setError('We could not check your agreement status. Please try again.');
     } else {
       setAcceptance(data as DpaAcceptance | null);
     }
@@ -82,7 +83,8 @@ export function useDpaAcceptance(userId: string | null | undefined, tenantId: st
       .single();
 
     if (insertError) {
-      setError(insertError.message);
+      console.error('Failed to record agreement acceptance', insertError);
+      setError('We could not record your acceptance. Please try again.');
       setAccepting(false);
       return false;
     }

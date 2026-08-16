@@ -3,6 +3,7 @@ import { Building2, ChevronRight, Check, Users, Loader2, ArrowLeft, Tag, Calenda
 import { supabase } from '../../lib/supabase';
 import { useTenant } from '../../contexts/TenantContext';
 import LegalFooter from '../../components/legal/LegalFooter';
+import { generateConfirmationCode } from '../../lib/utils';
 
 interface RoomType {
   id: string;
@@ -181,21 +182,7 @@ export default function BookingWidgetPage() {
         supabase.functions
           .invoke('send-booking-confirmation', {
             body: {
-              confirmationNumber: data.confirmation_number,
-              guestName: data.guest_name,
-              guestEmail: data.guest_email,
-              hotelName,
-              roomName: data.room_type?.name ?? '',
-              checkIn: data.check_in,
-              checkOut: data.check_out,
-              nights: Math.ceil((new Date(data.check_out).getTime() - new Date(data.check_in).getTime()) / 86400000),
-              adults: data.adults,
-              children: data.children ?? 0,
-              total: Number(data.total_amount),
-              depositAmount: Number(data.deposit_amount),
-              currency: 'EUR',
-              requireDeposit: Number(data.deposit_amount) > 0,
-              cancellationPolicy: '',
+              bookingId: data.id,
             },
           })
           .then(({ error: fnError }) => setEmailSent(!fnError))
@@ -299,7 +286,7 @@ export default function BookingWidgetPage() {
     if (!selectedRoom) return;
     setLoading(true);
     setBookingError('');
-    const confNum = `SW-${Math.floor(100000 + Math.random() * 900000)}`;
+    const confNum = generateConfirmationCode();
 
     const bookingStatus = stripeEnabled ? 'pending_payment' : 'confirmed';
     const paymentStatus = stripeEnabled ? 'pending' : 'not_required';
@@ -350,24 +337,11 @@ export default function BookingWidgetPage() {
 
     if (stripeEnabled) {
       setStripeRedirecting(true);
-      const widgetBase = `${window.location.origin}/booking-engine/widget`;
-      const returnParams = `hotel=${hotelId}&tenant=${tenantId}&booking_id=${inserted.id}`;
 
       const { data: checkoutData, error: checkoutError } = await supabase.functions
         .invoke('create-booking-checkout', {
           body: {
             bookingId: inserted.id,
-            hotelName,
-            roomName: selectedRoom.name,
-            checkIn,
-            checkOut,
-            nights,
-            currency,
-            amountToCharge: stripeChargeAmount,
-            depositMode: paymentMode === 'deposit' && requireDeposit,
-            guestEmail,
-            successUrl: `${widgetBase}?${returnParams}&session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${widgetBase}?${returnParams}&cancelled=true`,
           },
         });
 
@@ -389,21 +363,7 @@ export default function BookingWidgetPage() {
     supabase.functions
       .invoke('send-booking-confirmation', {
         body: {
-          confirmationNumber: confNum,
-          guestName,
-          guestEmail,
-          hotelName,
-          roomName: selectedRoom.name,
-          checkIn,
-          checkOut,
-          nights,
-          adults,
-          children,
-          total,
-          depositAmount,
-          currency,
-          requireDeposit,
-          cancellationPolicy: config?.cancellation_policy ?? '',
+          bookingId: inserted.id,
         },
       })
       .then(({ error: fnError }) => setEmailSent(!fnError))

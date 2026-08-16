@@ -169,9 +169,12 @@ Deno.serve(async (req: Request) => {
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find((u) => u.email === email);
 
+    let linkedExistingAccount = false;
     if (existingUser) {
+      // Never touch an existing account's credentials here: the caller has not
+      // proven they control that account. Link it to the hotel instead.
       targetUserId = existingUser.id;
-      await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
+      linkedExistingAccount = true;
     } else {
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -180,7 +183,8 @@ Deno.serve(async (req: Request) => {
       });
 
       if (createError) {
-        return json({ error: createError.message }, 400);
+        console.error("create-staff-member createUser error", createError);
+        return json({ error: "Unable to create the account for this email address." }, 400);
       }
       targetUserId = newUser.user.id;
     }
@@ -218,10 +222,16 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (insertError) {
-      return json({ error: insertError.message }, 500);
+      console.error("create-staff-member insert error", insertError);
+      return json({ error: "Unable to create staff member" }, 500);
     }
 
-    return json({ success: true, staffId: insertedStaff?.id, userId: targetUserId });
+    return json({
+      success: true,
+      staffId: insertedStaff?.id,
+      userId: targetUserId,
+      existing_account: linkedExistingAccount,
+    });
   } catch (err) {
     console.error("create-staff-member error", err);
     return json({ error: "Unable to create staff member" }, 500);

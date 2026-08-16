@@ -144,7 +144,7 @@ export default function BookingEngineAdminPage() {
     setSaving(false);
     if (error) {
       console.error('Save config error:', error);
-      showToast('error', `Failed to save: ${error.message}`);
+      showToast('error', 'Failed to save changes');
       return;
     }
     showToast('success', 'Booking engine config saved');

@@ -46,6 +46,8 @@ Deno.serve(async (req: Request) => {
       .select("role")
       .eq("user_id", caller.id)
       .eq("role", "super_admin")
+      .eq("active", true)
+      .is("tenant_id", null)
       .limit(1)
       .maybeSingle();
 
@@ -66,7 +68,8 @@ Deno.serve(async (req: Request) => {
 
     const { data: usersPage, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     if (listError) {
-      return new Response(JSON.stringify({ error: listError.message }), {
+      console.error("listUsers failed", listError);
+      return new Response(JSON.stringify({ error: "Lookup failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

@@ -91,7 +91,9 @@ Deno.serve(async (req: Request) => {
             .maybeSingle();
 
           if (res) {
-            const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+            const rand = new Uint32Array(1);
+            crypto.getRandomValues(rand);
+            const invoiceNumber = `INV-${new Date().getFullYear()}-${String(rand[0] % 100000000).padStart(8, "0")}`;
             const subtotal = (res.total_amount || 0) - (res.tax_amount || 0);
 
             const { data: newInvoice } = await supabase

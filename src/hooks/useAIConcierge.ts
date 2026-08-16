@@ -150,7 +150,8 @@ export function useAIConcierge() {
 
     } catch (err: any) {
       if (err.name === 'AbortError') return;
-      setError(err.message || 'Failed to get AI response');
+      console.error('AI concierge request failed', err);
+      setError('Failed to get AI response');
       setMessages(prev => prev.filter(m => m.id !== userMsg.id));
     } finally {
       setLoading(false);

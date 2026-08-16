@@ -16,9 +16,11 @@ function json(body: Record<string, unknown>, status = 200) {
 
 function generateTempPassword(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const bytes = new Uint32Array(16);
+  crypto.getRandomValues(bytes);
   let pass = "";
-  for (let i = 0; i < 10; i++) {
-    pass += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < bytes.length; i++) {
+    pass += chars[bytes[i] % chars.length];
   }
   return pass + "!1";
 }
@@ -62,7 +64,9 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", caller.id)
       .eq("active", true);
 
-    const isSuperAdmin = assignments?.some((a) => a.role === "super_admin");
+    const isSuperAdmin = assignments?.some(
+      (a) => a.role === "super_admin" && a.tenant_id === null
+    );
     const isTenantOwner = assignments?.some(
       (a) => a.role === "owner" && a.tenant_id === tenant_id
     );

@@ -70,13 +70,18 @@ export default function AISuggestionsPanel({ suggestions, roomTypes, loading, on
     setGenerating(true);
     setPoweredBy(null);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error('Your session has expired. Please sign in again.');
+
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-ai-pricing`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             hotel_id: currentHotel.id,

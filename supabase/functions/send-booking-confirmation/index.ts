@@ -162,22 +162,77 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const payload: BookingPayload = await req.json();
+    const { bookingId } = (await req.json()) as { bookingId?: string };
 
-    const required = ["confirmationNumber", "guestName", "guestEmail", "hotelName", "roomName", "checkIn", "checkOut"];
-    for (const field of required) {
-      if (!payload[field as keyof BookingPayload]) {
-        return new Response(JSON.stringify({ error: `Missing required field: ${field}` }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    if (!bookingId) {
+      return new Response(JSON.stringify({ error: "Missing required field: bookingId" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Every value in the email — above all the recipient address — comes from
+    // the stored booking, so this endpoint cannot be used as an open relay.
+    const { data: booking, error: bookingErr } = await supabase
+      .from("direct_bookings")
+      .select(
+        "id, hotel_id, confirmation_number, guest_name, guest_email, check_in, check_out, adults, children, total_amount, deposit_amount, room_type:room_types(name), hotel:hotels(name, currency)"
+      )
+      .eq("id", bookingId)
+      .maybeSingle();
+
+    if (bookingErr || !booking) {
+      return new Response(JSON.stringify({ error: "Booking not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const hotelRecord = booking.hotel as { name?: string; currency?: string } | null;
+    const roomRecord = booking.room_type as { name?: string } | null;
+    const { data: configRecord } = await supabase
+      .from("booking_engine_config")
+      .select("cancellation_policy, currency")
+      .eq("hotel_id", booking.hotel_id)
+      .maybeSingle();
+
+    const nights = Math.max(
+      1,
+      Math.round(
+        (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / 86400000
+      )
+    );
+    const depositAmount = Number(booking.deposit_amount ?? 0);
+
+    const payload: BookingPayload = {
+      confirmationNumber: booking.confirmation_number,
+      guestName: booking.guest_name,
+      guestEmail: booking.guest_email,
+      hotelName: hotelRecord?.name ?? "Hotel",
+      roomName: roomRecord?.name ?? "Room",
+      checkIn: booking.check_in,
+      checkOut: booking.check_out,
+      nights,
+      adults: booking.adults ?? 1,
+      children: booking.children ?? 0,
+      total: Number(booking.total_amount ?? 0),
+      depositAmount,
+      currency: configRecord?.currency || hotelRecord?.currency || "GBP",
+      requireDeposit: depositAmount > 0,
+      cancellationPolicy: configRecord?.cancellation_policy ?? "",
+    };
+
+    if (!payload.guestEmail) {
+      return new Response(JSON.stringify({ error: "This booking has no guest email address" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const html = buildConfirmationEmail(payload);
 
@@ -196,7 +251,8 @@ Deno.serve(async (req: Request) => {
     }
 
     if (sendError) {
-      return new Response(JSON.stringify({ success: false, error: sendError }), {
+      console.error("send-booking-confirmation send failure", sendError);
+      return new Response(JSON.stringify({ success: false, error: "Unable to send confirmation email" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -206,7 +262,8 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error("send-booking-confirmation error", err);
+    return new Response(JSON.stringify({ error: "Unable to send confirmation email" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

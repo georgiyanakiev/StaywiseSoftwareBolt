@@ -49,7 +49,8 @@ export default function SuperAdminPage() {
     const { data, error: err } = await db.rpc('admin_list_all_tenants');
 
     if (err) {
-      setError(err.message);
+      console.error('Failed to load tenants', err);
+      setError('We could not load the list of properties. Please try again.');
       setLoading(false);
       return;
     }
@@ -167,12 +168,13 @@ export default function SuperAdminPage() {
       .maybeSingle();
 
     if (err) {
-      setError(`Failed to update tenant: ${err.message}`);
+      console.error('Failed to update tenant', err);
+      setError('We could not update this account. Please try again.');
       setTogglingId(null);
       return;
     }
     if (!data) {
-      setError('Update was blocked (no row returned). Check RLS policies for tenants.');
+      setError('You do not have permission to change this account.');
       setTogglingId(null);
       return;
     }

@@ -153,6 +153,7 @@ export default function ChannelManagerPage() {
         vaultId: apiKeyVaultId,
         name: `channel_api_key_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
         value: formData.api_key,
+        hotelId: currentHotel.id,
       });
     }
 
@@ -161,6 +162,7 @@ export default function ChannelManagerPage() {
         vaultId: clientSecretVaultId,
         name: `channel_client_secret_${channelModal.channel?.id ?? 'new'}_${currentHotel.id}`,
         value: formData.client_secret,
+        hotelId: currentHotel.id,
       });
     }
 
