@@ -42,8 +42,7 @@ function eachDay(from: string, to: string): string[] {
 }
 
 export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props) {
-  const { toast } = useToast();
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info') => toast(type, message);
+  const { showToast } = useToast();
   const [form, setForm] = useState<RestrictionForm>({
     from_date: today(),
     to_date: addDays(today(), 6),
