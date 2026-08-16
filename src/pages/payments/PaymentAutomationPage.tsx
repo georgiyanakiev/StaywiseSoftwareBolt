@@ -66,7 +66,7 @@ const TYPE_COLORS: Record<string, string> = {
   adjustment: 'bg-orange-50 text-orange-700',
 };
 
-const getTriggerLabels = (t: any) => ({
+const getTriggerLabels = () => ({
   on_booking:          'On Booking',
   days_before_arrival: 'Days Before Arrival',
   on_checkin:          'On Check-in',
@@ -77,7 +77,6 @@ const getTriggerLabels = (t: any) => ({
 export default function PaymentAutomationPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info') => toast(type, message);
   const { t } = useLanguage();
   const tenantId = useTenantId();
 
@@ -195,14 +194,14 @@ export default function PaymentAutomationPage() {
   const toggleRule = async (id: string, active: boolean) => {
     await supabase.from('payment_rules').update({ active: !active }).eq('id', id);
     setRules(prev => prev.map(r => r.id === id ? { ...r, active: !active } : r));
-    showToast(`Rule ${!active ? 'activated' : 'deactivated'}`, 'success');
+    toast('success', `Rule ${!active ? 'activated' : 'deactivated'}`);
   };
 
   const deleteRule = async (id: string) => {
     await supabase.from('payment_rules').delete().eq('id', id);
     setRules(prev => prev.filter(r => r.id !== id));
     setDeleteConfirm(null);
-    showToast('Rule deleted', 'success');
+    toast('success', 'Rule deleted');
   };
 
   const chargeNow = async (tx: Transaction) => {
@@ -240,7 +239,7 @@ export default function PaymentAutomationPage() {
 
     setChargingId(null);
     loadData();
-    showToast(`${formatCurrency(tx.amount, currentHotel.currency)} recorded as paid`, 'success');
+    toast('success', `${formatCurrency(tx.amount, currentHotel.currency)} recorded as paid`);
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -316,7 +315,7 @@ export default function PaymentAutomationPage() {
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
 
-  const TRIGGER_LABELS = getTriggerLabels(t);
+  const TRIGGER_LABELS: Record<string, string> = getTriggerLabels();
 
   return (
     <div className="space-y-6">
@@ -600,7 +599,7 @@ export default function PaymentAutomationPage() {
         <PaymentRuleModal
           hotelId={currentHotel.id}
           onClose={() => setShowRuleModal(false)}
-          onSaved={() => { setShowRuleModal(false); loadData(); showToast('Payment rule added', 'success'); }}
+          onSaved={() => { setShowRuleModal(false); loadData(); toast('success', 'Payment rule added'); }}
         />
       )}
 
@@ -610,10 +609,10 @@ export default function PaymentAutomationPage() {
           hotelId={currentHotel?.id ?? ''}
           currency={currentHotel?.currency}
           onClose={() => setRefundTarget(null)}
-          onRefunded={(id, amount) => {
+          onRefunded={(_, amount) => {
             setRefundTarget(null);
             loadData();
-            showToast(`Refund of ${formatCurrency(amount, currentHotel?.currency)} issued`, 'success');
+            toast('success', `Refund of ${formatCurrency(amount, currentHotel?.currency)} issued`);
           }}
         />
       )}

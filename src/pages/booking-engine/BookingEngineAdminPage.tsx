@@ -84,7 +84,7 @@ export default function BookingEngineAdminPage() {
   const { currentHotel } = useHotel();
   const { t } = useLanguage();
   const tenantId = useTenantId();
-  const { toast: showToast } = useToast();
+  const { toast } = useToast();
   const [tab, setTab] = useState<Tab>('overview');
   const [bookings, setBookings] = useState<DirectBooking[]>([]);
   const [config, setConfig] = useState<Config | null>(null);
@@ -144,10 +144,10 @@ export default function BookingEngineAdminPage() {
     setSaving(false);
     if (error) {
       console.error('Save config error:', error);
-      showToast('error', 'Failed to save changes');
+      toast('error', 'Failed to save changes');
       return;
     }
-    showToast('success', 'Booking engine config saved');
+    toast('success', 'Booking engine config saved');
     loadData();
   };
 
@@ -159,15 +159,15 @@ export default function BookingEngineAdminPage() {
       : `<script\n  src="${base}/booking-widget.js"\n  data-hotel="${currentHotel?.id}"\n></script>`;
     navigator.clipboard.writeText(code);
     setCopiedType(type);
-    showToast('success', 'Embed code copied!');
+    toast('success', 'Embed code copied!');
     setTimeout(() => setCopiedType(null), 2500);
   };
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('direct_bookings').update({ status }).eq('id', id);
-    if (error) { showToast('error', 'Failed to update booking'); return; }
+    if (error) { toast('error', 'Failed to update booking'); return; }
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
-    showToast('success', 'Booking updated');
+    toast('success', 'Booking updated');
   };
 
   const getNights = (checkIn: string, checkOut: string) =>

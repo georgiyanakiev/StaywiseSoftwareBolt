@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   GitBranch, RefreshCw, Calendar, Activity, Plus, Lock,
-  BookOpen, Settings, FlaskConical,
+  BookOpen, FlaskConical,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { storeChannelSecret } from '../../lib/channelSecrets';
@@ -24,7 +24,6 @@ export default function ChannelManagerPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
   const { t } = useLanguage();
-  const showToast = (msg: string, type: 'success' | 'error') => toast(type, msg);
   const tenantId = useTenantId();
 
   const [topTab, setTopTab] = useState<TopTab>('my_channels');
@@ -63,9 +62,9 @@ export default function ChannelManagerPage() {
     const { error } = await supabase.from('channels')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', id);
-    if (error) { showToast('Failed to update channel status', 'error'); return; }
+    if (error) { toast('error', 'Failed to update channel status'); return; }
     setChannels(prev => prev.map(c => c.id === id ? { ...c, status: newStatus as Channel['status'] } : c));
-    showToast(`Channel ${newStatus === 'connected' ? 'connected' : 'disconnected'}`, 'success');
+    toast('success', `Channel ${newStatus === 'connected' ? 'connected' : 'disconnected'}`);
   };
 
   const syncChannel = async (id: string, name: string) => {
@@ -124,9 +123,9 @@ export default function ChannelManagerPage() {
 
     setSyncingChannel(null);
     if (isSimulated) {
-      showToast(`${name} is in demo mode — no real sync occurred. Add API credentials to enable live sync.`, 'error');
+      toast('error', `${name} is in demo mode — no real sync occurred. Add API credentials to enable live sync.`);
     } else {
-      showToast(`${name} synced — ${roomsAffected} rooms, ${datesAffected} pending rates updated`, 'success');
+      toast('success', `${name} synced — ${roomsAffected} rooms, ${datesAffected} pending rates updated`);
     }
     loadData();
   };
@@ -134,7 +133,7 @@ export default function ChannelManagerPage() {
   const syncAllChannels = async () => {
     if (!currentHotel) return;
     const connected = channels.filter(c => c.status === 'connected');
-    if (connected.length === 0) { showToast('No connected channels to sync', 'error'); return; }
+    if (connected.length === 0) { toast('error', 'No connected channels to sync'); return; }
     setSyncingAll(true);
     for (const ch of connected) await syncChannel(ch.id, ch.name);
     setSyncingAll(false);
@@ -182,7 +181,7 @@ export default function ChannelManagerPage() {
         .update({ ...channelPayload, updated_at: new Date().toISOString() })
         .eq('id', channelModal.channel.id);
       if (error) throw new Error(error.message);
-      showToast('Channel updated', 'success');
+      toast('success', 'Channel updated');
     } else {
       const { error } = await supabase.from('channels').insert({
         hotel_id: currentHotel.id,
@@ -191,7 +190,7 @@ export default function ChannelManagerPage() {
         ...(tenantId ? { tenant_id: tenantId } : {}),
       });
       if (error) throw new Error(error.message);
-      showToast('Channel added — connect it to start syncing', 'success');
+      toast('success', 'Channel added — connect it to start syncing');
     }
     await loadData();
   };
@@ -399,7 +398,7 @@ export default function ChannelManagerPage() {
           tenantId={tenantId}
           onChannelAdded={handleChannelAddedFromCatalog}
           onConfigure={handleConfigureFromCatalog}
-          showToast={showToast}
+          toast={toast}
         />
       )}
 

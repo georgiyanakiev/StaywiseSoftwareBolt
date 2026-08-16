@@ -42,7 +42,7 @@ function eachDay(from: string, to: string): string[] {
 }
 
 export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props) {
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [form, setForm] = useState<RestrictionForm>({
     from_date: today(),
     to_date: addDays(today(), 6),
@@ -59,7 +59,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
 
   const applyRestrictions = async () => {
     if (form.from_date > form.to_date) {
-      showToast('From date must be before To date', 'error');
+      toast('error', 'From date must be before To date');
       return;
     }
 
@@ -68,7 +68,7 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
       form.closed_to_arrival || form.closed_to_departure;
 
     if (!hasAnyRestriction) {
-      showToast('Please set at least one restriction', 'error');
+      toast('error', 'Please set at least one restriction');
       return;
     }
 
@@ -135,9 +135,9 @@ export default function RestrictionsPanel({ hotelId, tenantId, channels }: Props
         }
       }
 
-      showToast(`Restrictions applied to ${totalUpdated} rate records — pending sync`, 'success');
+      toast('success', `Restrictions applied to ${totalUpdated} rate records — pending sync`);
     } catch {
-      showToast('Failed to apply restrictions', 'error');
+      toast('error', 'Failed to apply restrictions');
     } finally {
       setSaving(false);
     }
