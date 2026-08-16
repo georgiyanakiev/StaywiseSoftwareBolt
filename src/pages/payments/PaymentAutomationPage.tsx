@@ -76,7 +76,8 @@ const getTriggerLabels = (t: any) => ({
 
 export default function PaymentAutomationPage() {
   const { currentHotel } = useHotel();
-  const { showToast } = useToast();
+  const { toast } = useToast();
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info') => toast(type, message);
   const { t } = useLanguage();
   const tenantId = useTenantId();
 
