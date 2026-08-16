@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   GitBranch, RefreshCw, Calendar, Activity, Plus, Lock,
-  BookOpen, Settings, FlaskConical,
+  BookOpen,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { storeChannelSecret } from '../../lib/channelSecrets';
@@ -20,11 +20,24 @@ import ChannelCatalog from './ChannelMarketplace';
 type TopTab = 'my_channels' | 'catalog';
 type SubTab = 'channels' | 'rates' | 'restrictions' | 'logs';
 
+const SYNC_FUNCTIONS: Record<string, string> = {
+  booking_com: 'booking-com-sync',
+  expedia: 'expedia-sync',
+  cloudbeds: 'cloudbeds-sync',
+  siteminder: 'siteminder-sync',
+  lodgify: 'lodgify-sync',
+};
+
+type SyncResult = {
+  success?: boolean;
+  error?: string;
+  records_processed?: number;
+};
+
 export default function ChannelManagerPage() {
   const { currentHotel } = useHotel();
   const { toast } = useToast();
   const { t } = useLanguage();
-  const showToast = (msg: string, type: 'success' | 'error') => toast(type, msg);
   const tenantId = useTenantId();
 
   const [topTab, setTopTab] = useState<TopTab>('my_channels');
@@ -63,48 +76,40 @@ export default function ChannelManagerPage() {
     const { error } = await supabase.from('channels')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', id);
-    if (error) { showToast('Failed to update channel status', 'error'); return; }
+    if (error) { toast('error', 'Failed to update channel status'); return; }
     setChannels(prev => prev.map(c => c.id === id ? { ...c, status: newStatus as Channel['status'] } : c));
-    showToast(`Channel ${newStatus === 'connected' ? 'connected' : 'disconnected'}`, 'success');
+    toast('success', `Channel ${newStatus === 'connected' ? 'connected' : 'disconnected'}`);
   };
 
   const syncChannel = async (id: string, name: string) => {
     if (!currentHotel) return;
     setSyncingChannel(id);
-    const now = new Date().toISOString();
-
     const channel = channels.find(c => c.id === id);
-    const hasCredentials = !!(
-      channel?.api_key_vault_id ||
-      (channel?.client_id && channel?.client_secret_vault_id && channel?.property_id)
-    );
+    const functionName = channel ? SYNC_FUNCTIONS[channel.type] : undefined;
+    let recordsProcessed = 0;
 
-    const [{ count: pendingRates }, { count: roomCount }] = await Promise.all([
-      supabase.from('channel_rates').select('*', { count: 'exact', head: true })
-        .eq('channel_id', id).eq('status', 'pending'),
-      supabase.from('rooms').select('*', { count: 'exact', head: true })
-        .eq('hotel_id', currentHotel.id),
-    ]);
+    try {
+      if (!functionName) {
+        throw new Error(`${name} does not have a live sync connector yet.`);
+      }
 
-    const roomsAffected = roomCount ?? 0;
-    const datesAffected = pendingRates ?? 0;
-    const isSimulated = !hasCredentials;
+      for (const direction of ['inbound', 'outbound'] as const) {
+        const { data, error } = await supabase.functions.invoke<SyncResult>(functionName, {
+          body: { hotel_id: currentHotel.id, direction },
+        });
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error ?? `${name} ${direction} sync failed.`);
+        recordsProcessed += data.records_processed ?? 0;
+      }
 
-    if (isSimulated) {
-      await Promise.all([
-        supabase.from('channels').update({ last_sync: now, status: 'connected' }).eq('id', id),
-        supabase.from('channel_sync_logs').insert({
-          hotel_id: currentHotel.id,
-          channel_id: id,
-          channel_name: name,
-          rooms_affected: 0,
-          dates_affected: 0,
-          status: 'simulated',
-          error_message: 'Simulated sync — demo mode. No real OTA calls were made. Add API credentials to enable live sync.',
-          ...(tenantId ? { tenant_id: tenantId } : {}),
-        }),
-      ]);
-    } else {
+      const now = new Date().toISOString();
+      const { count: pendingRates } = await supabase
+        .from('channel_rates')
+        .select('*', { count: 'exact', head: true })
+        .eq('channel_id', id)
+        .eq('status', 'pending');
+      const datesAffected = pendingRates ?? 0;
+
       await Promise.all([
         supabase.from('channels').update({ last_sync: now, status: 'connected' }).eq('id', id),
         supabase.from('channel_rates').update({ status: 'synced', synced_at: now })
@@ -113,28 +118,40 @@ export default function ChannelManagerPage() {
           hotel_id: currentHotel.id,
           channel_id: id,
           channel_name: name,
-          rooms_affected: roomsAffected,
+          rooms_affected: recordsProcessed,
           dates_affected: datesAffected,
           status: 'success',
           error_message: '',
           ...(tenantId ? { tenant_id: tenantId } : {}),
         }),
       ]);
+      toast('success', `${name} synced — ${recordsProcessed} OTA records processed.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `${name} sync failed.`;
+      await Promise.all([
+        supabase.from('channels').update({ status: 'error' }).eq('id', id),
+        supabase.from('channel_sync_logs').insert({
+          hotel_id: currentHotel.id,
+          channel_id: id,
+          channel_name: name,
+          rooms_affected: recordsProcessed,
+          dates_affected: 0,
+          status: 'failed',
+          error_message: message,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+        }),
+      ]);
+      toast('error', `${name} sync failed: ${message}`);
+    } finally {
+      setSyncingChannel(null);
+      await loadData();
     }
-
-    setSyncingChannel(null);
-    if (isSimulated) {
-      showToast(`${name} is in demo mode — no real sync occurred. Add API credentials to enable live sync.`, 'error');
-    } else {
-      showToast(`${name} synced — ${roomsAffected} rooms, ${datesAffected} pending rates updated`, 'success');
-    }
-    loadData();
   };
 
   const syncAllChannels = async () => {
     if (!currentHotel) return;
     const connected = channels.filter(c => c.status === 'connected');
-    if (connected.length === 0) { showToast('No connected channels to sync', 'error'); return; }
+    if (connected.length === 0) { toast('error', 'No connected channels to sync'); return; }
     setSyncingAll(true);
     for (const ch of connected) await syncChannel(ch.id, ch.name);
     setSyncingAll(false);
@@ -182,7 +199,7 @@ export default function ChannelManagerPage() {
         .update({ ...channelPayload, updated_at: new Date().toISOString() })
         .eq('id', channelModal.channel.id);
       if (error) throw new Error(error.message);
-      showToast('Channel updated', 'success');
+      toast('success', 'Channel updated');
     } else {
       const { error } = await supabase.from('channels').insert({
         hotel_id: currentHotel.id,
@@ -191,7 +208,7 @@ export default function ChannelManagerPage() {
         ...(tenantId ? { tenant_id: tenantId } : {}),
       });
       if (error) throw new Error(error.message);
-      showToast('Channel added — connect it to start syncing', 'success');
+      toast('success', 'Channel added — connect it to start syncing');
     }
     await loadData();
   };
@@ -277,17 +294,6 @@ export default function ChannelManagerPage() {
               <p className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Demo Mode banner */}
-      {topTab === 'my_channels' && channels.some(c => !c.api_key_vault_id && !(c.client_id && c.client_secret_vault_id && c.property_id)) && (
-        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-          <FlaskConical className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <span className="font-semibold text-amber-800">{t.channelManager.demoMode}</span>
-            <span className="text-amber-700 ml-2">{t.channelManager.demoModeDesc}</span>
-          </div>
         </div>
       )}
 
@@ -399,7 +405,7 @@ export default function ChannelManagerPage() {
           tenantId={tenantId}
           onChannelAdded={handleChannelAddedFromCatalog}
           onConfigure={handleConfigureFromCatalog}
-          showToast={showToast}
+          toast={toast}
         />
       )}
 
