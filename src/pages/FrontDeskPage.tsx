@@ -12,7 +12,7 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useFrontDeskData } from './frontdesk/useFrontDeskData';
 import type { ArrivalItem, DepartureItem, StayoverItem } from './frontdesk/useFrontDeskData';
-import type { Translations } from '../contexts/LanguageContext';
+import type { TranslationKeys as Translations } from '../lib/translations';
 
 type Tab = 'arrivals' | 'departures' | 'stayovers';
 
